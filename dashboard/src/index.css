@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #080c14;
+  --color-bg-card: #0d1420;
+  --color-bg-hover: #121a2a;
+  --color-border: #1a2538;
+  --color-border-glow: #00ffe740;
+  --color-primary: #00ffe7;
+  --color-secondary: #0088ff;
+  --color-accent: #bf00ff;
+  --color-text: #c8d6e5;
+  --color-text-dim: #5a6a7a;
+  --color-text-bright: #e8f0f8;
+  --color-success: #00ff88;
+  --color-warning: #ffcc00;
+  --color-danger: #ff4444;
+  --color-coral: #ff6b6b;
+  --color-teal: #4ecdc4;
+  --color-pink: #ff00cc;
+
+  --font-display: "Orbitron", sans-serif;
+  --font-mono: "Share Tech Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+/* Glass panel utility */
+.glass-panel {
+  background: linear-gradient(135deg, rgba(13, 20, 32, 0.9), rgba(8, 12, 20, 0.95));
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 15px rgba(0, 255, 231, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.glass-panel:hover {
+  border-color: var(--color-border-glow);
+}
+
+.panel-focused .glass-panel {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 20px rgba(0, 255, 231, 0.15), 0 0 40px rgba(0, 255, 231, 0.05), inset 0 1px 0
+    rgba(255, 255, 255, 0.05);
+}
+
+/* Neon glow text utilities */
+.glow-cyan {
+  text-shadow: 0 0 8px rgba(0, 255, 231, 0.6);
+}
+
+.glow-blue {
+  text-shadow: 0 0 8px rgba(0, 136, 255, 0.6);
+}
+
+.glow-magenta {
+  text-shadow: 0 0 8px rgba(191, 0, 255, 0.6);
+}
+
+/* Scanline overlay */
+.scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  z-index: 9999;
+}
+
+/* Pulsing animation */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* react-grid-layout overrides */
+.react-grid-item {
+  transition: all 300ms ease !important;
+}
+
+.react-grid-item > div {
+  height: 100%;
+}
+
+.react-grid-placeholder {
+  background: var(--color-primary) !important;
+  opacity: 0.08 !important;
+  border: 1px dashed var(--color-primary) !important;
+  border-radius: 4px;
+}
+
+.react-resizable-handle {
+  z-index: 10;
+}
+
+.react-resizable-handle-se::after {
+  border-right-color: var(--color-text-dim) !important;
+  border-bottom-color: var(--color-text-dim) !important;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #00ffe7, #00a8ff, #bf00ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

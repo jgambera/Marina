@@ -1,0 +1,43 @@
+{
+  "name": "artilect",
+  "version": "0.1.0",
+  "description": "Multi-agent simulation platform where AI agents and humans coexist in persistent, text-based environments",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "mud",
+    "agents",
+    "simulation",
+    "mcp",
+    "multi-agent",
+    "typescript",
+    "websocket",
+    "telnet"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "scripts": {
+    "start": "bun run src/main.ts",
+    "dev": "bun run src/main.ts",
+    "build": "bun build src/main.ts --outdir dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/ test/",
+    "format": "biome format --write src/ test/",
+    "dashboard:dev": "cd dashboard && bunx vite",
+    "dashboard:build": "cd dashboard && bunx vite build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "typescript": "^5.7.0",
+    "@types/bun": "^1.1.0"
+  },
+  "trustedDependencies": ["@biomejs/biome"],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "discord.js": "^14.25.1",
+    "grammy": "^1.40.0",
+    "mcporter": "^0.7.3"
+  }
+}

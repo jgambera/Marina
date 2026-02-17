@@ -1,0 +1,139 @@
+import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
+import { useEffect, useRef, useState } from "react";
+import { NodeMeta } from "./NodeMeta";
+
+export function PdfNode({ data, selected }: NodeProps) {
+  const url = (data.url as string) ?? "";
+  const filename = (data.filename as string) ?? "Document.pdf";
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [pageNum, setPageNum] = useState(1);
+  const [numPages, setNumPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const pdfDocRef = useRef<unknown>(null);
+
+  useEffect(() => {
+    if (!url || !canvasRef.current) return;
+    let cancelled = false;
+
+    async function loadPdf() {
+      try {
+        const pdfjsLib = await import("pdfjs-dist");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+        const pdf = await pdfjsLib.getDocument(url).promise;
+        if (cancelled) return;
+        pdfDocRef.current = pdf;
+        setNumPages(pdf.numPages);
+        setLoading(false);
+        renderPage(pdf, 1);
+      } catch {
+        setLoading(false);
+      }
+    }
+
+    async function renderPage(pdf: { getPage: (n: number) => Promise<unknown> }, num: number) {
+      const page = (await pdf.getPage(num)) as {
+        getViewport: (opts: { scale: number }) => { width: number; height: number };
+        render: (ctx: {
+          canvasContext: CanvasRenderingContext2D;
+          viewport: { width: number; height: number };
+        }) => { promise: Promise<void> };
+      };
+      const canvas = canvasRef.current;
+      if (!canvas || cancelled) return;
+      const viewport = page.getViewport({ scale: 1.2 });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d")!;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    }
+
+    loadPdf();
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  useEffect(() => {
+    if (!pdfDocRef.current || pageNum < 1) return;
+    const pdf = pdfDocRef.current as {
+      getPage: (n: number) => Promise<unknown>;
+    };
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    (async () => {
+      const page = (await pdf.getPage(pageNum)) as {
+        getViewport: (opts: { scale: number }) => { width: number; height: number };
+        render: (ctx: {
+          canvasContext: CanvasRenderingContext2D;
+          viewport: { width: number; height: number };
+        }) => { promise: Promise<void> };
+      };
+      const viewport = page.getViewport({ scale: 1.2 });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d")!;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    })();
+  }, [pageNum]);
+
+  return (
+    <div className="rounded-lg overflow-hidden bg-gray-900 border border-red-800/50 shadow-lg shadow-red-900/20 flex flex-col h-full">
+      <NodeResizer
+        isVisible={!!selected}
+        minWidth={200}
+        minHeight={250}
+        lineClassName="!border-red-500/50"
+        handleClassName="!w-2 !h-2 !bg-red-500 !border-red-400"
+      />
+      <Handle type="target" position={Position.Top} className="!bg-red-500" />
+      {selected && (
+        <div className="px-3 py-1.5 bg-red-900/30 text-xs text-red-300 font-medium truncate flex items-center justify-between">
+          <NodeMeta filename={filename} data={data} />
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 ml-2 shrink-0"
+            >
+              Open
+            </a>
+          )}
+        </div>
+      )}
+      <div className="flex-1 flex items-center justify-center p-2 min-h-[200px] overflow-auto">
+        {loading ? (
+          <div className="text-gray-500 text-sm animate-pulse">Loading PDF...</div>
+        ) : !url ? (
+          <div className="text-gray-500 text-sm">No PDF</div>
+        ) : (
+          <canvas ref={canvasRef} className="max-w-full" />
+        )}
+      </div>
+      {numPages > 1 && (
+        <div className="flex items-center justify-center gap-2 py-1.5 bg-gray-800/50 text-xs text-gray-400">
+          <button
+            onClick={() => setPageNum((p) => Math.max(1, p - 1))}
+            disabled={pageNum <= 1}
+            className="px-2 py-0.5 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30"
+          >
+            Prev
+          </button>
+          <span>
+            {pageNum} / {numPages}
+          </span>
+          <button
+            onClick={() => setPageNum((p) => Math.min(numPages, p + 1))}
+            disabled={pageNum >= numPages}
+            className="px-2 py-0.5 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30"
+          >
+            Next
+          </button>
+        </div>
+      )}
+      <Handle type="source" position={Position.Bottom} className="!bg-red-500" />
+    </div>
+  );
+}

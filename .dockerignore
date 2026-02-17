@@ -1,0 +1,17 @@
+node_modules
+test
+*.test.ts
+.git
+*.db
+*.db-wal
+*.db-shm
+dist
+.DS_Store
+.dockerignore
+Dockerfile
+docker-compose.yml
+.env
+.env.*
+scripts
+biome.json
+tsconfig.json

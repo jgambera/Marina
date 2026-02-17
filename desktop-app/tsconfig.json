@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "outDir": "dist",
+    "paths": {
+      "@engine/*": ["src/engine/*"],
+      "@world/*": ["src/world/*"],
+      "@net/*": ["src/net/*"],
+      "@auth/*": ["src/auth/*"],
+      "@persistence/*": ["src/persistence/*"],
+      "@rooms/*": ["rooms/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "../src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "build"]
+}

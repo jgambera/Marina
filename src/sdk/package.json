@@ -1,0 +1,17 @@
+{
+  "name": "@artilect/agent-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for building agents that connect to an Artilect server via WebSocket.",
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "files": ["index.ts", "client.ts", "examples/"],
+  "keywords": ["artilect", "mud", "agent", "sdk", "websocket"],
+  "license": "MIT",
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  }
+}

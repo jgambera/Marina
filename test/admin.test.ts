@@ -1,0 +1,120 @@
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { Engine } from "../src/engine/engine";
+import { ArtilectDB } from "../src/persistence/database";
+import { roomId } from "../src/types";
+import type { EntityId } from "../src/types";
+import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+describe("Admin Commands", () => {
+  let db: ArtilectDB;
+  let engine: Engine;
+  let adminConn: MockConnection;
+  let adminEntity: EntityId;
+  const dbPath = `/tmp/artilect-admin-test-${Date.now()}.db`;
+
+  beforeEach(() => {
+    db = new ArtilectDB(dbPath);
+    engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
+    engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
+
+    // Create admin user
+    adminConn = new MockConnection("admin_conn");
+    engine.addConnection(adminConn);
+    const result = engine.login("admin_conn", "AdminUser");
+    if ("entityId" in result) {
+      adminEntity = result.entityId;
+      // Set admin rank
+      const entity = engine.entities.get(adminEntity);
+      if (entity) entity.properties.rank = 4;
+    }
+  });
+
+  afterEach(() => {
+    db.close();
+    cleanupDb(dbPath);
+  });
+
+  it("should reject non-admin users", () => {
+    const conn = new MockConnection("user_conn");
+    engine.addConnection(conn);
+    const result = engine.login("user_conn", "NormalUser");
+    if (!("entityId" in result)) return;
+
+    conn.clear();
+    engine.processCommand(result.entityId, "admin stats");
+    expect(conn.lastText()).toContain("rank 4");
+  });
+
+  it("should show stats", () => {
+    adminConn.clear();
+    engine.processCommand(adminEntity, "admin stats");
+    const text = adminConn.lastText();
+    expect(text).toContain("Server Stats:");
+    expect(text).toContain("Rooms:");
+    expect(text).toContain("Entities:");
+    expect(text).toContain("Online connections:");
+    expect(text).toContain("Uptime:");
+  });
+
+  it("should kick players", () => {
+    const userConn = new MockConnection("user_conn");
+    engine.addConnection(userConn);
+    const result = engine.login("user_conn", "Victim");
+    if (!("entityId" in result)) return;
+
+    adminConn.clear();
+    engine.processCommand(adminEntity, "admin kick Victim");
+    const kickTexts = adminConn.allText();
+    expect(kickTexts.some((t) => t.includes("Kicked Victim"))).toBe(true);
+  });
+
+  it("should ban players", () => {
+    adminConn.clear();
+    engine.processCommand(adminEntity, "admin ban BadUser Being rude");
+    const banTexts = adminConn.allText();
+    expect(banTexts.some((t) => t.includes("Banned BadUser"))).toBe(true);
+    expect(db.isBanned("baduser")).toBe(true);
+  });
+
+  it("should unban players", () => {
+    db.addBan("baduser", "admin");
+    adminConn.clear();
+    engine.processCommand(adminEntity, "admin unban baduser");
+    expect(adminConn.lastText()).toContain("Unbanned");
+    expect(db.isBanned("baduser")).toBe(false);
+  });
+
+  it("should list bans", () => {
+    db.addBan("user1", "admin", "Spam");
+    db.addBan("user2", "admin", "Harassment");
+    adminConn.clear();
+    engine.processCommand(adminEntity, "admin bans");
+    const text = adminConn.lastText();
+    expect(text).toContain("Active bans");
+    expect(text).toContain("user1");
+    expect(text).toContain("user2");
+  });
+
+  it("should broadcast announcements", () => {
+    const userConn = new MockConnection("user_conn");
+    engine.addConnection(userConn);
+    const result = engine.login("user_conn", "Listener");
+    if (!("entityId" in result)) return;
+
+    userConn.clear();
+    adminConn.clear();
+    engine.processCommand(adminEntity, "admin announce Server restart in 5 minutes");
+    expect(adminConn.lastText()).toContain("Announcement sent");
+    // Listener should receive the broadcast
+    const listenerTexts = userConn.allText();
+    expect(listenerTexts.some((t) => t.includes("[ADMIN]"))).toBe(true);
+  });
+
+  it("should show usage for missing subcommand", () => {
+    adminConn.clear();
+    engine.processCommand(adminEntity, "admin");
+    expect(adminConn.lastText()).toContain("Usage:");
+  });
+});

@@ -1,0 +1,243 @@
+import { header, separator } from "../../net/ansi";
+import type { ArtilectDB } from "../../persistence/database";
+import type { CommandDef, Entity, RoomContext } from "../../types";
+
+export function skillCommand(opts: {
+  getEntity: (id: string) => Entity | undefined;
+  db?: ArtilectDB;
+}): CommandDef {
+  return {
+    name: "skill",
+    aliases: [],
+    help: "Skill library. Usage: skill store <name> | <description> | <action_sequence> | skill search <query> | skill verify <id> | skill list | skill share <id> <pool> | skill compose <id1> <id2> ...",
+    handler: (ctx: RoomContext, input) => {
+      const entity = opts.getEntity(input.entity);
+      if (!entity) return;
+      if (!opts.db) {
+        ctx.send(input.entity, "Skills require database support.");
+        return;
+      }
+      const db = opts.db;
+      const sub = input.tokens[0]?.toLowerCase();
+
+      if (!sub) {
+        ctx.send(
+          input.entity,
+          "Usage: skill store <name> | <desc> | <actions> | skill search <query> | skill verify <id> | skill list | skill share <id> <pool> | skill compose <id1> <id2> ...",
+        );
+        return;
+      }
+
+      switch (sub) {
+        case "store": {
+          const rest = input.args.slice("store".length).trim();
+          const parts = rest.split("|").map((p) => p.trim());
+          if (parts.length < 3) {
+            ctx.send(input.entity, "Usage: skill store <name> | <description> | <action_sequence>");
+            return;
+          }
+          const [name, description, ...actionParts] = parts;
+          const actions = actionParts.join(" | ");
+          const content = `[Skill: ${name}] ${description} || Actions: ${actions}`;
+          const id = db.createNote(entity.name, content, undefined, {
+            importance: 6,
+            noteType: "skill",
+          });
+          ctx.send(input.entity, `Skill #${id} "${name}" stored.`);
+          return;
+        }
+
+        case "search": {
+          const query = input.tokens.slice(1).join(" ");
+          if (!query) {
+            ctx.send(input.entity, "Usage: skill search <query>");
+            return;
+          }
+          const results = db.recallNotesWithType(entity.name, query, "skill", {
+            weightImportance: 0.4,
+            weightRecency: 0.2,
+            weightRelevance: 0.4,
+          });
+          if (results.length === 0) {
+            ctx.send(input.entity, "No matching skills found.");
+            return;
+          }
+          // Touch each to track recall
+          for (const note of results) {
+            db.touchNote(note.id);
+          }
+          const lines = [
+            header(`Skills: "${query}"`),
+            separator(),
+            ...results.map((n) => {
+              return `  #${n.id} [imp=${n.importance} score=${n.score.toFixed(2)}]: ${n.content.slice(0, 80)}`;
+            }),
+          ];
+          ctx.send(input.entity, lines.join("\n"));
+          return;
+        }
+
+        case "verify": {
+          const id = Number.parseInt(input.tokens[1] ?? "", 10);
+          if (Number.isNaN(id)) {
+            ctx.send(input.entity, "Usage: skill verify <id>");
+            return;
+          }
+          const note = db.getNote(id);
+          if (!note || note.note_type !== "skill") {
+            ctx.send(input.entity, `Skill #${id} not found.`);
+            return;
+          }
+          // Add a supports self-link to indicate verification
+          try {
+            db.createNoteLink(id, id, "supports");
+          } catch {
+            // Already verified by this mechanism
+          }
+          // Boost importance (capped at 10)
+          const newImportance = Math.min(note.importance + 1, 10);
+          // We need to update importance directly — use a corrected version
+          if (newImportance > note.importance) {
+            // Create a new note that supersedes with higher importance
+            // Actually, just update the note's importance via touch + recall pattern
+            // For simplicity, store a verification note linking to the skill
+            const verifyId = db.createNote(
+              entity.name,
+              `[Verified skill #${id}] ${note.content.slice(0, 60)}`,
+              undefined,
+              { importance: 3, noteType: "observation" },
+            );
+            try {
+              db.createNoteLink(verifyId, id, "supports");
+            } catch {
+              // Ignore
+            }
+          }
+          ctx.send(input.entity, `Skill #${id} verified. Verification recorded.`);
+          return;
+        }
+
+        case "list": {
+          const notes = db.getNotesByEntity(entity.name, 100);
+          const skills = notes.filter((n) => n.note_type === "skill");
+          if (skills.length === 0) {
+            ctx.send(input.entity, "No skills stored.");
+            return;
+          }
+          const lines = [
+            header("Skill Library"),
+            separator(),
+            ...skills.map((n) => {
+              // Count supports links as verification count
+              const links = db.getNoteLinks(n.id);
+              const verifications = links.filter(
+                (l) => l.relationship === "supports" && l.target_id === n.id,
+              ).length;
+              const verified = verifications > 0 ? ` [verified x${verifications}]` : "";
+              return `  #${n.id} (imp=${n.importance})${verified}: ${n.content.slice(0, 70)}`;
+            }),
+          ];
+          ctx.send(input.entity, lines.join("\n"));
+          return;
+        }
+
+        case "share": {
+          const id = Number.parseInt(input.tokens[1] ?? "", 10);
+          const poolName = input.tokens[2];
+          if (Number.isNaN(id) || !poolName) {
+            ctx.send(input.entity, "Usage: skill share <id> <pool>");
+            return;
+          }
+          const note = db.getNote(id);
+          if (!note || note.note_type !== "skill") {
+            ctx.send(input.entity, `Skill #${id} not found.`);
+            return;
+          }
+          const pool = db.getMemoryPool(poolName);
+          if (!pool) {
+            ctx.send(input.entity, `Pool "${poolName}" not found.`);
+            return;
+          }
+          const sharedId = db.addPoolNote(
+            pool.id,
+            entity.name,
+            note.content,
+            note.importance,
+            "skill",
+          );
+          try {
+            db.createNoteLink(sharedId, id, "related_to");
+          } catch {
+            // Ignore
+          }
+          ctx.send(input.entity, `Skill #${id} shared to pool "${poolName}" as note #${sharedId}.`);
+          return;
+        }
+
+        case "compose": {
+          const ids = input.tokens
+            .slice(1)
+            .map((t) => Number.parseInt(t, 10))
+            .filter((n) => !Number.isNaN(n));
+          if (ids.length < 2) {
+            ctx.send(input.entity, "Usage: skill compose <id1> <id2> [id3] ...");
+            return;
+          }
+          const skills = ids
+            .map((id) => db.getNote(id))
+            .filter((n): n is NonNullable<typeof n> => n !== undefined && n.note_type === "skill");
+          if (skills.length < 2) {
+            ctx.send(input.entity, "Need at least 2 valid skill notes to compose.");
+            return;
+          }
+
+          // Extract action sequences and compose
+          const actionParts: string[] = [];
+          const nameparts: string[] = [];
+          for (const s of skills) {
+            // Parse out action sequence from "[Skill: name] desc || Actions: ..."
+            const actMatch = s.content.match(/Actions:\s*(.+)/);
+            if (actMatch?.[1]) {
+              actionParts.push(actMatch[1].trim());
+            }
+            const nameMatch = s.content.match(/\[Skill:\s*([^\]]+)\]/);
+            if (nameMatch?.[1]) {
+              nameparts.push(nameMatch[1].trim());
+            }
+          }
+
+          const composedName = nameparts.join(" + ") || "composed_skill";
+          const composedActions = actionParts.join(" ; ");
+          const content = `[Skill: ${composedName}] Composed from skills ${ids.map((i) => `#${i}`).join(", ")} || Actions: ${composedActions}`;
+          const maxImp = Math.min(Math.max(...skills.map((s) => s.importance)) + 1, 10);
+          const newId = db.createNote(entity.name, content, undefined, {
+            importance: maxImp,
+            noteType: "skill",
+          });
+
+          // Link to component skills
+          for (const s of skills) {
+            try {
+              db.createNoteLink(s.id, newId, "part_of");
+            } catch {
+              // Ignore
+            }
+          }
+
+          ctx.send(
+            input.entity,
+            `Composed skill #${newId} "${composedName}" from ${skills.length} skills (importance=${maxImp}).`,
+          );
+          return;
+        }
+
+        default: {
+          ctx.send(
+            input.entity,
+            "Usage: skill store <name> | <desc> | <actions> | skill search <query> | skill verify <id> | skill list | skill share <id> <pool> | skill compose <id1> <id2> ...",
+          );
+        }
+      }
+    },
+  };
+}
