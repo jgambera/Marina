@@ -104,16 +104,31 @@ export function useCanvas(canvasId: string | null) {
   const deleteNodes = useCallback(
     async (nodeIds: string[]) => {
       if (!canvasId || nodeIds.length === 0) return;
-      // Optimistic removal
-      setNodes((nds) => nds.filter((n) => !nodeIds.includes(n.id)));
+      // Snapshot for rollback on failure
+      let snapshot: Node[] | null = null;
+      setNodes((nds) => {
+        snapshot = nds;
+        return nds.filter((n) => !nodeIds.includes(n.id));
+      });
+      const failed: string[] = [];
       for (const nodeId of nodeIds) {
         try {
-          await fetch(`${API_BASE}/api/canvases/${canvasId}/nodes/${nodeId}`, {
+          const res = await fetch(`${API_BASE}/api/canvases/${canvasId}/nodes/${nodeId}`, {
             method: "DELETE",
           });
-        } catch {
-          // WebSocket node_deleted will reconcile state
+          if (!res.ok) {
+            console.error(`Canvas node delete failed: ${res.status}`);
+            failed.push(nodeId);
+          }
+        } catch (err) {
+          console.error("Canvas node delete error:", err);
+          failed.push(nodeId);
         }
+      }
+      // Restore any nodes whose DELETE did not succeed
+      if (failed.length > 0 && snapshot) {
+        const restore = (snapshot as Node[]).filter((n) => failed.includes(n.id));
+        setNodes((nds) => [...nds, ...restore]);
       }
     },
     [canvasId, setNodes],

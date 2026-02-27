@@ -38,8 +38,19 @@ export async function handleCanvasApi(
     const nodeId = decodeURIComponent(nodeMatch[2]!);
 
     if (method === "DELETE") {
+      // Fetch the node first so we can clean up its asset
+      const node = db.getNode(nodeId);
+      if (!node) return json({ error: "Node not found" }, 404);
       const deleted = db.deleteNode(nodeId);
       if (!deleted) return json({ error: "Node not found" }, 404);
+      // Clean up associated asset file and DB row
+      if (node.asset_id && storage) {
+        const asset = db.getAsset(node.asset_id);
+        if (asset) {
+          await storage.delete(asset.storage_key);
+          db.deleteAsset(node.asset_id);
+        }
+      }
       broadcaster?.broadcast({ type: "node_deleted", canvasId, nodeId });
       return json({ ok: true, id: nodeId });
     }
