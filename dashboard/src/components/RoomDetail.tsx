@@ -1,5 +1,5 @@
 import { Code, DoorOpen, Eye } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRoomDetail } from "../hooks/use-api";
 import { useKeyboardNav } from "../hooks/use-keyboard-nav";
 import { useWorldState } from "../hooks/use-world-state";
@@ -13,8 +13,13 @@ export function RoomDetail() {
   const selectedRoom = useWorldState((s) => s.selectedRoom);
   const selectRoom = useWorldState((s) => s.selectRoom);
   const selectEntity = useWorldState((s) => s.selectEntity);
-  const { data, isLoading } = useRoomDetail(selectedRoom);
+  const { data, isLoading, isError } = useRoomDetail(selectedRoom);
   const [mode, setMode] = useState<ViewMode>("view");
+
+  // Reset to view mode when room changes
+  useEffect(() => {
+    setMode("view");
+  }, [selectedRoom]);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   if (!selectedRoom) {
@@ -66,6 +71,9 @@ export function RoomDetail() {
         className="flex flex-1 flex-col overflow-hidden text-[11px] outline-none"
       >
         {isLoading && <div className="p-2 text-text-dim">Loading...</div>}
+        {isError && (
+          <div className="p-2 text-red-400 text-[11px]">Failed to load room details.</div>
+        )}
         {data && (
           <>
             {/* Header row: district badge + name + mode toggle */}

@@ -38,7 +38,7 @@ export function useSystem() {
 export function useRoomDetail(roomId: string | null) {
   return useQuery({
     queryKey: ["room", roomId],
-    queryFn: () => fetchApi<RoomDetail>(`/api/rooms/${roomId}`),
+    queryFn: () => fetchApi<RoomDetail>(`/api/rooms/${encodeURIComponent(roomId!)}`),
     enabled: !!roomId,
   });
 }

@@ -57,7 +57,7 @@ export async function handleDashboardApi(
 
   const roomMatch = url.pathname.match(/^\/api\/rooms\/(.+)$/);
   if (roomMatch) {
-    return await getRoomDetail(engine, db, roomMatch[1]!);
+    return await getRoomDetail(engine, db, decodeURIComponent(roomMatch[1]!));
   }
 
   const entityMatch = url.pathname.match(/^\/api\/entities\/(.+)$/);
