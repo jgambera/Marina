@@ -225,6 +225,11 @@ Set how the team coordinates:
 project Research orchestrate nsed        NSED: propose/evaluate/execute/debrief cycle
 project Research orchestrate goosetown   Goosetown: phased decomposition with flocks
 project Research orchestrate gastown     Gastown: hierarchical convoy structure
+project Research orchestrate swarm       Swarm: self-organizing specialist handoffs
+project Research orchestrate pipeline    Pipeline: sequential stage-by-stage processing
+project Research orchestrate debate      Debate: adversarial argumentation with judge
+project Research orchestrate mapreduce   MapReduce: parallel decomposition and synthesis
+project Research orchestrate blackboard  Blackboard: shared workspace, incremental refinement
 project Research orchestrate custom Our own process described here
 ```
 

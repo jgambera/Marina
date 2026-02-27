@@ -2,10 +2,24 @@
 
 ## Research Summary
 
-Evaluated three reference projects for multi-agent organizational patterns and mapped
-their concepts to Artilect's existing primitive set.
+Evaluated multi-agent organizational patterns and mapped their concepts to Artilect's
+primitive set. All 8 patterns are available as built-in orchestration templates via
+`project <name> orchestrate <pattern>`.
 
-### Reference Projects
+### Orchestration Patterns (8 built-in)
+
+| Pattern | Topology | Core Pattern |
+|---------|----------|-------------|
+| `nsed` | Flat peer ring | Symmetric cross-evaluation deliberation |
+| `goosetown` | Hub-and-spoke with phases | Orchestrator + delegate flocks |
+| `gastown` | Deep hierarchy with roles | Lead → Reviewer → Worker chain of command |
+| `swarm` | Self-organizing mesh | Specialist handoffs via expertise matching |
+| `pipeline` | Sequential chain | Stage-by-stage processing with handoff gates |
+| `debate` | Adversarial + judge | Competing positions with scoring and synthesis |
+| `mapreduce` | Parallel fan-out/fan-in | Independent chunks with reducer merge |
+| `blackboard` | Shared workspace | Incremental refinement on a common pool |
+
+### Research References
 
 | Project | Topology | Core Pattern |
 |---------|----------|-------------|
@@ -158,6 +172,157 @@ rooms/town/
 
 ---
 
+## Architecture 4: Swarm — Self-Organizing Specialist Handoffs
+
+### What Swarm Does
+- No fixed leader or hierarchy — agents self-organize based on expertise
+- Each agent declares capabilities via core memory (`memory set expertise <skills>`)
+- Tasks are self-claimed by matching skill to requirement
+- When one specialist finishes their part, they hand off directly to the next via `tell`
+- Maximizes parallelism: every agent works simultaneously on what they're best at
+
+### Key Concepts
+- **Expertise tags**: Each agent advertises skills in core memory, discoverable via `observe` and `recall`
+- **Self-claiming**: Agents browse open tasks and claim ones matching their skills — no assignment needed
+- **Direct handoff**: `tell <agent> <context>` passes work directly between specialists
+- **Pool logging**: Each handoff is documented in the shared pool for traceability
+- **Emergent coordination**: No central scheduler; the swarm self-organizes through skill matching
+
+### Artilect Mapping
+
+| Swarm Concept | Artilect Primitive |
+|---|---|
+| Expertise declaration | `memory set expertise <skills>` |
+| Skill discovery | `observe` + `recall expertise` |
+| Self-claiming | `task claim <id>` |
+| Direct handoff | `tell <agent> <context>` |
+| Handoff log | `pool <name> add` |
+| Progress monitoring | `project <name> tasks` |
+| Convergence | `reflect` across handoff chain |
+
+---
+
+## Architecture 5: Pipeline — Sequential Stage Processing
+
+### What Pipeline Does
+- Work flows through ordered stages (e.g., research → analysis → synthesis → review)
+- Each stage must complete before the next begins
+- The project board serves as a conveyor belt — stage outputs are posted for the next stage to consume
+- Agents claim exactly one stage at a time and review upstream output before processing
+
+### Key Concepts
+- **Stages**: Ordered child tasks in the project bundle, each specifying input/output contracts
+- **Conveyor belt**: Board posts tagged `[stage-N-output]` carry results between stages
+- **Stage signals**: Channel messages announce stage completion to unblock downstream
+- **Quality gates**: Each stage reviews the previous stage's output before processing
+- **Preparation**: Waiting agents add preparatory notes to the pool while upstream completes
+
+### Artilect Mapping
+
+| Pipeline Concept | Artilect Primitive |
+|---|---|
+| Stage definition | Child tasks in project bundle |
+| Stage output | Board post tagged `[stage-N-output]` |
+| Stage signal | Channel message |
+| Stage claiming | `task claim <id>` (one at a time) |
+| Upstream monitoring | `observe` + board read |
+| Quality rejection | Board reply + channel notification |
+| Lessons learned | `pool <name> add` |
+
+---
+
+## Architecture 6: Debate — Adversarial Argumentation
+
+### What Debate Does
+- Decisions are made through structured argumentation rather than consensus or hierarchy
+- Agents post competing positions with evidence, then score each other's arguments
+- A knowledge graph tracks which arguments support or contradict others
+- A designated judge synthesizes the final ruling from scored positions
+- Prior rulings become precedent, preventing re-litigation of settled questions
+
+### Key Concepts
+- **Positions**: Competing claims posted to the board with evidence
+- **Argumentation**: Replies that support or attack positions, with note links tracking relationships
+- **Scoring**: Numeric votes (1-10) quantify argument strength
+- **Judging**: A designated agent reviews all positions and scores, posts a synthesis ruling
+- **Precedent**: Rulings are stored in the pool; future debates reference them via `recall`
+
+### Artilect Mapping
+
+| Debate Concept | Artilect Primitive |
+|---|---|
+| Position | Board post tagged `[position]` |
+| Argument | Board reply |
+| Evidence linking | `note link <id> <id> supports/contradicts` |
+| Scoring | `board vote <board> <post> <score>` (1-10) |
+| Score review | `board scores <board> <post>` |
+| Ruling | Board post tagged `[ruling]` |
+| Precedent | `pool <name> add` + `pool <name> recall` |
+| Synthesis | `reflect` across debate notes |
+
+---
+
+## Architecture 7: MapReduce — Parallel Decomposition
+
+### What MapReduce Does
+- A coordinator splits a large problem into independent chunks
+- Workers process chunks in parallel with no cross-talk (independence is the key invariant)
+- Each worker deposits results in the shared pool
+- A reducer collects all chunk results and synthesizes the final output
+- Maximizes throughput for problems that decompose naturally
+
+### Key Concepts
+- **Mapping**: Coordinator creates one task per chunk, fully specifying chunk boundaries
+- **Independence**: Workers must not coordinate or read each other's results during execution
+- **Chunk results**: Deposited in the pool with `[chunk-N]` tags
+- **Reduction**: Reducer collects all chunk results via pool recall and synthesizes
+- **Tracking**: Project status monitors chunk completion; stalled chunks can be reassigned
+
+### Artilect Mapping
+
+| MapReduce Concept | Artilect Primitive |
+|---|---|
+| Coordinator | Project creator |
+| Chunk definition | Child task in project bundle |
+| Chunk claiming | `task claim <id>` |
+| Chunk result | `pool <name> add [chunk-N] <result>` |
+| Reduction trigger | All chunk tasks completed (`project <name> tasks`) |
+| Merge synthesis | `pool <name> recall chunk` + board post `[merged-result]` |
+| Reassignment | New task creation for stalled chunks |
+| Post-mortem | `reflect` on chunk granularity |
+
+---
+
+## Architecture 8: Blackboard — Shared Workspace
+
+### What Blackboard Does
+- The project pool IS the primary workspace — a shared blackboard that all agents read and write
+- Knowledge accumulates incrementally: observations, hypotheses, partial solutions
+- Agents contribute asynchronously; there's no fixed turn order or phases
+- A knowledge graph (note links) structures contributions into connected clusters
+- The group converges when the blackboard state reaches a coherent answer
+
+### Key Concepts
+- **Read-before-write**: Always `recall` current state before contributing
+- **Typed contributions**: `#observation` for raw data, `#inference` for derived conclusions, `#decision` for agreed actions
+- **Importance weighting**: Higher importance surfaces first in recall, guiding attention
+- **Knowledge graph**: `note link` connects related contributions (supports, contradicts, part_of)
+- **Convergence**: Periodic `reflect` synthesizes blackboard contents; resolved questions become board posts and tasks
+
+### Artilect Mapping
+
+| Blackboard Concept | Artilect Primitive |
+|---|---|
+| Blackboard | Project memory pool |
+| Reading the board | `pool <name> recall <topic>` |
+| Writing to the board | `pool <name> add <content> !<importance> #<type>` |
+| Knowledge structure | `note link`, `note trace`, `note graph` |
+| Convergence check | `reflect` |
+| Resolved action | Board post + `task create` |
+| Full board state | `pool <name> list` |
+
+---
+
 ## Artilect's Unique Advantages
 
 ### 1. Spatial Reasoning About Organization
@@ -184,16 +349,22 @@ pre-programmed event responses.
 
 ---
 
-## Missing Primitives (Phase 5 Scope)
+## Primitives (All Implemented)
 
-| Primitive | Enables | Approach |
+All coordination primitives identified during research have been built:
+
+| Primitive | Status | Used By |
 |---|---|---|
-| Task bundles (parent_task_id) | Gastown convoys, Goosetown phase tracking | Migration: add column to tasks |
-| Numeric vote scoring | NSED cross-evaluation, quality metrics | Migration: add score column to board_votes |
-| Room entry guards (canEnter) | Goosetown phase gates, Gastown role rooms | RoomModule type extension |
-| Agent activity tracking | Gastown witness patrol, stuck detection | DB query on event_log |
-| Task event triggers | Gastown propulsion, auto-notification | Extend macro trigger types |
-| Score matrix / aggregation | NSED convergence detection | Board manager method |
+| Task bundles (parent_task_id) | Done (migration 13) | Gastown convoys, Goosetown phases, Pipeline stages, MapReduce chunks |
+| Numeric vote scoring (1-10) | Done (migration 13) | NSED evaluation, Debate argumentation |
+| Room entry guards (canEnter) | Done (Phase 5) | Goosetown phase gates, Gastown role rooms |
+| Agent activity tracking | Done (Phase 5) | Gastown patrol, Swarm skill discovery |
+| Task event triggers | Done (Phase 5) | Gastown propulsion, Pipeline stage signals |
+| Score matrix / aggregation | Done (Phase 5) | NSED convergence, Debate scoring |
+| Core memory (mutable key-value) | Done (migration 14) | Swarm expertise tags |
+| Note links (knowledge graph) | Done (migration 14) | Debate argument structure, Blackboard knowledge graph |
+| Memory pools (shared notes) | Done (migration 14) | MapReduce chunk results, Blackboard workspace, all pattern conventions |
+| Scored retrieval (recall) | Done (migration 14) | All patterns for knowledge discovery |
 
 ---
 
@@ -215,3 +386,7 @@ Artilect is a **platform for organizational patterns** where:
 
 Agent organizations are **district blueprints** — sets of rooms with specific commands,
 NPCs, and conventions — that can be instantiated dynamically via the building system.
+
+**Orchestration templates** (8 built-in) seed coordination conventions into a project's
+memory pool. Agents discover how to work together through `recall`, not configuration.
+Run `project <name> orchestrate <pattern>` to apply one, or `custom` to define your own.

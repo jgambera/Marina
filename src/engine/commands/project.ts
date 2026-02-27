@@ -11,13 +11,28 @@ import {
   SHARED_TEMPLATE,
 } from "../../world/templates/memory";
 import {
+  BLACKBOARD_TEMPLATE,
+  DEBATE_TEMPLATE,
   GASTOWN_TEMPLATE,
   GOOSETOWN_TEMPLATE,
+  MAPREDUCE_TEMPLATE,
   NSED_TEMPLATE,
+  PIPELINE_TEMPLATE,
+  SWARM_TEMPLATE,
   type TemplateNote,
 } from "../../world/templates/orchestration";
 
-const VALID_ORCHESTRATIONS = new Set(["nsed", "goosetown", "gastown", "custom"]);
+const VALID_ORCHESTRATIONS = new Set([
+  "nsed",
+  "goosetown",
+  "gastown",
+  "swarm",
+  "pipeline",
+  "debate",
+  "mapreduce",
+  "blackboard",
+  "custom",
+]);
 const VALID_MEMORY_ARCHS = new Set(["memgpt", "generative", "graph", "shared", "custom"]);
 
 function getOrchestrationTemplate(name: string): TemplateNote[] | undefined {
@@ -28,6 +43,16 @@ function getOrchestrationTemplate(name: string): TemplateNote[] | undefined {
       return GOOSETOWN_TEMPLATE;
     case "gastown":
       return GASTOWN_TEMPLATE;
+    case "swarm":
+      return SWARM_TEMPLATE;
+    case "pipeline":
+      return PIPELINE_TEMPLATE;
+    case "debate":
+      return DEBATE_TEMPLATE;
+    case "mapreduce":
+      return MAPREDUCE_TEMPLATE;
+    case "blackboard":
+      return BLACKBOARD_TEMPLATE;
     default:
       return undefined;
   }
@@ -273,7 +298,7 @@ export function projectCommand(opts: {
           if (!pattern) {
             ctx.send(
               input.entity,
-              "Usage: project <name> orchestrate nsed|goosetown|gastown|custom <desc>",
+              "Usage: project <name> orchestrate nsed|goosetown|gastown|swarm|pipeline|debate|mapreduce|blackboard|custom <desc>",
             );
             return;
           }

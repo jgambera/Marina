@@ -41,6 +41,7 @@ These tools accept a single `input` string containing a subcommand and its argum
 | `board`   | list, read, post, reply, search, vote, pin, archive, scores   | `"post general My Title \| Body text"`       |
 | `group`   | list, info, create, join, leave, invite, kick, promote, demote, disband | `"create mygroup My Group Name"` |
 | `task`    | list, info, create, claim, submit, approve, reject, cancel, bundle, assign, children | `"create Fix the bug \| Detailed description"` |
+| `project` | create, orchestrate, memory, join, status, propose, tasks, list, info | `"create Alpha \| Research project"` or `"Alpha orchestrate swarm"` |
 | `macro`   | list, info, create, edit, delete, run, share, trigger          | `"create patrol look ; north ; look ; south"` |
 | `build`   | room, modify, link, unlink, code, validate, reload, audit, revert, destroy, template | `"room my/new/room A Custom Room"` |
 

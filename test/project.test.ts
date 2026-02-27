@@ -124,6 +124,86 @@ describe("Project Command", () => {
       expect(db.getProjectByName("GasTest")!.orchestration).toBe("gastown");
     });
 
+    it("should set swarm orchestration and seed pool", () => {
+      engine.processCommand(conn1.entity!, "project create SwarmTest | Swarm");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "project SwarmTest orchestrate swarm");
+      expect(conn1.lastText()).toContain('Set orchestration to "swarm"');
+
+      const project = db.getProjectByName("SwarmTest");
+      expect(project!.orchestration).toBe("swarm");
+
+      const notes = db.recallPoolNotes(
+        project!.pool_id!,
+        "Swarm orchestration specialist handoffs",
+      );
+      expect(notes.length).toBeGreaterThan(0);
+    });
+
+    it("should set pipeline orchestration and seed pool", () => {
+      engine.processCommand(conn1.entity!, "project create PipeTest | Pipe");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "project PipeTest orchestrate pipeline");
+      expect(conn1.lastText()).toContain('Set orchestration to "pipeline"');
+
+      const project = db.getProjectByName("PipeTest");
+      expect(project!.orchestration).toBe("pipeline");
+
+      const notes = db.recallPoolNotes(
+        project!.pool_id!,
+        "Pipeline orchestration sequential stages",
+      );
+      expect(notes.length).toBeGreaterThan(0);
+    });
+
+    it("should set debate orchestration and seed pool", () => {
+      engine.processCommand(conn1.entity!, "project create DebateTest | Debate");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "project DebateTest orchestrate debate");
+      expect(conn1.lastText()).toContain('Set orchestration to "debate"');
+
+      const project = db.getProjectByName("DebateTest");
+      expect(project!.orchestration).toBe("debate");
+
+      const notes = db.recallPoolNotes(
+        project!.pool_id!,
+        "Debate orchestration adversarial argumentation",
+      );
+      expect(notes.length).toBeGreaterThan(0);
+    });
+
+    it("should set mapreduce orchestration and seed pool", () => {
+      engine.processCommand(conn1.entity!, "project create MRTest | MapReduce");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "project MRTest orchestrate mapreduce");
+      expect(conn1.lastText()).toContain('Set orchestration to "mapreduce"');
+
+      const project = db.getProjectByName("MRTest");
+      expect(project!.orchestration).toBe("mapreduce");
+
+      const notes = db.recallPoolNotes(
+        project!.pool_id!,
+        "MapReduce orchestration parallel decomposition",
+      );
+      expect(notes.length).toBeGreaterThan(0);
+    });
+
+    it("should set blackboard orchestration and seed pool", () => {
+      engine.processCommand(conn1.entity!, "project create BBTest | Blackboard");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "project BBTest orchestrate blackboard");
+      expect(conn1.lastText()).toContain('Set orchestration to "blackboard"');
+
+      const project = db.getProjectByName("BBTest");
+      expect(project!.orchestration).toBe("blackboard");
+
+      const notes = db.recallPoolNotes(
+        project!.pool_id!,
+        "Blackboard orchestration shared workspace",
+      );
+      expect(notes.length).toBeGreaterThan(0);
+    });
+
     it("should handle custom orchestration", () => {
       engine.processCommand(conn1.entity!, "project create CustomOrch | Custom");
       conn1.clear();
