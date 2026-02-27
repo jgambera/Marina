@@ -20,6 +20,7 @@ interface WorldState {
   // Actions
   setSnapshot: (data: WorldSnapshot) => void;
   pushEvent: (event: DashboardEvent) => void;
+  pushEvents: (events: DashboardEvent[]) => void;
   selectRoom: (roomId: string | null) => void;
   selectEntity: (name: string | null) => void;
 }
@@ -53,6 +54,11 @@ export const useWorldState = create<WorldState>((set) => ({
   pushEvent: (event) =>
     set((state) => ({
       eventFeed: [event, ...state.eventFeed].slice(0, 200),
+    })),
+
+  pushEvents: (events) =>
+    set((state) => ({
+      eventFeed: [...events, ...state.eventFeed].slice(0, 200),
     })),
 
   selectRoom: (roomId) => set({ selectedRoom: roomId }),

@@ -101,7 +101,7 @@ export function AudioNode({ data, selected }: NodeProps) {
           <audio
             ref={audioRef}
             controls
-            className="w-full"
+            className="nodrag w-full"
             preload="metadata"
             crossOrigin="anonymous"
           >

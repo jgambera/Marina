@@ -1,8 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useWorldState } from "../hooks/use-world-state";
-import type { WorldData } from "../lib/types";
+import type { EntitySummary, WorldData } from "../lib/types";
 import {
-  type RoomEdge,
   type RoomPosition,
   computeLayout,
   getDistrictColor,
@@ -15,6 +14,268 @@ function avg(nums: number[]): number {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
+// ── Memoized Room Node ────────────────────────────────────────────────
+interface RoomNodeProps {
+  room: RoomPosition;
+  pop: number;
+  isSelected: boolean;
+  isHighlighted: boolean;
+  isHub: boolean;
+  shortName: string;
+  entityNames: string[];
+  onSelect: (roomId: string, isSelected: boolean) => void;
+  onHover: (
+    room: RoomPosition,
+    radius: number,
+    shortName: string,
+    names: string[],
+  ) => void;
+  onLeave: () => void;
+}
+
+const RoomNode = React.memo(function RoomNode({
+  room,
+  pop,
+  isSelected,
+  isHighlighted,
+  isHub,
+  shortName,
+  entityNames,
+  onSelect,
+  onHover,
+  onLeave,
+}: RoomNodeProps) {
+  const color = getDistrictColor(room.district);
+  const baseRadius = isHub ? 14 : 8;
+  const radius = baseRadius + Math.min(pop * 2.5, 10);
+
+  return (
+    <g
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(room.id, isSelected);
+      }}
+      onMouseEnter={() =>
+        onHover(room, radius, shortName, entityNames)
+      }
+      onMouseLeave={onLeave}
+      className="cursor-pointer"
+    >
+      {/* Ambient halo */}
+      <circle
+        cx={room.x}
+        cy={room.y}
+        r={radius + 8}
+        fill="none"
+        stroke={color}
+        strokeWidth={0.5}
+        opacity={isSelected ? 0.5 : 0.15}
+      />
+
+      {/* Population pulse ring */}
+      {pop > 0 && (
+        <circle
+          cx={room.x}
+          cy={room.y}
+          r={radius + 5}
+          fill="none"
+          stroke={color}
+          strokeWidth={1.5}
+          opacity={0.2}
+        >
+          <animate
+            attributeName="opacity"
+            values="0.15;0.5;0.15"
+            dur="2.5s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      )}
+
+      {/* Selection ring */}
+      {isSelected && (
+        <circle
+          cx={room.x}
+          cy={room.y}
+          r={radius + 11}
+          fill="none"
+          stroke={color}
+          strokeWidth={1.5}
+          opacity={0.7}
+          filter="url(#glow-sm)"
+        />
+      )}
+
+      {/* Keyboard highlight ring */}
+      {isHighlighted && !isSelected && (
+        <circle
+          cx={room.x}
+          cy={room.y}
+          r={radius + 11}
+          fill="none"
+          stroke="#00ffe7"
+          strokeWidth={1}
+          strokeDasharray="4 3"
+          opacity={0.7}
+        />
+      )}
+
+      {/* Hub decorative rotating rings */}
+      {isHub && (
+        <circle
+          cx={room.x}
+          cy={room.y}
+          r={radius + 20}
+          fill="none"
+          stroke={color}
+          strokeWidth={0.6}
+          strokeDasharray="3 5"
+          opacity={0.3}
+        >
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from={`0 ${room.x} ${room.y}`}
+            to={`360 ${room.x} ${room.y}`}
+            dur="30s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      )}
+      {isHub && (
+        <circle
+          cx={room.x}
+          cy={room.y}
+          r={radius + 26}
+          fill="none"
+          stroke={color}
+          strokeWidth={0.4}
+          strokeDasharray="2 8"
+          opacity={0.2}
+        >
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from={`360 ${room.x} ${room.y}`}
+            to={`0 ${room.x} ${room.y}`}
+            dur="45s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      )}
+
+      {/* Room circle */}
+      <circle
+        cx={room.x}
+        cy={room.y}
+        r={radius}
+        fill={pop > 0 ? color : "#0d1420"}
+        fillOpacity={pop > 0 ? 0.2 : 0.5}
+        stroke={color}
+        strokeWidth={isSelected ? 2 : isHub ? 1.5 : 1}
+        opacity={isSelected ? 1 : 0.75}
+        filter={pop > 0 || isHub ? "url(#glow-sm)" : undefined}
+      />
+
+      {/* Hub inner core glow */}
+      {isHub && (
+        <circle
+          cx={room.x}
+          cy={room.y}
+          r={4}
+          fill={color}
+          opacity={0.6}
+          filter="url(#glow-md)"
+        >
+          <animate
+            attributeName="opacity"
+            values="0.4;0.8;0.4"
+            dur="3s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      )}
+
+      {/* Room label */}
+      <text
+        x={room.x}
+        y={room.y + radius + 12}
+        textAnchor="middle"
+        fill={isSelected ? color : "#6a7a8a"}
+        fontSize={isHub ? 9 : 7.5}
+        fontFamily="Share Tech Mono, monospace"
+        fontWeight={isHub ? 700 : 400}
+      >
+        {shortName}
+      </text>
+    </g>
+  );
+});
+
+// ── Memoized Entity Dots ──────────────────────────────────────────────
+interface EntityDotsProps {
+  roomId: string;
+  entities: EntitySummary[];
+  pos: RoomPosition;
+  isHub: boolean;
+  onSelectEntity: (name: string) => void;
+}
+
+const EntityDots = React.memo(function EntityDots({
+  entities,
+  pos,
+  isHub,
+  onSelectEntity,
+}: EntityDotsProps) {
+  const baseRadius =
+    (isHub ? 14 : 8) + Math.min(entities.length * 2.5, 10);
+
+  return (
+    <>
+      {entities.map((ent, i) => {
+        const angle =
+          (2 * Math.PI * i) / entities.length - Math.PI / 2;
+        const orbitR = baseRadius + 10;
+        const ex = pos.x + Math.cos(angle) * orbitR;
+        const ey = pos.y + Math.sin(angle) * orbitR;
+        const dotColor =
+          ent.kind === "agent"
+            ? "#00ffe7"
+            : ent.kind === "npc"
+              ? "#ffcc00"
+              : "#5a6a7a";
+
+        return (
+          <g key={ent.id}>
+            <circle
+              cx={ex}
+              cy={ey}
+              r={3.5}
+              fill={dotColor}
+              opacity={0.9}
+              filter="url(#glow-sm)"
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectEntity(ent.name);
+              }}
+            />
+            <circle
+              cx={ex}
+              cy={ey}
+              r={1.2}
+              fill="white"
+              opacity={0.8}
+              style={{ pointerEvents: "none" }}
+            />
+          </g>
+        );
+      })}
+    </>
+  );
+});
+
+// ── Main WorldMap Component ───────────────────────────────────────────
 interface WorldMapProps {
   worldData?: WorldData;
 }
@@ -29,7 +290,6 @@ export function WorldMap({ worldData }: WorldMapProps) {
   const wsStartRoom = useWorldState((s) => s.startRoom);
   const wsWorldName = useWorldState((s) => s.worldName);
 
-  // Resolve startRoom: prefer WS, fall back to REST, then empty
   const startRoom = wsStartRoom || worldData?.startRoom || "";
   const worldName = wsWorldName || worldData?.worldName || "";
 
@@ -42,17 +302,20 @@ export function WorldMap({ worldData }: WorldMapProps) {
     y: number;
     lines: string[];
   } | null>(null);
-  const [highlightedRoom, setHighlightedRoom] = useState<string | null>(null);
+  const [highlightedRoom, setHighlightedRoom] = useState<
+    string | null
+  >(null);
 
-  // ── Compute room positions + edges from live data only ────────────────
+  // ── Compute room positions + edges from live data ─────────────────
   const { allPositions, allEdges, posMap } = useMemo(() => {
-    const rooms = wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
+    const rooms =
+      wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
     const { positions, edges } = computeLayout(rooms, startRoom);
     const pm = new Map(positions.map((p) => [p.id, p]));
     return { allPositions: positions, allEdges: edges, posMap: pm };
   }, [wsRooms, worldData, startRoom]);
 
-  // ── District zones (centroid + bounding radius) ─────────────────────────
+  // ── District zones ────────────────────────────────────────────────
   const districtZones = useMemo(() => {
     const districts = new Map<string, RoomPosition[]>();
     for (const pos of allPositions) {
@@ -60,22 +323,28 @@ export function WorldMap({ worldData }: WorldMapProps) {
       arr.push(pos);
       districts.set(pos.district, arr);
     }
-    return Array.from(districts.entries()).map(([district, rooms]) => {
-      const cx = avg(rooms.map((r) => r.x));
-      const cy = avg(rooms.map((r) => r.y));
-      const maxDist = Math.max(...rooms.map((r) => Math.sqrt((r.x - cx) ** 2 + (r.y - cy) ** 2)));
-      return {
-        district,
-        cx,
-        cy,
-        radius: maxDist + 70,
-        color: getDistrictColor(district),
-        label: getDistrictLabel(district),
-      };
-    });
+    return Array.from(districts.entries()).map(
+      ([district, rooms]) => {
+        const cx = avg(rooms.map((r) => r.x));
+        const cy = avg(rooms.map((r) => r.y));
+        const maxDist = Math.max(
+          ...rooms.map((r) =>
+            Math.sqrt((r.x - cx) ** 2 + (r.y - cy) ** 2),
+          ),
+        );
+        return {
+          district,
+          cx,
+          cy,
+          radius: maxDist + 70,
+          color: getDistrictColor(district),
+          label: getDistrictLabel(district),
+        };
+      },
+    );
   }, [allPositions]);
 
-  // ── Cross-district edges with gradient data ─────────────────────────────
+  // ── Cross-district edges with gradient data ───────────────────────
   const crossEdges = useMemo(() => {
     return allEdges
       .filter((e) => e.crossDistrict)
@@ -96,7 +365,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
       .filter((g): g is NonNullable<typeof g> => g != null);
   }, [allEdges, posMap]);
 
-  // ── Entity grouping by room ─────────────────────────────────────────────
+  // ── Entity grouping by room ───────────────────────────────────────
   const entityPositions = useMemo(() => {
     const byRoom = new Map<string, typeof wsEntities>();
     for (const e of wsEntities) {
@@ -107,15 +376,40 @@ export function WorldMap({ worldData }: WorldMapProps) {
     return byRoom;
   }, [wsEntities]);
 
-  // ── Room short name lookup ──────────────────────────────────────────────
+  // ── Room short name lookup ────────────────────────────────────────
   const roomShorts = useMemo(() => {
     const m = new Map<string, string>();
-    const rooms = wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
+    const rooms =
+      wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
     for (const r of rooms) m.set(r.id, r.short);
     return m;
   }, [wsRooms, worldData]);
 
-  // ── Pan / zoom ──────────────────────────────────────────────────────────
+  // ── Stable callbacks for memoized children ────────────────────────
+  const handleRoomSelect = useCallback(
+    (roomId: string, isSelected: boolean) => {
+      selectRoom(isSelected ? null : roomId);
+    },
+    [selectRoom],
+  );
+
+  const handleRoomHover = useCallback(
+    (
+      room: RoomPosition,
+      radius: number,
+      short: string,
+      names: string[],
+    ) => {
+      const lines = [short];
+      if (names.length > 0) lines.push(names.join(", "));
+      setTooltip({ x: room.x, y: room.y - radius - 18, lines });
+    },
+    [],
+  );
+
+  const handleRoomLeave = useCallback(() => setTooltip(null), []);
+
+  // ── Pan / zoom ────────────────────────────────────────────────────
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const scale = e.deltaY > 0 ? 1.1 : 0.9;
@@ -134,15 +428,18 @@ export function WorldMap({ worldData }: WorldMapProps) {
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 0) dragRef.current = { x: e.clientX, y: e.clientY };
+    if (e.button === 0)
+      dragRef.current = { x: e.clientX, y: e.clientY };
   }, []);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (!dragRef.current || !svgRef.current) return;
       const rect = svgRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - dragRef.current.x) / rect.width) * viewBox.w;
-      const dy = ((e.clientY - dragRef.current.y) / rect.height) * viewBox.h;
+      const dx =
+        ((e.clientX - dragRef.current.x) / rect.width) * viewBox.w;
+      const dy =
+        ((e.clientY - dragRef.current.y) / rect.height) * viewBox.h;
       dragRef.current = { x: e.clientX, y: e.clientY };
       setViewBox((vb) => ({ ...vb, x: vb.x - dx, y: vb.y - dy }));
     },
@@ -217,14 +514,18 @@ export function WorldMap({ worldData }: WorldMapProps) {
           if (allPositions.length === 0) break;
           const dir = e.shiftKey ? -1 : 1;
           const curIdx = highlightedRoom
-            ? allPositions.findIndex((p) => p.id === highlightedRoom)
+            ? allPositions.findIndex(
+                (p) => p.id === highlightedRoom,
+              )
             : -1;
           let next: number;
           if (curIdx === -1) {
             next = dir > 0 ? 0 : allPositions.length - 1;
           } else {
             next =
-              (((curIdx + dir) % allPositions.length) + allPositions.length) % allPositions.length;
+              (((curIdx + dir) % allPositions.length) +
+                allPositions.length) %
+              allPositions.length;
           }
           const pos = allPositions[next]!;
           setHighlightedRoom(pos.id);
@@ -234,7 +535,11 @@ export function WorldMap({ worldData }: WorldMapProps) {
         case "Enter":
           e.preventDefault();
           if (highlightedRoom) {
-            selectRoom(selectedRoom === highlightedRoom ? null : highlightedRoom);
+            selectRoom(
+              selectedRoom === highlightedRoom
+                ? null
+                : highlightedRoom,
+            );
           }
           break;
         case "Escape":
@@ -242,14 +547,23 @@ export function WorldMap({ worldData }: WorldMapProps) {
           break;
       }
     },
-    [zoomBy, panViewTo, allPositions, highlightedRoom, selectRoom, selectedRoom],
+    [
+      zoomBy,
+      panViewTo,
+      allPositions,
+      highlightedRoom,
+      selectRoom,
+      selectedRoom,
+    ],
   );
 
   const isHub = (id: string) => id === startRoom;
 
   return (
     <GlassPanel
-      title={worldName ? `World Map — ${worldName}` : "World Map"}
+      title={
+        worldName ? `World Map — ${worldName}` : "World Map"
+      }
       icon={<MapIcon size={14} />}
     >
       <svg
@@ -264,16 +578,28 @@ export function WorldMap({ worldData }: WorldMapProps) {
         onMouseLeave={handleMouseUp}
         onKeyDown={handleKeyDown}
       >
-        {/* ── Definitions ─────────────────────────────────────── */}
+        {/* ── Definitions ─────────────────────────────────── */}
         <defs>
-          <filter id="glow-sm" x="-50%" y="-50%" width="200%" height="200%">
+          <filter
+            id="glow-sm"
+            x="-50%"
+            y="-50%"
+            width="200%"
+            height="200%"
+          >
             <feGaussianBlur stdDeviation="2" result="b" />
             <feMerge>
               <feMergeNode in="b" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="glow-md" x="-50%" y="-50%" width="200%" height="200%">
+          <filter
+            id="glow-md"
+            x="-50%"
+            y="-50%"
+            width="200%"
+            height="200%"
+          >
             <feGaussianBlur stdDeviation="4" result="b" />
             <feMerge>
               <feMergeNode in="b" />
@@ -283,10 +609,25 @@ export function WorldMap({ worldData }: WorldMapProps) {
 
           {/* District zone radial gradients */}
           {districtZones.map((z) => (
-            <radialGradient key={`zg-${z.district}`} id={`zg-${z.district}`}>
-              <stop offset="0%" stopColor={z.color} stopOpacity="0.07" />
-              <stop offset="60%" stopColor={z.color} stopOpacity="0.025" />
-              <stop offset="100%" stopColor={z.color} stopOpacity="0" />
+            <radialGradient
+              key={`zg-${z.district}`}
+              id={`zg-${z.district}`}
+            >
+              <stop
+                offset="0%"
+                stopColor={z.color}
+                stopOpacity="0.07"
+              />
+              <stop
+                offset="60%"
+                stopColor={z.color}
+                stopOpacity="0.025"
+              />
+              <stop
+                offset="100%"
+                stopColor={z.color}
+                stopOpacity="0"
+              />
             </radialGradient>
           ))}
 
@@ -301,13 +642,21 @@ export function WorldMap({ worldData }: WorldMapProps) {
               y2={g.to.y}
               gradientUnits="userSpaceOnUse"
             >
-              <stop offset="0%" stopColor={g.fromColor} stopOpacity="0.7" />
-              <stop offset="100%" stopColor={g.toColor} stopOpacity="0.7" />
+              <stop
+                offset="0%"
+                stopColor={g.fromColor}
+                stopOpacity="0.7"
+              />
+              <stop
+                offset="100%"
+                stopColor={g.toColor}
+                stopOpacity="0.7"
+              />
             </linearGradient>
           ))}
         </defs>
 
-        {/* ── Layer 1: District ambient zones ─────────────────── */}
+        {/* ── Layer 1: District ambient zones ─────────────── */}
         {districtZones.map((z) => (
           <circle
             key={`zone-${z.district}`}
@@ -318,7 +667,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
           />
         ))}
 
-        {/* ── Layer 2: District labels (watermark) ────────────── */}
+        {/* ── Layer 2: District labels (watermark) ────────── */}
         {districtZones.map((z) => (
           <text
             key={`dl-${z.district}`}
@@ -337,7 +686,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
           </text>
         ))}
 
-        {/* ── Layer 3: Within-district edges ──────────────────── */}
+        {/* ── Layer 3: Within-district edges ──────────────── */}
         {allEdges
           .filter((e) => !e.crossDistrict)
           .map((edge) => {
@@ -358,7 +707,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
             );
           })}
 
-        {/* ── Layer 4: Cross-district edges (gradient) ────────── */}
+        {/* ── Layer 4: Cross-district edges (gradient) ────── */}
         {crossEdges.map((g) => (
           <line
             key={`ce-${g.edge.from}-${g.edge.to}`}
@@ -373,7 +722,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
           />
         ))}
 
-        {/* ── Layer 5: Pulse particles on cross-district edges ── */}
+        {/* ── Layer 5: Pulse particles on cross edges ─────── */}
         {crossEdges.map((g, i) => {
           const dur = 3 + (i % 4);
           const reverse = i % 2 === 1;
@@ -383,7 +732,13 @@ export function WorldMap({ worldData }: WorldMapProps) {
           const y2 = reverse ? g.from.y : g.to.y;
           const color = reverse ? g.toColor : g.fromColor;
           return (
-            <circle key={`pulse-${i}`} r={1.8} fill={color} opacity={0} filter="url(#glow-sm)">
+            <circle
+              key={`pulse-${i}`}
+              r={1.8}
+              fill={color}
+              opacity={0}
+              filter="url(#glow-sm)"
+            >
               <animate
                 attributeName="cx"
                 from={x1}
@@ -412,240 +767,59 @@ export function WorldMap({ worldData }: WorldMapProps) {
           );
         })}
 
-        {/* ── Layer 6: Room nodes ─────────────────────────────── */}
+        {/* ── Layer 6: Room nodes (memoized) ──────────────── */}
         {allPositions.map((room) => {
           const pop = roomPops[room.id] ?? 0;
-          const isSelected = selectedRoom === room.id;
-          const color = getDistrictColor(room.district);
-          const hub = isHub(room.id);
-          const baseRadius = hub ? 14 : 8;
-          const radius = baseRadius + Math.min(pop * 2.5, 10);
-
+          const ents = entityPositions.get(room.id);
+          const names = ents?.map((ent) => ent.name) || [];
+          const short =
+            roomShorts.get(room.id) ??
+            room.id.split("/")[1] ??
+            room.id;
           return (
-            <g
+            <RoomNode
               key={room.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                selectRoom(isSelected ? null : room.id);
-              }}
-              onMouseEnter={() => {
-                const ents = entityPositions.get(room.id);
-                const names = ents?.map((ent) => ent.name) || [];
-                const short = roomShorts.get(room.id) ?? room.id.split("/")[1];
-                const lines = [short ?? room.id];
-                if (names.length > 0) {
-                  lines.push(names.join(", "));
-                }
-                setTooltip({
-                  x: room.x,
-                  y: room.y - radius - 18,
-                  lines,
-                });
-              }}
-              onMouseLeave={() => setTooltip(null)}
-              className="cursor-pointer"
-            >
-              {/* Ambient halo — always visible */}
-              <circle
-                cx={room.x}
-                cy={room.y}
-                r={radius + 8}
-                fill="none"
-                stroke={color}
-                strokeWidth={0.5}
-                opacity={isSelected ? 0.5 : 0.15}
-              />
-
-              {/* Population pulse ring */}
-              {pop > 0 && (
-                <circle
-                  cx={room.x}
-                  cy={room.y}
-                  r={radius + 5}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={1.5}
-                  opacity={0.2}
-                >
-                  <animate
-                    attributeName="opacity"
-                    values="0.15;0.5;0.15"
-                    dur="2.5s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              )}
-
-              {/* Selection ring */}
-              {isSelected && (
-                <circle
-                  cx={room.x}
-                  cy={room.y}
-                  r={radius + 11}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={1.5}
-                  opacity={0.7}
-                  filter="url(#glow-sm)"
-                />
-              )}
-
-              {/* Keyboard highlight ring */}
-              {highlightedRoom === room.id && !isSelected && (
-                <circle
-                  cx={room.x}
-                  cy={room.y}
-                  r={radius + 11}
-                  fill="none"
-                  stroke="#00ffe7"
-                  strokeWidth={1}
-                  strokeDasharray="4 3"
-                  opacity={0.7}
-                />
-              )}
-
-              {/* Hub decorative rotating ring */}
-              {hub && (
-                <circle
-                  cx={room.x}
-                  cy={room.y}
-                  r={radius + 20}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={0.6}
-                  strokeDasharray="3 5"
-                  opacity={0.3}
-                >
-                  <animateTransform
-                    attributeName="transform"
-                    type="rotate"
-                    from={`0 ${room.x} ${room.y}`}
-                    to={`360 ${room.x} ${room.y}`}
-                    dur="30s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              )}
-              {hub && (
-                <circle
-                  cx={room.x}
-                  cy={room.y}
-                  r={radius + 26}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={0.4}
-                  strokeDasharray="2 8"
-                  opacity={0.2}
-                >
-                  <animateTransform
-                    attributeName="transform"
-                    type="rotate"
-                    from={`360 ${room.x} ${room.y}`}
-                    to={`0 ${room.x} ${room.y}`}
-                    dur="45s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              )}
-
-              {/* Room circle */}
-              <circle
-                cx={room.x}
-                cy={room.y}
-                r={radius}
-                fill={pop > 0 ? color : "#0d1420"}
-                fillOpacity={pop > 0 ? 0.2 : 0.5}
-                stroke={color}
-                strokeWidth={isSelected ? 2 : hub ? 1.5 : 1}
-                opacity={isSelected ? 1 : 0.75}
-                filter={pop > 0 || hub ? "url(#glow-sm)" : undefined}
-              />
-
-              {/* Hub inner core glow */}
-              {hub && (
-                <circle
-                  cx={room.x}
-                  cy={room.y}
-                  r={4}
-                  fill={color}
-                  opacity={0.6}
-                  filter="url(#glow-md)"
-                >
-                  <animate
-                    attributeName="opacity"
-                    values="0.4;0.8;0.4"
-                    dur="3s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              )}
-
-              {/* Room label */}
-              <text
-                x={room.x}
-                y={room.y + radius + 12}
-                textAnchor="middle"
-                fill={isSelected ? color : "#6a7a8a"}
-                fontSize={hub ? 9 : 7.5}
-                fontFamily="Share Tech Mono, monospace"
-                fontWeight={hub ? 700 : 400}
-              >
-                {roomShorts.get(room.id) ?? room.id.split("/")[1] ?? room.id}
-              </text>
-            </g>
+              room={room}
+              pop={pop}
+              isSelected={selectedRoom === room.id}
+              isHighlighted={highlightedRoom === room.id}
+              isHub={isHub(room.id)}
+              shortName={short}
+              entityNames={names}
+              onSelect={handleRoomSelect}
+              onHover={handleRoomHover}
+              onLeave={handleRoomLeave}
+            />
           );
         })}
 
-        {/* ── Layer 7: Entity orbit dots ──────────────────────── */}
-        {Array.from(entityPositions.entries()).map(([roomId, ents]) => {
-          const pos = posMap.get(roomId);
-          if (!pos) return null;
-          const hub = isHub(roomId);
-          const baseRadius = (hub ? 14 : 8) + Math.min(ents.length * 2.5, 10);
-
-          return ents.map((ent, i) => {
-            const angle = (2 * Math.PI * i) / ents.length - Math.PI / 2;
-            const orbitR = baseRadius + 10;
-            const ex = pos.x + Math.cos(angle) * orbitR;
-            const ey = pos.y + Math.sin(angle) * orbitR;
-            const dotColor =
-              ent.kind === "agent" ? "#00ffe7" : ent.kind === "npc" ? "#ffcc00" : "#5a6a7a";
-
+        {/* ── Layer 7: Entity orbit dots (memoized) ───────── */}
+        {Array.from(entityPositions.entries()).map(
+          ([roomId, ents]) => {
+            const pos = posMap.get(roomId);
+            if (!pos) return null;
             return (
-              <g key={ent.id}>
-                <circle
-                  cx={ex}
-                  cy={ey}
-                  r={3.5}
-                  fill={dotColor}
-                  opacity={0.9}
-                  filter="url(#glow-sm)"
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectEntity(ent.name);
-                  }}
-                />
-                <circle
-                  cx={ex}
-                  cy={ey}
-                  r={1.2}
-                  fill="white"
-                  opacity={0.8}
-                  style={{ pointerEvents: "none" }}
-                />
-              </g>
+              <EntityDots
+                key={roomId}
+                roomId={roomId}
+                entities={ents}
+                pos={pos}
+                isHub={isHub(roomId)}
+                onSelectEntity={selectEntity}
+              />
             );
-          });
-        })}
+          },
+        )}
 
-        {/* ── Tooltip ─────────────────────────────────────────── */}
+        {/* ── Tooltip ─────────────────────────────────────── */}
         {tooltip && (
           <g>
             {(() => {
               const lineH = 10;
               const pad = 6;
-              const maxLen = Math.max(...tooltip.lines.map((l) => l.length));
+              const maxLen = Math.max(
+                ...tooltip.lines.map((l) => l.length),
+              );
               const w = Math.max(maxLen * 5 + pad * 2, 60);
               const h = tooltip.lines.length * lineH + pad * 2;
               return (
@@ -665,7 +839,13 @@ export function WorldMap({ worldData }: WorldMapProps) {
                     <text
                       key={i}
                       x={tooltip.x}
-                      y={tooltip.y - h / 2 + pad + 8 + i * lineH}
+                      y={
+                        tooltip.y -
+                        h / 2 +
+                        pad +
+                        8 +
+                        i * lineH
+                      }
                       textAnchor="middle"
                       fill={i === 0 ? "#c8d6e5" : "#8a9ab0"}
                       fontSize={i === 0 ? 8 : 6.5}

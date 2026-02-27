@@ -2,7 +2,7 @@ import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
 import { useEffect, useRef, useState } from "react";
 import { NodeMeta } from "./NodeMeta";
 
-export function PdfNode({ data, selected }: NodeProps) {
+export default function PdfNode({ data, selected }: NodeProps) {
   const url = (data.url as string) ?? "";
   const filename = (data.filename as string) ?? "Document.pdf";
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -12,8 +12,31 @@ export function PdfNode({ data, selected }: NodeProps) {
   const pdfDocRef = useRef<unknown>(null);
 
   useEffect(() => {
-    if (!url || !canvasRef.current) return;
+    if (!url) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
+
+    async function renderPage(
+      pdf: { getPage: (n: number) => Promise<unknown> },
+      num: number,
+    ) {
+      const page = (await pdf.getPage(num)) as {
+        getViewport: (opts: { scale: number }) => { width: number; height: number };
+        render: (ctx: {
+          canvasContext: CanvasRenderingContext2D;
+          viewport: { width: number; height: number };
+        }) => { promise: Promise<void> };
+      };
+      const canvas = canvasRef.current;
+      if (!canvas || cancelled) return;
+      const viewport = page.getViewport({ scale: 1.2 });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d")!;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    }
 
     async function loadPdf() {
       try {
@@ -29,23 +52,6 @@ export function PdfNode({ data, selected }: NodeProps) {
       } catch {
         setLoading(false);
       }
-    }
-
-    async function renderPage(pdf: { getPage: (n: number) => Promise<unknown> }, num: number) {
-      const page = (await pdf.getPage(num)) as {
-        getViewport: (opts: { scale: number }) => { width: number; height: number };
-        render: (ctx: {
-          canvasContext: CanvasRenderingContext2D;
-          viewport: { width: number; height: number };
-        }) => { promise: Promise<void> };
-      };
-      const canvas = canvasRef.current;
-      if (!canvas || cancelled) return;
-      const viewport = page.getViewport({ scale: 1.2 });
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d")!;
-      await page.render({ canvasContext: ctx, viewport }).promise;
     }
 
     loadPdf();
@@ -89,7 +95,7 @@ export function PdfNode({ data, selected }: NodeProps) {
       />
       <Handle type="target" position={Position.Top} className="!bg-red-500" />
       {selected && (
-        <div className="px-3 py-1.5 bg-red-900/30 text-xs text-red-300 font-medium truncate flex items-center justify-between">
+        <div className="nodrag px-3 py-1.5 bg-red-900/30 text-xs text-red-300 font-medium truncate flex items-center justify-between">
           <NodeMeta filename={filename} data={data} />
           {url && (
             <a
@@ -103,17 +109,24 @@ export function PdfNode({ data, selected }: NodeProps) {
           )}
         </div>
       )}
-      <div className="flex-1 flex items-center justify-center p-2 min-h-[200px] overflow-auto">
-        {loading ? (
-          <div className="text-gray-500 text-sm animate-pulse">Loading PDF...</div>
-        ) : !url ? (
-          <div className="text-gray-500 text-sm">No PDF</div>
-        ) : (
-          <canvas ref={canvasRef} className="max-w-full" />
+      <div className="flex-1 relative p-2 min-h-[200px] overflow-auto">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-900/80">
+            <span className="text-gray-500 text-sm animate-pulse">Loading PDF...</span>
+          </div>
         )}
+        {!loading && !url && (
+          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+            No PDF
+          </div>
+        )}
+        <canvas
+          ref={canvasRef}
+          className={`max-w-full ${loading || !url ? "invisible" : ""}`}
+        />
       </div>
       {numPages > 1 && (
-        <div className="flex items-center justify-center gap-2 py-1.5 bg-gray-800/50 text-xs text-gray-400">
+        <div className="nodrag flex items-center justify-center gap-2 py-1.5 bg-gray-800/50 text-xs text-gray-400">
           <button
             onClick={() => setPageNum((p) => Math.max(1, p - 1))}
             disabled={pageNum <= 1}
