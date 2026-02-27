@@ -321,6 +321,7 @@ export class WebSocketServer {
                 data: {
                   text: `Reconnected as ${result.name}.`,
                   entityId: result.entityId,
+                  token: result.token,
                 },
               }),
             );

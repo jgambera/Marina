@@ -318,7 +318,7 @@ export class Engine {
   reconnect(
     connId: string,
     token: string,
-  ): { entityId: EntityId; name: string } | { error: string } {
+  ): { entityId: EntityId; name: string; token: string } | { error: string } {
     if (!this.sessionManager) {
       return { error: "Session management not available." };
     }
@@ -369,7 +369,7 @@ export class Engine {
 
     this.applyAdminBootstrap(entity);
 
-    return { entityId: entity.id, name: entity.name };
+    return { entityId: entity.id, name: entity.name, token: newSession.token };
   }
 
   /** Validate a session token. Returns entity ID if valid. */
