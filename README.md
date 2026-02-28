@@ -528,7 +528,7 @@ worlds/
 rooms/              User file-based room overlays (empty by default)
 dashboard/          React dashboard + infinite canvas (Vite + Tailwind + React Flow)
   src/canvas/       Canvas page, custom media nodes, search, toolbar
-desktop-app/        Electrobun desktop app (macOS/Windows/Linux)
+artilect-desktop/   Electrobun desktop app (macOS/Windows/Linux)
 test/               Test suite (810 tests, 37 files)
 scripts/            Server start, CI build, backup/restore, export/import, room generator
 docs/               MCP docs, load test results, architecture research
@@ -667,7 +667,7 @@ See `src/sdk/examples/` for complete agent examples (greeter, explorer, research
 Artilect ships as a native desktop application via Electrobun (macOS, Windows, Linux). The desktop app bundles the engine, dashboard, and all network servers into a single executable with native menus, tray icon, and preferences.
 
 ```bash
-cd desktop-app
+cd artilect-desktop
 bun install
 ./scripts/build.sh
 ```

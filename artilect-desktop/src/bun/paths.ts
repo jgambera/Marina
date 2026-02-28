@@ -59,7 +59,7 @@ export function getAppPaths(): AppPaths {
     // Bundled Electrobun app: cwd is Contents/MacOS/
     // Rooms copied to Contents/Resources/app/resources/rooms/
     resolve("../Resources/app/resources/rooms"),
-    // Dev mode: import.meta.dir is desktop-app/src/bun/, go up to repo root
+    // Dev mode: import.meta.dir is artilect-desktop/src/bun/, go up to repo root
     join(import.meta.dir, "../../../rooms"),
     // Fallback: cwd-relative
     resolve("rooms"),

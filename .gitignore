@@ -13,7 +13,7 @@ dist/
 backups/
 data/
 dashboard/node_modules/
-desktop-app/node_modules/
-desktop-app/build/
-desktop-app/dist/
-desktop-app/.font-cache/
+artilect-desktop/node_modules/
+artilect-desktop/build/
+artilect-desktop/dist/
+artilect-desktop/.font-cache/

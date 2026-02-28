@@ -3,7 +3,7 @@
 # Artilect Desktop — Full Prepare & Build Pipeline
 #
 # Usage:
-#   ./desktop-app/scripts/build.sh [options] [env]
+#   ./artilect-desktop/scripts/build.sh [options] [env]
 #
 # Environments:
 #   dev      Fast iteration, unsigned, runs after build (default)
@@ -39,7 +39,7 @@ step()  { echo -e "\n${BOLD}── $* ──${RESET}"; }
 # ─── Paths ───────────────────────────────────────────────────────────────────
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-DESKTOP_DIR="$REPO_ROOT/desktop-app"
+DESKTOP_DIR="$REPO_ROOT/artilect-desktop"
 DASHBOARD_DIR="$REPO_ROOT/dashboard"
 ASSETS_DIR="$DESKTOP_DIR/assets"
 DIST_DIR="$DESKTOP_DIR/dist"
@@ -98,7 +98,7 @@ info "bun $BUN_VERSION"
 
 # Verify we're in the right repo
 [ -f "$REPO_ROOT/src/main.ts" ] || fail "Not in the Artilect repo root"
-[ -d "$DESKTOP_DIR/src/bun" ]   || fail "desktop-app/src/bun/ not found — run from repo root"
+[ -d "$DESKTOP_DIR/src/bun" ]   || fail "artilect-desktop/src/bun/ not found — run from repo root"
 
 ok "Prerequisites satisfied"
 
@@ -303,13 +303,13 @@ bunx vite build --config "$DESKTOP_DIR/vite.desktop.config.ts" 2>&1
 # Verify build output
 if [ -f "$DIST_DIR/dashboard/index.js" ]; then
   DASH_SIZE=$(du -sh "$DIST_DIR/dashboard" | cut -f1 | xargs)
-  ok "Dashboard built ($DASH_SIZE) → desktop-app/dist/dashboard/"
+  ok "Dashboard built ($DASH_SIZE) → artilect-desktop/dist/dashboard/"
 else
   # Vite may use a hashed entry — check for any JS
   JS_COUNT=$(find "$DIST_DIR/dashboard" -name "*.js" 2>/dev/null | wc -l | xargs)
   if [ "$JS_COUNT" -gt 0 ]; then
     DASH_SIZE=$(du -sh "$DIST_DIR/dashboard" | cut -f1 | xargs)
-    ok "Dashboard built ($DASH_SIZE, $JS_COUNT JS files) → desktop-app/dist/dashboard/"
+    ok "Dashboard built ($DASH_SIZE, $JS_COUNT JS files) → artilect-desktop/dist/dashboard/"
   else
     fail "Dashboard build produced no JS output"
   fi
@@ -411,8 +411,8 @@ if [ "$RUN_AFTER" = true ] && [ "$ENV" = "dev" ]; then
 fi
 
 if [ "$ENV" = "dev" ]; then
-  echo -e "${DIM}To run:  cd desktop-app && bunx electrobun build --env=dev --run${RESET}"
+  echo -e "${DIM}To run:  cd artilect-desktop && bunx electrobun build --env=dev --run${RESET}"
 elif [ "$ENV" = "stable" ]; then
-  echo -e "${DIM}Distribution artifacts are in desktop-app/build/${RESET}"
+  echo -e "${DIM}Distribution artifacts are in artilect-desktop/build/${RESET}"
 fi
 echo ""

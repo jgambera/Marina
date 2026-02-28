@@ -42,7 +42,7 @@ jobs:
         run: cd dashboard && bun install
 
       - name: Install desktop dependencies
-        run: cd desktop-app && bun install
+        run: cd artilect-desktop && bun install
 
       - name: Run tests (verify no regressions)
         run: bun test
@@ -55,13 +55,13 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         run: |
           ENV="${{ github.event.inputs.env || 'stable' }}"
-          bash desktop-app/scripts/build.sh "$ENV"
+          bash artilect-desktop/scripts/build.sh "$ENV"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: artilect-macos-${{ matrix.arch }}
-          path: desktop-app/build/*.dmg
+          path: artilect-desktop/build/*.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -76,16 +76,16 @@ jobs:
         run: |
           bun install
           cd dashboard && bun install
-          cd ../desktop-app && bun install
+          cd ../artilect-desktop && bun install
 
       - name: Build desktop app
-        run: bash desktop-app/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
+        run: bash artilect-desktop/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: artilect-windows-x64
-          path: desktop-app/build/*.exe
+          path: artilect-desktop/build/*.exe
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -105,16 +105,16 @@ jobs:
         run: |
           bun install
           cd dashboard && bun install
-          cd ../desktop-app && bun install
+          cd ../artilect-desktop && bun install
 
       - name: Build desktop app
-        run: bash desktop-app/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
+        run: bash artilect-desktop/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: artilect-linux-x64
-          path: desktop-app/build/*.deb
+          path: artilect-desktop/build/*.deb
 
   release:
     needs: [build-macos, build-windows, build-linux]
