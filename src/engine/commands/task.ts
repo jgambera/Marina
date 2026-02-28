@@ -18,7 +18,7 @@ export function taskCommand(
   return {
     name: "task",
     aliases: [],
-    help: "Manage tasks. Usage: task list|info|create|claim|submit|approve|reject|cancel|bundle|assign|children [args]",
+    help: "Manage tasks with create/claim/submit workflow.\nUsage: task list|info|create|claim|submit|approve|reject|cancel|bundle|assign|children\n\nExamples:\n  task create Map the grid | Explore all sectors and document exits\n  task claim 3\n  task submit 3 All sectors documented\n  task bundle Sprint 1 | First batch of tasks\n  task assign 3 1",
     handler: (ctx: RoomContext, input) => {
       const self = ctx.getEntity(input.entity);
       if (!self) return;

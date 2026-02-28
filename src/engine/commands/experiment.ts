@@ -10,7 +10,7 @@ export function experimentCommand(opts: {
   return {
     name: "experiment",
     aliases: ["exp"],
-    help: "Experiment framework. Usage: experiment [list|create|join|start|status|results] [args]",
+    help: "Structured experiments with participants and recorded results.\nUsage: experiment list|create|join|start|status|results|complete|record\n\nExamples:\n  experiment create Temperature_Study 4 300\n  experiment join Temperature_Study\n  experiment start Temperature_Study\n  experiment record Temperature_Study accuracy 0.85",
     handler: (ctx: RoomContext, input) => {
       const entity = opts.getEntity(input.entity);
       if (!entity) return;

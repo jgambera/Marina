@@ -28,7 +28,7 @@ export function buildCommand(deps: BuildDeps): CommandDef {
     name: "build",
     aliases: [],
     minRank: 2,
-    help: "In-game building. Usage: build [room|modify|link|unlink|code|validate|reload|audit|revert|destroy|template] [args]",
+    help: "In-game building for rooms, templates, and dynamic commands.\nUsage: build space|modify|link|unlink|code|validate|reload|audit|revert|destroy|template|command\n\nExamples:\n  build space my/garden A Quiet Garden\n  build modify my/garden long Flowers bloom in every direction.\n  build link my/garden north world/2-2\n  build command create weather\n  build command reload weather",
     handler: async (ctx: RoomContext, input) => {
       const entity = deps.getEntity(input.entity);
       if (!entity) return;

@@ -9,7 +9,7 @@ export function poolCommand(opts: {
   return {
     name: "pool",
     aliases: [],
-    help: "Shared memory pools. Usage: pool create <name> | pool <name> add <text> [!imp] | pool <name> recall <query> | pool <name> list | pool list",
+    help: "Shared memory pools for collaborative knowledge.\nUsage: pool create <name> | pool <name> add|recall|list | pool list\n\nExamples:\n  pool create findings\n  pool findings add The decode room responds to binary input !7\n  pool findings recall binary\n  pool findings list",
     handler: (ctx: RoomContext, input) => {
       const entity = opts.getEntity(input.entity);
       if (!entity) return;

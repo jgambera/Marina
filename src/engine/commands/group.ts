@@ -9,7 +9,7 @@ export function groupCommand(
   return {
     name: "group",
     aliases: ["guild"],
-    help: "Manage groups. Usage: group list|info|create|join|leave|invite|kick|promote|demote|disband [args]",
+    help: "Manage groups (auto-creates channel + board).\nUsage: group list|info|create|join|leave|invite|kick|promote|demote|disband\n\nExamples:\n  group create explorers Exploration Team\n  group join explorers\n  group invite Alice explorers\n  group info explorers",
     handler: (ctx: RoomContext, input) => {
       const self = ctx.getEntity(input.entity);
       if (!self) return;

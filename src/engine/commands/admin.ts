@@ -21,7 +21,7 @@ export function adminCommand(deps: AdminDeps): CommandDef {
   return {
     name: "admin",
     minRank: 4,
-    help: "Admin commands: kick, ban, unban, stats, announce, reload, export. Requires rank 4 (admin).",
+    help: "Admin commands. Requires rank 4.\nUsage: admin kick|ban|unban|bans|stats|announce|reload|export\n\nExamples:\n  admin kick Alice\n  admin ban Bob Griefing\n  admin stats\n  admin announce Server restart in 5 minutes",
     handler(ctx, input) {
       const entity = deps.getEntity(input.entity);
       if (!entity) return;

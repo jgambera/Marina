@@ -10,7 +10,7 @@ export function boardCommand(
   return {
     name: "board",
     aliases: [],
-    help: "Manage boards. Usage: board [list|read|post|reply|search|vote|scores|pin|archive] [args]",
+    help: "Manage boards for async discussion.\nUsage: board list|read|post|reply|search|vote|scores|pin|archive|create\n\nExamples:\n  board post general Relay Results | Average accuracy was 73%\n  board reply 5 Was that with the training run?\n  board vote 5 up 8\n  board search general relay",
     handler: (ctx: RoomContext, input) => {
       const entity = getEntity(input.entity);
       if (!entity) return;

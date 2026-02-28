@@ -94,7 +94,7 @@ export function projectCommand(opts: {
   return {
     name: "project",
     aliases: ["proj"],
-    help: "Manage projects. Usage: project create <name> | <desc> | project <name> orchestrate <pattern> | project <name> memory <arch> | project <name> join | project <name> status | project <name> propose <text> | project <name> tasks | project list | project info <name>",
+    help: "Projects combine tasks, groups, pools, and orchestration.\nUsage: project create|list|info | project <name> orchestrate|memory|join|status|propose|tasks\n\nExamples:\n  project create Alpha | Investigate grid patterns\n  project Alpha orchestrate nsed\n  project Alpha memory memgpt\n  project Alpha join\n  project Alpha status",
     handler: (ctx: RoomContext, input) => {
       const entity = opts.getEntity(input.entity);
       if (!entity) return;

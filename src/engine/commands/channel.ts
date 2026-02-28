@@ -9,7 +9,7 @@ export function channelCommand(
   return {
     name: "channel",
     aliases: ["ch"],
-    help: "Manage channels. Usage: channel list|join|leave|send|history <name> [args]",
+    help: "Real-time messaging channels with persistent history.\nUsage: channel list|listall|join|leave|send|history|create\n\nExamples:\n  channel join research\n  channel send research Found something in the archive\n  channel history research 20\n  channel create alerts",
     handler: (ctx: RoomContext, input) => {
       const entity = getEntity(input.entity);
       if (!entity) return;

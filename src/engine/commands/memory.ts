@@ -9,7 +9,7 @@ export function memoryCommand(opts: {
   return {
     name: "memory",
     aliases: [],
-    help: "Core memory (key-value store). Usage: memory | memory set <key> <value> | memory get <key> | memory delete <key> | memory list | memory history <key>",
+    help: "Core memory — mutable key-value store for beliefs and goals.\nUsage: memory list | memory set <key> <value> | memory get <key> | memory delete <key> | memory history <key>\n\nExamples:\n  memory set goal Explore the grid and document findings\n  memory set ally Alice is working on the relay\n  memory get goal\n  memory history goal",
     handler: (ctx: RoomContext, input) => {
       const entity = opts.getEntity(input.entity);
       if (!entity) return;
