@@ -10,7 +10,7 @@ import {
   Plug,
   UsersRound,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useBoardDetail,
   useBoards,
@@ -25,6 +25,7 @@ import {
   useTaskDetail,
   useTasks,
 } from "../hooks/use-api";
+import { SPRING_GENTLE, animate, prefersReducedMotion, stagger } from "../lib/animations";
 import { cn, formatTime } from "../lib/utils";
 import { GlassPanel } from "./GlassPanel";
 
@@ -50,7 +51,11 @@ const SECTIONS: Section[] = [
   "commands",
 ];
 
-export function CoordinationCard() {
+export function CoordinationCard({
+  backContent,
+}: {
+  backContent?: React.ReactNode;
+}) {
   const [expanded, setExpanded] = useState<Section>(null);
   const [highlightedSection, setHighlightedSection] = useState<number | null>(null);
 
@@ -104,8 +109,8 @@ export function CoordinationCard() {
   );
 
   return (
-    <GlassPanel title="Coordination" icon={<Layers size={14} />}>
-      <div tabIndex={0} onKeyDown={onKeyDown} className="flex flex-col text-[11px] outline-none">
+    <GlassPanel title="Coordination" icon={<Layers size={14} />} backContent={backContent}>
+      <div onKeyDown={onKeyDown} className="flex flex-col text-[11px] outline-none">
         <SectionRow
           label="Projects"
           icon={<FolderKanban size={11} />}
@@ -205,6 +210,34 @@ function SectionRow({
   onClick: () => void;
   children: React.ReactNode;
 }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || !contentRef.current || prefersReducedMotion()) return;
+
+    const el = contentRef.current;
+    const scrollH = el.scrollHeight;
+
+    animate(el, {
+      height: [0, scrollH],
+      opacity: [0, 1],
+      ease: SPRING_GENTLE,
+      duration: 400,
+    });
+
+    // Stagger child items
+    const items = el.querySelectorAll(":scope > div > div, :scope > div > button");
+    if (items.length > 0) {
+      animate(items, {
+        opacity: [0, 1],
+        translateY: [8, 0],
+        delay: stagger(40),
+        duration: 300,
+        ease: "outQuad",
+      });
+    }
+  }, [isOpen]);
+
   return (
     <>
       <button
@@ -225,7 +258,10 @@ function SectionRow({
         )}
       </button>
       {isOpen && (
-        <div className="animate-fade-in border-t border-border bg-bg-card px-2 py-1">
+        <div
+          ref={contentRef}
+          className="border-t border-border bg-bg-card px-2 py-1 overflow-hidden"
+        >
           {children}
         </div>
       )}

@@ -1,10 +1,12 @@
-import type { ReactNode } from "react";
+import { RefreshCw } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { cn } from "../lib/utils";
 
 interface GlassPanelProps {
   title?: string;
   icon?: ReactNode;
   children: ReactNode;
+  backContent?: ReactNode;
   className?: string;
   isFocused?: boolean;
   onDoubleClick?: () => void;
@@ -14,10 +16,13 @@ export function GlassPanel({
   title,
   icon,
   children,
+  backContent,
   className,
   isFocused,
   onDoubleClick,
 }: GlassPanelProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
   return (
     <div
       className={cn(
@@ -32,12 +37,33 @@ export function GlassPanel({
           onDoubleClick={onDoubleClick}
         >
           {icon && <span className="text-primary">{icon}</span>}
-          <h2 className="font-display text-[11px] font-semibold tracking-wider text-primary uppercase">
+          <h2 className="flex-1 font-display text-[11px] font-semibold tracking-wider text-primary uppercase">
             {title}
           </h2>
+          {backContent && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsFlipped((f) => !f);
+              }}
+              className="text-text-dim hover:text-primary transition-colors"
+              title={isFlipped ? "Show front" : "Show data"}
+            >
+              <RefreshCw size={10} />
+            </button>
+          )}
         </div>
       )}
-      <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {isFlipped ? (
+          <div className="flex flex-1 flex-col overflow-hidden overflow-y-auto animate-fade-in">
+            {backContent}
+          </div>
+        ) : (
+          children
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { Activity, FolderKanban, Frame, Plug, Radio, RotateCcw } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useSystem } from "../hooks/use-api";
 import { useWorldState } from "../hooks/use-world-state";
+import { SPRING_BOUNCY, animate, prefersReducedMotion, stagger } from "../lib/animations";
 import { formatUptime } from "../lib/utils";
 
 interface HeaderProps {
@@ -9,16 +11,43 @@ interface HeaderProps {
   onResetLayout?: () => void;
 }
 
+const TITLE_LETTERS = "ARTILECT".split("");
+
 export function Header({ connected, uptime, onResetLayout }: HeaderProps) {
   const entities = useWorldState((s) => s.entities);
   const connections = useWorldState((s) => s.connections);
   const { data: systemData } = useSystem();
   const agents = entities.filter((e) => e.kind === "agent");
+  const hasAnimated = useRef(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (hasAnimated.current || !titleRef.current || prefersReducedMotion()) return;
+    hasAnimated.current = true;
+
+    const spans = titleRef.current.querySelectorAll(".header-letter");
+    if (spans.length === 0) return;
+
+    animate(spans, {
+      opacity: [0, 1],
+      filter: ["blur(8px)", "blur(0px)"],
+      scale: [0.5, 1],
+      delay: stagger(50, { from: "center" }),
+      ease: SPRING_BOUNCY,
+      duration: 600,
+    });
+  }, []);
 
   return (
     <header className="glass-panel flex items-center justify-between px-3 py-1">
       <div className="flex items-center gap-3">
-        <h1 className="gradient-text font-display text-lg font-bold tracking-widest">ARTILECT</h1>
+        <h1 ref={titleRef} className="gradient-text font-display text-lg font-bold tracking-widest">
+          {TITLE_LETTERS.map((letter, i) => (
+            <span key={i} className="header-letter" style={{ display: "inline-block" }}>
+              {letter}
+            </span>
+          ))}
+        </h1>
         <span className="text-text-dim text-[11px]">Mission Control</span>
       </div>
 

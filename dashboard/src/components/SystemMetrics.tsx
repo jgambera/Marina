@@ -7,9 +7,10 @@ import { GlassPanel } from "./GlassPanel";
 
 interface SystemMetricsProps {
   uptime: number;
+  backContent?: React.ReactNode;
 }
 
-export function SystemMetrics({ uptime }: SystemMetricsProps) {
+export function SystemMetrics({ uptime, backContent }: SystemMetricsProps) {
   const memory = useWorldState((s) => s.memory);
   const connections = useWorldState((s) => s.connections);
   const entities = useWorldState((s) => s.entities);
@@ -69,7 +70,7 @@ export function SystemMetrics({ uptime }: SystemMetricsProps) {
   }
 
   return (
-    <GlassPanel title="System" icon={<Cpu size={14} />}>
+    <GlassPanel title="System" icon={<Cpu size={14} />} backContent={backContent}>
       <div className="flex flex-col gap-0.5 p-1.5 text-[11px]">
         {rows.map((r) => (
           <div key={r.label} className="flex justify-between">

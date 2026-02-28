@@ -6,6 +6,9 @@ interface CanvasToolbarProps {
   nodes: Node[];
   selectedCount?: number;
   onDelete?: () => void;
+  onAnimateLayout?: (
+    targetMap: Map<string, { x: number; y: number; w: number; h: number }>,
+  ) => Promise<void>;
 }
 
 const API_BASE = window.location.origin;
@@ -15,6 +18,7 @@ export function CanvasToolbar({
   nodes,
   selectedCount = 0,
   onDelete,
+  onAnimateLayout,
 }: CanvasToolbarProps) {
   const exportCanvas = () => {
     if (!canvasId) return;
@@ -45,6 +49,8 @@ export function CanvasToolbar({
     const cellW = 420;
     const cellH = 500;
 
+    // Compute target positions
+    const targetMap = new Map<string, { x: number; y: number; w: number; h: number }>();
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i]!;
       const col = i % cols;
@@ -52,18 +58,31 @@ export function CanvasToolbar({
       const x = col * (cellW + gap);
       const y = row * (cellH + gap);
       const size = defaultSize(node.type ?? "text");
+      targetMap.set(node.id, { x, y, w: size.w, h: size.h });
+    }
 
+    // Animate first, then persist
+    if (onAnimateLayout) {
+      await onAnimateLayout(targetMap);
+    }
+
+    // Persist to backend
+    for (const [nodeId, target] of targetMap) {
       try {
-        await fetch(`${API_BASE}/api/canvases/${canvasId}/nodes/${node.id}`, {
+        await fetch(`${API_BASE}/api/canvases/${canvasId}/nodes/${nodeId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ x, y, width: size.w, height: size.h }),
+          body: JSON.stringify({
+            x: target.x,
+            y: target.y,
+            width: target.w,
+            height: target.h,
+          }),
         });
       } catch {
         // Continue with remaining nodes
       }
     }
-    window.location.reload();
   };
 
   const layoutTimeline = async () => {
@@ -77,26 +96,43 @@ export function CanvasToolbar({
     const gap = 40;
     let x = 0;
 
+    // Compute target positions
+    const targetMap = new Map<string, { x: number; y: number; w: number; h: number }>();
     for (let i = 0; i < sorted.length; i++) {
       const node = sorted[i]!;
       const size = defaultSize(node.type ?? "text");
+      targetMap.set(node.id, { x, y: 0, w: size.w, h: size.h });
+      x += size.w + gap;
+    }
+
+    // Animate first, then persist
+    if (onAnimateLayout) {
+      await onAnimateLayout(targetMap);
+    }
+
+    // Persist to backend
+    for (const [nodeId, target] of targetMap) {
       try {
-        await fetch(`${API_BASE}/api/canvases/${canvasId}/nodes/${node.id}`, {
+        await fetch(`${API_BASE}/api/canvases/${canvasId}/nodes/${nodeId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ x, y: 0, width: size.w, height: size.h }),
+          body: JSON.stringify({
+            x: target.x,
+            y: target.y,
+            width: target.w,
+            height: target.h,
+          }),
         });
       } catch {
         // Continue
       }
-      x += size.w + gap;
     }
-    window.location.reload();
   };
 
   return (
     <div className="flex items-center gap-1">
       <button
+        type="button"
         onClick={exportCanvas}
         disabled={!canvasId}
         className="text-xs text-gray-400 hover:text-gray-200 bg-gray-800 px-2 py-1 rounded border border-gray-700 disabled:opacity-30"
@@ -105,6 +141,7 @@ export function CanvasToolbar({
         Export
       </button>
       <button
+        type="button"
         onClick={layoutGrid}
         disabled={!canvasId || nodes.length === 0}
         className="text-xs text-gray-400 hover:text-gray-200 bg-gray-800 px-2 py-1 rounded border border-gray-700 disabled:opacity-30"
@@ -113,6 +150,7 @@ export function CanvasToolbar({
         Grid
       </button>
       <button
+        type="button"
         onClick={layoutTimeline}
         disabled={!canvasId || nodes.length === 0}
         className="text-xs text-gray-400 hover:text-gray-200 bg-gray-800 px-2 py-1 rounded border border-gray-700 disabled:opacity-30"
@@ -122,6 +160,7 @@ export function CanvasToolbar({
       </button>
       {selectedCount > 0 && onDelete && (
         <button
+          type="button"
           onClick={onDelete}
           className="text-xs text-red-400 hover:text-red-200 bg-gray-800 px-2 py-1 rounded border border-red-900/50 hover:border-red-700"
           title={`Delete ${selectedCount} selected node${selectedCount > 1 ? "s" : ""}`}

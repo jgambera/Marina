@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronRight, Trash2, Users } from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
 import { useEntityDetail } from "../hooks/use-api";
 import { useKeyboardNav } from "../hooks/use-keyboard-nav";
@@ -7,7 +8,11 @@ import { deleteApi } from "../lib/api";
 import { cn, formatTime } from "../lib/utils";
 import { GlassPanel } from "./GlassPanel";
 
-export function EntityRoster() {
+export function EntityRoster({
+  backContent,
+}: {
+  backContent?: ReactNode;
+}) {
   const entities = useWorldState((s) => s.entities);
   const selectedEntity = useWorldState((s) => s.selectedEntity);
   const selectEntity = useWorldState((s) => s.selectEntity);
@@ -33,7 +38,7 @@ export function EntityRoster() {
   });
 
   return (
-    <GlassPanel title="Entities" icon={<Users size={14} />}>
+    <GlassPanel title="Entities" icon={<Users size={14} />} backContent={backContent}>
       <div
         ref={containerRef}
         tabIndex={0}

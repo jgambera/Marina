@@ -9,28 +9,24 @@ import { GlassPanel } from "./GlassPanel";
 
 type ViewMode = "view" | "source";
 
-export function RoomDetail() {
+export function RoomDetail({
+  backContent,
+}: {
+  backContent?: React.ReactNode;
+}) {
   const selectedRoom = useWorldState((s) => s.selectedRoom);
   const selectRoom = useWorldState((s) => s.selectRoom);
   const selectEntity = useWorldState((s) => s.selectEntity);
   const { data, isLoading, isError } = useRoomDetail(selectedRoom);
   const [mode, setMode] = useState<ViewMode>("view");
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   // Reset to view mode when room changes
   useEffect(() => {
     setMode("view");
   }, [selectedRoom]);
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
-  if (!selectedRoom) {
-    return (
-      <GlassPanel title="Room Detail" icon={<DoorOpen size={14} />}>
-        <div className="p-2 text-text-dim text-[11px]">Click a room on the map to inspect it.</div>
-      </GlassPanel>
-    );
-  }
-
-  const district = selectedRoom.split("/")[0] ?? "";
+  const district = selectedRoom?.split("/")[0] ?? "";
   const districtColor = getDistrictColor(district);
 
   // Build flat navigable items list: exits then entities
@@ -62,8 +58,16 @@ export function RoomDetail() {
     containerRef: navContainerRef,
   } = useKeyboardNav({ items: navItems, onActivate: onActivateNav });
 
+  if (!selectedRoom) {
+    return (
+      <GlassPanel title="Room Detail" icon={<DoorOpen size={14} />} backContent={backContent}>
+        <div className="p-2 text-text-dim text-[11px]">Click a room on the map to inspect it.</div>
+      </GlassPanel>
+    );
+  }
+
   return (
-    <GlassPanel title="Room Detail" icon={<DoorOpen size={14} />}>
+    <GlassPanel title="Room Detail" icon={<DoorOpen size={14} />} backContent={backContent}>
       <div
         ref={navContainerRef}
         tabIndex={0}

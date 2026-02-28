@@ -2,19 +2,44 @@ import { ScrollText } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { useKeyboardNav } from "../hooks/use-keyboard-nav";
 import { useWorldState } from "../hooks/use-world-state";
+import { SPRING_SNAPPY, animate, prefersReducedMotion, stagger } from "../lib/animations";
 import type { DashboardEvent } from "../lib/types";
 import { cn, formatTime } from "../lib/utils";
 import { GlassPanel } from "./GlassPanel";
 
-export function ActivityFeed() {
+export function ActivityFeed({
+  backContent,
+}: {
+  backContent?: React.ReactNode;
+}) {
   const events = useWorldState((s) => s.eventFeed);
   const entities = useWorldState((s) => s.entities);
   const selectEntity = useWorldState((s) => s.selectEntity);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef(0);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
+    }
+
+    // Animate new event rows
+    const newCount = events.length - prevCountRef.current;
+    prevCountRef.current = events.length;
+
+    if (newCount > 0 && !prefersReducedMotion() && scrollRef.current) {
+      const rows = scrollRef.current.querySelectorAll(".event-row");
+      const toAnimate = Array.from(rows).slice(0, Math.min(newCount, 10));
+
+      if (toAnimate.length > 0) {
+        animate(toAnimate, {
+          translateY: [-20, 0],
+          opacity: [0, 1],
+          delay: stagger(30),
+          ease: SPRING_SNAPPY,
+          duration: 400,
+        });
+      }
     }
   }, [events.length]);
 
@@ -34,13 +59,12 @@ export function ActivityFeed() {
   });
 
   return (
-    <GlassPanel title="Activity" icon={<ScrollText size={14} />}>
+    <GlassPanel title="Activity" icon={<ScrollText size={14} />} backContent={backContent}>
       <div
         ref={(el) => {
           (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
           (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
         }}
-        tabIndex={0}
         onKeyDown={onKeyDown}
         className="flex flex-col overflow-auto outline-none"
       >
@@ -130,7 +154,7 @@ function EventRow({
     <div
       data-kb-item
       className={cn(
-        "flex items-start gap-2 px-2 py-0.5 text-[11px] leading-tight hover:bg-bg-hover",
+        "event-row flex items-start gap-2 px-2 py-0.5 text-[11px] leading-tight hover:bg-bg-hover",
         isHighlighted && "ring-1 ring-primary/40",
       )}
     >

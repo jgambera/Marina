@@ -1,5 +1,13 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Map as MapIcon } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWorldState } from "../hooks/use-world-state";
+import {
+  SPRING_BOUNCY,
+  animate,
+  createTimeline,
+  prefersReducedMotion,
+  stagger,
+} from "../lib/animations";
 import type { EntitySummary, WorldData } from "../lib/types";
 import {
   type RoomPosition,
@@ -8,7 +16,6 @@ import {
   getDistrictLabel,
 } from "../lib/world-graph";
 import { GlassPanel } from "./GlassPanel";
-import { Map as MapIcon } from "lucide-react";
 
 function avg(nums: number[]): number {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
@@ -24,12 +31,7 @@ interface RoomNodeProps {
   shortName: string;
   entityNames: string[];
   onSelect: (roomId: string, isSelected: boolean) => void;
-  onHover: (
-    room: RoomPosition,
-    radius: number,
-    shortName: string,
-    names: string[],
-  ) => void;
+  onHover: (room: RoomPosition, radius: number, shortName: string, names: string[]) => void;
   onLeave: () => void;
 }
 
@@ -51,18 +53,18 @@ const RoomNode = React.memo(function RoomNode({
 
   return (
     <g
+      data-room-id={room.id}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(room.id, isSelected);
       }}
-      onMouseEnter={() =>
-        onHover(room, radius, shortName, entityNames)
-      }
+      onMouseEnter={() => onHover(room, radius, shortName, entityNames)}
       onMouseLeave={onLeave}
       className="cursor-pointer"
     >
       {/* Ambient halo */}
       <circle
+        data-room-halo={room.id}
         cx={room.x}
         cy={room.y}
         r={radius + 8}
@@ -179,20 +181,8 @@ const RoomNode = React.memo(function RoomNode({
 
       {/* Hub inner core glow */}
       {isHub && (
-        <circle
-          cx={room.x}
-          cy={room.y}
-          r={4}
-          fill={color}
-          opacity={0.6}
-          filter="url(#glow-md)"
-        >
-          <animate
-            attributeName="opacity"
-            values="0.4;0.8;0.4"
-            dur="3s"
-            repeatCount="indefinite"
-          />
+        <circle cx={room.x} cy={room.y} r={4} fill={color} opacity={0.6} filter="url(#glow-md)">
+          <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
         </circle>
       )}
 
@@ -227,23 +217,17 @@ const EntityDots = React.memo(function EntityDots({
   isHub,
   onSelectEntity,
 }: EntityDotsProps) {
-  const baseRadius =
-    (isHub ? 14 : 8) + Math.min(entities.length * 2.5, 10);
+  const baseRadius = (isHub ? 14 : 8) + Math.min(entities.length * 2.5, 10);
 
   return (
     <>
       {entities.map((ent, i) => {
-        const angle =
-          (2 * Math.PI * i) / entities.length - Math.PI / 2;
+        const angle = (2 * Math.PI * i) / entities.length - Math.PI / 2;
         const orbitR = baseRadius + 10;
         const ex = pos.x + Math.cos(angle) * orbitR;
         const ey = pos.y + Math.sin(angle) * orbitR;
         const dotColor =
-          ent.kind === "agent"
-            ? "#00ffe7"
-            : ent.kind === "npc"
-              ? "#ffcc00"
-              : "#5a6a7a";
+          ent.kind === "agent" ? "#00ffe7" : ent.kind === "npc" ? "#ffcc00" : "#5a6a7a";
 
         return (
           <g key={ent.id}>
@@ -278,9 +262,10 @@ const EntityDots = React.memo(function EntityDots({
 // ── Main WorldMap Component ───────────────────────────────────────────
 interface WorldMapProps {
   worldData?: WorldData;
+  backContent?: React.ReactNode;
 }
 
-export function WorldMap({ worldData }: WorldMapProps) {
+export function WorldMap({ worldData, backContent }: WorldMapProps) {
   const selectedRoom = useWorldState((s) => s.selectedRoom);
   const selectRoom = useWorldState((s) => s.selectRoom);
   const selectEntity = useWorldState((s) => s.selectEntity);
@@ -289,27 +274,35 @@ export function WorldMap({ worldData }: WorldMapProps) {
   const roomPops = useWorldState((s) => s.roomPopulations);
   const wsStartRoom = useWorldState((s) => s.startRoom);
   const wsWorldName = useWorldState((s) => s.worldName);
+  const eventFeed = useWorldState((s) => s.eventFeed);
 
   const startRoom = wsStartRoom || worldData?.startRoom || "";
   const worldName = wsWorldName || worldData?.worldName || "";
 
-  const DEFAULT_VIEWBOX = { x: 40, y: 15, w: 920, h: 720 };
+  const DEFAULT_VIEWBOX = { x: 50, y: 10, w: 900, h: 730 };
   const [viewBox, setViewBox] = useState(DEFAULT_VIEWBOX);
   const svgRef = useRef<SVGSVGElement>(null);
+  const trailsRef = useRef<SVGGElement>(null);
+  const rippleRef = useRef<SVGGElement>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
     lines: string[];
   } | null>(null);
-  const [highlightedRoom, setHighlightedRoom] = useState<
-    string | null
-  >(null);
+  const [highlightedRoom, setHighlightedRoom] = useState<string | null>(null);
+
+  // Animation refs
+  const hasInitializedRef = useRef(false);
+  const entityRoomRef = useRef<Map<string, string>>(new Map());
+  const activeTrailsRef = useRef(0);
+  const breatheTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const breatheAnimsRef = useRef<Map<string, ReturnType<typeof animate>>>(new Map());
+  const prevSelectedRef = useRef<string | null>(null);
 
   // ── Compute room positions + edges from live data ─────────────────
   const { allPositions, allEdges, posMap } = useMemo(() => {
-    const rooms =
-      wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
+    const rooms = wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
     const { positions, edges } = computeLayout(rooms, startRoom);
     const pm = new Map(positions.map((p) => [p.id, p]));
     return { allPositions: positions, allEdges: edges, posMap: pm };
@@ -323,26 +316,33 @@ export function WorldMap({ worldData }: WorldMapProps) {
       arr.push(pos);
       districts.set(pos.district, arr);
     }
-    return Array.from(districts.entries()).map(
-      ([district, rooms]) => {
-        const cx = avg(rooms.map((r) => r.x));
-        const cy = avg(rooms.map((r) => r.y));
-        const maxDist = Math.max(
-          ...rooms.map((r) =>
-            Math.sqrt((r.x - cx) ** 2 + (r.y - cy) ** 2),
-          ),
-        );
-        return {
-          district,
-          cx,
-          cy,
-          radius: maxDist + 70,
-          color: getDistrictColor(district),
-          label: getDistrictLabel(district),
-        };
-      },
-    );
+    return Array.from(districts.entries()).map(([district, rooms]) => {
+      const cx = avg(rooms.map((r) => r.x));
+      const cy = avg(rooms.map((r) => r.y));
+      const maxDist = Math.max(...rooms.map((r) => Math.sqrt((r.x - cx) ** 2 + (r.y - cy) ** 2)));
+      return {
+        district,
+        cx,
+        cy,
+        radius: maxDist + 70,
+        color: getDistrictColor(district),
+        label: getDistrictLabel(district),
+      };
+    });
   }, [allPositions]);
+
+  // ── Resolved adjacent grid edges (for pulse particles) ──────────────
+  const gridEdgesResolved = useMemo(() => {
+    return allEdges
+      .filter((e) => e.gridEdge && e.adjacent)
+      .map((edge) => {
+        const from = posMap.get(edge.from);
+        const to = posMap.get(edge.to);
+        if (!from || !to) return null;
+        return { edge, from, to, color: getDistrictColor(from.district) };
+      })
+      .filter((g): g is NonNullable<typeof g> => g != null);
+  }, [allEdges, posMap]);
 
   // ── Cross-district edges with gradient data ───────────────────────
   const crossEdges = useMemo(() => {
@@ -379,11 +379,228 @@ export function WorldMap({ worldData }: WorldMapProps) {
   // ── Room short name lookup ────────────────────────────────────────
   const roomShorts = useMemo(() => {
     const m = new Map<string, string>();
-    const rooms =
-      wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
+    const rooms = wsRooms.length > 0 ? wsRooms : (worldData?.rooms ?? []);
     for (const r of rooms) m.set(r.id, r.short);
     return m;
   }, [wsRooms, worldData]);
+
+  // ── 2.1: Map Materialization on First Load ────────────────────────
+  useEffect(() => {
+    if (
+      hasInitializedRef.current ||
+      !svgRef.current ||
+      prefersReducedMotion() ||
+      allPositions.length === 0
+    )
+      return;
+    hasInitializedRef.current = true;
+
+    const svg = svgRef.current;
+    const hubPos = posMap.get(startRoom);
+
+    // Sort rooms by distance from hub
+    const sorted = [...allPositions].sort((a, b) => {
+      if (!hubPos) return 0;
+      const da = Math.sqrt((a.x - hubPos.x) ** 2 + (a.y - hubPos.y) ** 2);
+      const db = Math.sqrt((b.x - hubPos.x) ** 2 + (b.y - hubPos.y) ** 2);
+      return da - db;
+    });
+
+    const roomEls = sorted
+      .map((r) => svg.querySelector(`[data-room-id="${r.id}"]`))
+      .filter((el): el is Element => el != null);
+
+    const edgeEls = svg.querySelectorAll("line");
+
+    const tl = createTimeline({
+      defaults: { duration: 400 },
+    });
+
+    // Hub first
+    if (roomEls.length > 0) {
+      tl.add(roomEls[0]!, {
+        scale: [0, 1],
+        opacity: [0, 1],
+        ease: SPRING_BOUNCY,
+        duration: 600,
+      });
+    }
+
+    // Remaining rooms
+    if (roomEls.length > 1) {
+      tl.add(
+        roomEls.slice(1),
+        {
+          scale: [0, 1],
+          opacity: [0, 1],
+          delay: stagger(40),
+          ease: SPRING_BOUNCY,
+        },
+        "-=300",
+      );
+    }
+
+    // Edges
+    if (edgeEls.length > 0) {
+      tl.add(
+        edgeEls,
+        {
+          opacity: [
+            0,
+            (el: Element) => {
+              const current = el.getAttribute("opacity");
+              return current ? Number.parseFloat(current) : 0.3;
+            },
+          ],
+          delay: stagger(20),
+          duration: 300,
+        },
+        "-=200",
+      );
+    }
+  }, [allPositions, posMap, startRoom]);
+
+  // ── 2.2: Entity Movement Trails ───────────────────────────────────
+  useEffect(() => {
+    if (prefersReducedMotion() || !trailsRef.current || allPositions.length === 0) return;
+
+    // Process latest events for movement
+    for (const ev of eventFeed.slice(0, 20)) {
+      if (ev.type === "entity_enter" && ev.entity && ev.room) {
+        const prevRoom = entityRoomRef.current.get(ev.entity);
+        entityRoomRef.current.set(ev.entity, ev.room);
+
+        if (prevRoom && prevRoom !== ev.room && activeTrailsRef.current < 10) {
+          const from = posMap.get(prevRoom);
+          const to = posMap.get(ev.room);
+          if (!from || !to) continue;
+
+          activeTrailsRef.current++;
+
+          // Determine color by entity kind
+          const ent = wsEntities.find((e) => e.id === ev.entity);
+          const color =
+            ent?.kind === "agent" ? "#00ffe7" : ent?.kind === "npc" ? "#ffcc00" : "#5a6a7a";
+
+          // Create temp SVG circle
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("r", "3");
+          circle.setAttribute("fill", color);
+          circle.setAttribute("filter", "url(#glow-sm)");
+          circle.setAttribute("cx", String(from.x));
+          circle.setAttribute("cy", String(from.y));
+          trailsRef.current.appendChild(circle);
+
+          animate(circle, {
+            cx: [from.x, to.x],
+            cy: [from.y, to.y],
+            opacity: [0.8, 0],
+            r: [3, 1.5],
+            duration: 800,
+            ease: "outQuad",
+            onComplete: () => {
+              circle.remove();
+              activeTrailsRef.current--;
+            },
+          });
+        }
+      } else if (ev.type === "entity_leave" && ev.entity && ev.room) {
+        entityRoomRef.current.set(ev.entity, ev.room);
+      }
+    }
+  }, [eventFeed, posMap, allPositions, wsEntities]);
+
+  // ── 2.3: Room Activity Breathing ──────────────────────────────────
+  useEffect(() => {
+    if (prefersReducedMotion() || !svgRef.current) return;
+
+    function recomputeBreathing() {
+      if (!svgRef.current) return;
+      const now = Date.now();
+      const thirtySecsAgo = now - 30_000;
+
+      // Count events per room in last 30s
+      const roomActivity = new Map<string, number>();
+      for (const ev of eventFeed) {
+        if (ev.timestamp < thirtySecsAgo) break;
+        if (ev.room) {
+          roomActivity.set(ev.room, (roomActivity.get(ev.room) ?? 0) + 1);
+        }
+      }
+
+      const maxActivity = Math.max(1, ...roomActivity.values());
+
+      for (const [roomId, count] of roomActivity) {
+        const halo = svgRef.current!.querySelector(`[data-room-halo="${roomId}"]`);
+        if (!halo) continue;
+
+        // Cancel previous animation
+        const prev = breatheAnimsRef.current.get(roomId);
+        if (prev) prev.pause();
+
+        const intensity = count / maxActivity;
+        const dur = Math.max(800, 2500 - intensity * 1500);
+
+        const anim = animate(halo, {
+          opacity: [0.15, 0.15 + intensity * 0.4, 0.15],
+          duration: dur,
+          loop: true,
+          ease: "inOutSine",
+        });
+        breatheAnimsRef.current.set(roomId, anim);
+      }
+    }
+
+    recomputeBreathing();
+    breatheTimerRef.current = setInterval(recomputeBreathing, 5000);
+
+    return () => {
+      if (breatheTimerRef.current) {
+        clearInterval(breatheTimerRef.current);
+      }
+      for (const anim of breatheAnimsRef.current.values()) {
+        anim.pause();
+      }
+      breatheAnimsRef.current.clear();
+    };
+  }, [eventFeed]);
+
+  // ── 2.4: Selection Ripple ─────────────────────────────────────────
+  useEffect(() => {
+    if (
+      !selectedRoom ||
+      selectedRoom === prevSelectedRef.current ||
+      prefersReducedMotion() ||
+      !rippleRef.current
+    ) {
+      prevSelectedRef.current = selectedRoom;
+      return;
+    }
+    prevSelectedRef.current = selectedRoom;
+
+    const pos = posMap.get(selectedRoom);
+    if (!pos) return;
+
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    const color = getDistrictColor(pos.district);
+    circle.setAttribute("cx", String(pos.x));
+    circle.setAttribute("cy", String(pos.y));
+    circle.setAttribute("r", "0");
+    circle.setAttribute("fill", "none");
+    circle.setAttribute("stroke", color);
+    circle.setAttribute("stroke-width", "2");
+    circle.setAttribute("opacity", "0.6");
+    rippleRef.current.appendChild(circle);
+
+    animate(circle, {
+      r: [0, 60],
+      opacity: [0.6, 0],
+      strokeWidth: [2, 0.5],
+      duration: 600,
+      ease: "outQuad",
+      onComplete: () => circle.remove(),
+    });
+  }, [selectedRoom, posMap]);
 
   // ── Stable callbacks for memoized children ────────────────────────
   const handleRoomSelect = useCallback(
@@ -394,12 +611,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
   );
 
   const handleRoomHover = useCallback(
-    (
-      room: RoomPosition,
-      radius: number,
-      short: string,
-      names: string[],
-    ) => {
+    (room: RoomPosition, radius: number, short: string, names: string[]) => {
       const lines = [short];
       if (names.length > 0) lines.push(names.join(", "));
       setTooltip({ x: room.x, y: room.y - radius - 18, lines });
@@ -428,18 +640,15 @@ export function WorldMap({ worldData }: WorldMapProps) {
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 0)
-      dragRef.current = { x: e.clientX, y: e.clientY };
+    if (e.button === 0) dragRef.current = { x: e.clientX, y: e.clientY };
   }, []);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (!dragRef.current || !svgRef.current) return;
       const rect = svgRef.current.getBoundingClientRect();
-      const dx =
-        ((e.clientX - dragRef.current.x) / rect.width) * viewBox.w;
-      const dy =
-        ((e.clientY - dragRef.current.y) / rect.height) * viewBox.h;
+      const dx = ((e.clientX - dragRef.current.x) / rect.width) * viewBox.w;
+      const dy = ((e.clientY - dragRef.current.y) / rect.height) * viewBox.h;
       dragRef.current = { x: e.clientX, y: e.clientY };
       setViewBox((vb) => ({ ...vb, x: vb.x - dx, y: vb.y - dy }));
     },
@@ -514,18 +723,14 @@ export function WorldMap({ worldData }: WorldMapProps) {
           if (allPositions.length === 0) break;
           const dir = e.shiftKey ? -1 : 1;
           const curIdx = highlightedRoom
-            ? allPositions.findIndex(
-                (p) => p.id === highlightedRoom,
-              )
+            ? allPositions.findIndex((p) => p.id === highlightedRoom)
             : -1;
           let next: number;
           if (curIdx === -1) {
             next = dir > 0 ? 0 : allPositions.length - 1;
           } else {
             next =
-              (((curIdx + dir) % allPositions.length) +
-                allPositions.length) %
-              allPositions.length;
+              (((curIdx + dir) % allPositions.length) + allPositions.length) % allPositions.length;
           }
           const pos = allPositions[next]!;
           setHighlightedRoom(pos.id);
@@ -535,11 +740,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
         case "Enter":
           e.preventDefault();
           if (highlightedRoom) {
-            selectRoom(
-              selectedRoom === highlightedRoom
-                ? null
-                : highlightedRoom,
-            );
+            selectRoom(selectedRoom === highlightedRoom ? null : highlightedRoom);
           }
           break;
         case "Escape":
@@ -547,30 +748,23 @@ export function WorldMap({ worldData }: WorldMapProps) {
           break;
       }
     },
-    [
-      zoomBy,
-      panViewTo,
-      allPositions,
-      highlightedRoom,
-      selectRoom,
-      selectedRoom,
-    ],
+    [zoomBy, panViewTo, allPositions, highlightedRoom, selectRoom, selectedRoom],
   );
 
   const isHub = (id: string) => id === startRoom;
 
   return (
     <GlassPanel
-      title={
-        worldName ? `World Map — ${worldName}` : "World Map"
-      }
+      title={worldName ? `World Map — ${worldName}` : "World Map"}
       icon={<MapIcon size={14} />}
+      backContent={backContent}
     >
       <svg
         ref={svgRef}
-        tabIndex={0}
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
         className="h-full w-full cursor-grab outline-none focus:ring-1 focus:ring-primary/40 active:cursor-grabbing"
+        role="img"
+        aria-label="World map"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -580,26 +774,14 @@ export function WorldMap({ worldData }: WorldMapProps) {
       >
         {/* ── Definitions ─────────────────────────────────── */}
         <defs>
-          <filter
-            id="glow-sm"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
+          <filter id="glow-sm" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="2" result="b" />
             <feMerge>
               <feMergeNode in="b" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter
-            id="glow-md"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
+          <filter id="glow-md" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="4" result="b" />
             <feMerge>
               <feMergeNode in="b" />
@@ -609,25 +791,10 @@ export function WorldMap({ worldData }: WorldMapProps) {
 
           {/* District zone radial gradients */}
           {districtZones.map((z) => (
-            <radialGradient
-              key={`zg-${z.district}`}
-              id={`zg-${z.district}`}
-            >
-              <stop
-                offset="0%"
-                stopColor={z.color}
-                stopOpacity="0.07"
-              />
-              <stop
-                offset="60%"
-                stopColor={z.color}
-                stopOpacity="0.025"
-              />
-              <stop
-                offset="100%"
-                stopColor={z.color}
-                stopOpacity="0"
-              />
+            <radialGradient key={`zg-${z.district}`} id={`zg-${z.district}`}>
+              <stop offset="0%" stopColor={z.color} stopOpacity="0.07" />
+              <stop offset="60%" stopColor={z.color} stopOpacity="0.025" />
+              <stop offset="100%" stopColor={z.color} stopOpacity="0" />
             </radialGradient>
           ))}
 
@@ -642,18 +809,18 @@ export function WorldMap({ worldData }: WorldMapProps) {
               y2={g.to.y}
               gradientUnits="userSpaceOnUse"
             >
-              <stop
-                offset="0%"
-                stopColor={g.fromColor}
-                stopOpacity="0.7"
-              />
-              <stop
-                offset="100%"
-                stopColor={g.toColor}
-                stopOpacity="0.7"
-              />
+              <stop offset="0%" stopColor={g.fromColor} stopOpacity="0.7" />
+              <stop offset="100%" stopColor={g.toColor} stopOpacity="0.7" />
             </linearGradient>
           ))}
+
+          {/* Arrowhead markers for directional edges */}
+          <marker id="arrow-cyan" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#00ffe7" opacity="0.6" />
+          </marker>
+          <marker id="arrow-dim" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#5a6a7a" opacity="0.5" />
+          </marker>
         </defs>
 
         {/* ── Layer 1: District ambient zones ─────────────── */}
@@ -686,9 +853,9 @@ export function WorldMap({ worldData }: WorldMapProps) {
           </text>
         ))}
 
-        {/* ── Layer 3: Within-district edges ──────────────── */}
+        {/* ── Layer 3: Adjacent grid edges (solid, prominent) ── */}
         {allEdges
-          .filter((e) => !e.crossDistrict)
+          .filter((e) => e.gridEdge && e.adjacent)
           .map((edge) => {
             const from = posMap.get(edge.from);
             const to = posMap.get(edge.to);
@@ -702,7 +869,59 @@ export function WorldMap({ worldData }: WorldMapProps) {
                 y2={to.y}
                 stroke={getDistrictColor(from.district)}
                 strokeWidth={1.2}
-                opacity={0.3}
+                opacity={0.35}
+              />
+            );
+          })}
+
+        {/* ── Layer 3a: Non-adjacent grid edges (curved, dashed) ── */}
+        {allEdges
+          .filter((e) => e.gridEdge && !e.adjacent)
+          .map((edge) => {
+            const from = posMap.get(edge.from);
+            const to = posMap.get(edge.to);
+            if (!from || !to) return null;
+            const mx = (from.x + to.x) / 2;
+            const my = (from.y + to.y) / 2;
+            // Curve control point perpendicular to midpoint
+            const dx = to.x - from.x;
+            const dy = to.y - from.y;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const cx = mx + (-dy / len) * 30;
+            const cy = my + (dx / len) * 30;
+            return (
+              <path
+                key={`e-${edge.from}-${edge.to}`}
+                d={`M${from.x},${from.y} Q${cx},${cy} ${to.x},${to.y}`}
+                stroke={getDistrictColor(from.district)}
+                strokeWidth={0.8}
+                opacity={0.25}
+                fill="none"
+                strokeDasharray="6 3"
+                markerEnd={!edge.bidirectional ? "url(#arrow-dim)" : undefined}
+              />
+            );
+          })}
+
+        {/* ── Layer 3b: Non-grid within-district edges (directional) */}
+        {allEdges
+          .filter((e) => !e.crossDistrict && !e.gridEdge)
+          .map((edge) => {
+            const from = posMap.get(edge.from);
+            const to = posMap.get(edge.to);
+            if (!from || !to) return null;
+            return (
+              <line
+                key={`e-${edge.from}-${edge.to}`}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke={getDistrictColor(from.district)}
+                strokeWidth={0.8}
+                opacity={0.15}
+                strokeDasharray="4 4"
+                markerEnd={!edge.bidirectional ? "url(#arrow-dim)" : undefined}
               />
             );
           })}
@@ -719,6 +938,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
             strokeWidth={1.5}
             opacity={0.5}
             strokeDasharray="8 4"
+            markerEnd={!g.edge.bidirectional ? "url(#arrow-cyan)" : undefined}
           />
         ))}
 
@@ -732,13 +952,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
           const y2 = reverse ? g.from.y : g.to.y;
           const color = reverse ? g.toColor : g.fromColor;
           return (
-            <circle
-              key={`pulse-${i}`}
-              r={1.8}
-              fill={color}
-              opacity={0}
-              filter="url(#glow-sm)"
-            >
+            <circle key={`pulse-${i}`} r={1.8} fill={color} opacity={0} filter="url(#glow-sm)">
               <animate
                 attributeName="cx"
                 from={x1}
@@ -767,15 +981,50 @@ export function WorldMap({ worldData }: WorldMapProps) {
           );
         })}
 
+        {/* ── Layer 5b: Pulse particles on grid edges ─────── */}
+        {gridEdgesResolved.map((g, i) => {
+          const dur = 4 + (i % 5);
+          const reverse = i % 2 === 1;
+          const x1 = reverse ? g.to.x : g.from.x;
+          const y1 = reverse ? g.to.y : g.from.y;
+          const x2 = reverse ? g.from.x : g.to.x;
+          const y2 = reverse ? g.from.y : g.to.y;
+          return (
+            <circle key={`gpulse-${i}`} r={1.2} fill={g.color} opacity={0}>
+              <animate
+                attributeName="cx"
+                from={x1}
+                to={x2}
+                dur={`${dur}s`}
+                repeatCount="indefinite"
+                begin={`${i * 0.5}s`}
+              />
+              <animate
+                attributeName="cy"
+                from={y1}
+                to={y2}
+                dur={`${dur}s`}
+                repeatCount="indefinite"
+                begin={`${i * 0.5}s`}
+              />
+              <animate
+                attributeName="opacity"
+                values="0;0.5;0.5;0"
+                keyTimes="0;0.15;0.85;1"
+                dur={`${dur}s`}
+                repeatCount="indefinite"
+                begin={`${i * 0.5}s`}
+              />
+            </circle>
+          );
+        })}
+
         {/* ── Layer 6: Room nodes (memoized) ──────────────── */}
         {allPositions.map((room) => {
           const pop = roomPops[room.id] ?? 0;
           const ents = entityPositions.get(room.id);
           const names = ents?.map((ent) => ent.name) || [];
-          const short =
-            roomShorts.get(room.id) ??
-            room.id.split("/")[1] ??
-            room.id;
+          const short = roomShorts.get(room.id) ?? room.id.split("/")[1] ?? room.id;
           return (
             <RoomNode
               key={room.id}
@@ -794,22 +1043,26 @@ export function WorldMap({ worldData }: WorldMapProps) {
         })}
 
         {/* ── Layer 7: Entity orbit dots (memoized) ───────── */}
-        {Array.from(entityPositions.entries()).map(
-          ([roomId, ents]) => {
-            const pos = posMap.get(roomId);
-            if (!pos) return null;
-            return (
-              <EntityDots
-                key={roomId}
-                roomId={roomId}
-                entities={ents}
-                pos={pos}
-                isHub={isHub(roomId)}
-                onSelectEntity={selectEntity}
-              />
-            );
-          },
-        )}
+        {Array.from(entityPositions.entries()).map(([roomId, ents]) => {
+          const pos = posMap.get(roomId);
+          if (!pos) return null;
+          return (
+            <EntityDots
+              key={roomId}
+              roomId={roomId}
+              entities={ents}
+              pos={pos}
+              isHub={isHub(roomId)}
+              onSelectEntity={selectEntity}
+            />
+          );
+        })}
+
+        {/* ── Layer 8: Entity movement trails ─────────────── */}
+        <g ref={trailsRef} />
+
+        {/* ── Layer 9: Selection ripples ──────────────────── */}
+        <g ref={rippleRef} />
 
         {/* ── Tooltip ─────────────────────────────────────── */}
         {tooltip && (
@@ -817,9 +1070,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
             {(() => {
               const lineH = 10;
               const pad = 6;
-              const maxLen = Math.max(
-                ...tooltip.lines.map((l) => l.length),
-              );
+              const maxLen = Math.max(...tooltip.lines.map((l) => l.length));
               const w = Math.max(maxLen * 5 + pad * 2, 60);
               const h = tooltip.lines.length * lineH + pad * 2;
               return (
@@ -839,13 +1090,7 @@ export function WorldMap({ worldData }: WorldMapProps) {
                     <text
                       key={i}
                       x={tooltip.x}
-                      y={
-                        tooltip.y -
-                        h / 2 +
-                        pad +
-                        8 +
-                        i * lineH
-                      }
+                      y={tooltip.y - h / 2 + pad + 8 + i * lineH}
                       textAnchor="middle"
                       fill={i === 0 ? "#c8d6e5" : "#8a9ab0"}
                       fontSize={i === 0 ? 8 : 6.5}

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type Layout,
-  type ResponsiveLayouts,
   ResponsiveGridLayout,
+  type ResponsiveLayouts,
   useContainerWidth,
   verticalCompactor,
 } from "react-grid-layout";
@@ -20,6 +20,12 @@ import { RoomDetail } from "./components/RoomDetail";
 import { SystemMetrics } from "./components/SystemMetrics";
 import { WebChat } from "./components/WebChat";
 import { WorldMap } from "./components/WorldMap";
+import { EntityDistribution } from "./components/back-faces/EntityDistribution";
+import { EventDistribution } from "./components/back-faces/EventDistribution";
+import { RoomNeighborhood } from "./components/back-faces/RoomNeighborhood";
+import { SystemGauges } from "./components/back-faces/SystemGauges";
+import { TaskPipeline } from "./components/back-faces/TaskPipeline";
+import { WorldMapHeatmap } from "./components/back-faces/WorldMapHeatmap";
 
 const LAYOUT_KEY = "artilect-dashboard-layouts";
 
@@ -300,7 +306,10 @@ export default function App() {
               onDoubleClick={onHeaderDblClick("worldmap")}
               className={panelClass("worldmap")}
             >
-              <WorldMap worldData={worldData} />
+              <WorldMap
+                worldData={worldData}
+                backContent={<WorldMapHeatmap worldData={worldData} />}
+              />
             </div>
             <div
               key="entities"
@@ -310,7 +319,7 @@ export default function App() {
               onDoubleClick={onHeaderDblClick("entities")}
               className={panelClass("entities")}
             >
-              <EntityRoster />
+              <EntityRoster backContent={<EntityDistribution />} />
             </div>
             <div
               key="webchat"
@@ -330,7 +339,7 @@ export default function App() {
               onDoubleClick={onHeaderDblClick("room")}
               className={panelClass("room")}
             >
-              <RoomDetail />
+              <RoomDetail backContent={<RoomNeighborhood />} />
             </div>
             <div
               key="activity"
@@ -340,7 +349,7 @@ export default function App() {
               onDoubleClick={onHeaderDblClick("activity")}
               className={panelClass("activity")}
             >
-              <ActivityFeed />
+              <ActivityFeed backContent={<EventDistribution />} />
             </div>
             <div
               key="coordination"
@@ -350,7 +359,7 @@ export default function App() {
               onDoubleClick={onHeaderDblClick("coordination")}
               className={panelClass("coordination")}
             >
-              <CoordinationCard />
+              <CoordinationCard backContent={<TaskPipeline />} />
             </div>
             <div
               key="system"
@@ -360,7 +369,7 @@ export default function App() {
               onDoubleClick={onHeaderDblClick("system")}
               className={panelClass("system")}
             >
-              <SystemMetrics uptime={uptime} />
+              <SystemMetrics uptime={uptime} backContent={<SystemGauges />} />
             </div>
           </ResponsiveGridLayout>
         )}

@@ -3,12 +3,12 @@ import {
   BackgroundVariant,
   Controls,
   MiniMap,
-  ReactFlow,
-  useReactFlow,
-  ReactFlowProvider,
   type Node,
   type NodeDimensionChange,
   type OnSelectionChangeParams,
+  ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,6 +16,7 @@ import { CanvasToolbar } from "./components/CanvasToolbar";
 import { SearchBar } from "./components/SearchBar";
 import { fetchCanvases, useCanvas } from "./hooks/use-canvas";
 import { useCanvasWs } from "./hooks/use-canvas-ws";
+import { animateLayout as animateLayoutUtil, springEntrance } from "./lib/animations";
 import { defaultSize } from "./lib/layout";
 import type { CanvasData } from "./lib/types";
 import { nodeTypes } from "./nodes";
@@ -44,6 +45,7 @@ function CanvasInner() {
   const [dropping, setDropping] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
+  const prevNodeIdsRef = useRef<Set<string>>(new Set());
 
   // Load canvas list on mount — default to "global" canvas
   useEffect(() => {
@@ -70,6 +72,33 @@ function CanvasInner() {
 
   // Real-time updates via WebSocket
   useCanvasWs(selectedId, setNodes);
+
+  // ── Node entrance animation ─────────────────────────────────────────
+  useEffect(() => {
+    if (nodes.length === 0) return;
+
+    const currentIds = new Set(nodes.map((n) => n.id));
+    const newIds: string[] = [];
+    for (const id of currentIds) {
+      if (!prevNodeIdsRef.current.has(id)) {
+        newIds.push(id);
+      }
+    }
+    prevNodeIdsRef.current = currentIds;
+
+    if (newIds.length === 0) return;
+
+    // Slight delay to let DOM render
+    requestAnimationFrame(() => {
+      const elements = newIds
+        .map((id) => document.querySelector(`[data-id="${id}"]`))
+        .filter((el): el is Element => el != null);
+
+      if (elements.length > 0) {
+        springEntrance(elements);
+      }
+    });
+  }, [nodes]);
 
   // Track selected nodes for toolbar delete button
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
@@ -142,6 +171,14 @@ function CanvasInner() {
     }
     setFilteredIds(new Set(filtered.map((n) => n.id)));
   }, []);
+
+  // ── Animated layout callback for toolbar ────────────────────────────
+  const handleAnimateLayout = useCallback(
+    async (targetMap: Map<string, { x: number; y: number; w: number; h: number }>) => {
+      await animateLayoutUtil(nodes, targetMap, setNodes);
+    },
+    [nodes, setNodes],
+  );
 
   // ── Drag & Drop Upload ───────────────────────────────────────────────
 
@@ -251,6 +288,7 @@ function CanvasInner() {
           nodes={nodes}
           selectedCount={selectedNodeIds.length}
           onDelete={handleToolbarDelete}
+          onAnimateLayout={handleAnimateLayout}
         />
         <div className="w-px h-5 bg-gray-700" />
         <a
