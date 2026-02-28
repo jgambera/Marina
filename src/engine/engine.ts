@@ -44,6 +44,7 @@ import { emoteCommand } from "./commands/emote";
 import { examineCommand } from "./commands/examine";
 import { experimentCommand } from "./commands/experiment";
 import { exportCommand } from "./commands/export-cmd";
+import { gotoCommand } from "./commands/goto";
 import { groupCommand } from "./commands/group";
 import { helpCommand } from "./commands/help";
 import { ignoreCommand, isIgnoring } from "./commands/ignore";
@@ -51,6 +52,7 @@ import { inventoryCommand } from "./commands/inventory";
 import { dropCommand, getCommand, giveCommand } from "./commands/items";
 import { linkCommand } from "./commands/link";
 import { lookCommand } from "./commands/look";
+import { lsCommand } from "./commands/ls";
 import { macroCommand } from "./commands/macro";
 import { mapCommand } from "./commands/map";
 import { memoryCommand } from "./commands/memory";
@@ -1241,6 +1243,31 @@ export class Engine {
         moveEntity: (entityId, to) => this.entities.move(entityId, to),
         buildContext: (room) => this.buildContext(room),
         sendLook: (entityId) => this.sendLook(entityId),
+      }),
+    );
+
+    this.commands.registerBuiltin(
+      lsCommand({
+        getEntityRoom: (entityId) => this.getEntityRoom(entityId),
+        getAllRooms: () => this.rooms.all(),
+        getAllEntities: () => this.entities.all(),
+        getEntitiesInRoom: (room) => this.entities.inRoom(room),
+        getRoomBoards: this.boardManager
+          ? (roomId) => this.boardManager!.getBoardsForScope("room", roomId)
+          : undefined,
+      }),
+    );
+
+    this.commands.registerBuiltin(
+      gotoCommand({
+        getEntity: (id) => this.entities.get(id),
+        getRoomById: (id) => this.rooms.get(id),
+        hasRoom: (id) => this.rooms.has(id),
+        moveEntity: (entityId, to) => this.entities.move(entityId, to),
+        buildContext: (room) => this.buildContext(room),
+        sendLook: (entityId) => this.sendLook(entityId),
+        getAllEntities: () => this.entities.all(),
+        getEntityRoom: (entityId) => this.getEntityRoom(entityId),
       }),
     );
 
