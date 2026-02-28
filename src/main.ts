@@ -4,6 +4,7 @@ import { Engine } from "./engine/engine";
 import { Logger } from "./engine/logger";
 import type { Adapter } from "./net/adapter";
 import { DashboardBroadcaster } from "./net/dashboard-ws";
+import { LogServer } from "./net/log-server";
 import { formatPerception } from "./net/formatter";
 import { McpServerAdapter } from "./net/mcp-server";
 import { TelnetServer } from "./net/telnet-server";
@@ -18,6 +19,7 @@ import type { WorldDefinition } from "./world/world-definition";
 const WS_PORT = Number(process.env.WS_PORT) || 3300;
 const TELNET_PORT = Number(process.env.TELNET_PORT) || 4000;
 const MCP_PORT = Number(process.env.MCP_PORT) || 3301;
+const LOG_PORT = Number(process.env.LOG_PORT) || 3302;
 const TICK_MS = Number(process.env.TICK_MS) || 1000;
 const DB_PATH = process.env.DB_PATH || "artilect.db";
 
@@ -111,6 +113,15 @@ const dashboardBroadcaster = new DashboardBroadcaster();
 engine.addEventListener((event) => dashboardBroadcaster.broadcastEvent(event));
 const stateInterval = setInterval(() => dashboardBroadcaster.broadcastState(engine), 2000);
 
+// ─── Live Log Server ────────────────────────────────────────────────────────
+
+const logServer = new LogServer({
+  port: LOG_PORT,
+  resolveEntity: (id) => engine.entities.get(id)?.name,
+});
+engine.addEventListener((event) => logServer.handleEvent(event));
+logServer.start();
+
 // ─── Network Layer ────────────────────────────────────────────────────────────
 
 const wsServer = new WebSocketServer(engine, WS_PORT, rateLimiter);
@@ -163,6 +174,7 @@ async function shutdown() {
   }
 
   engine.shutdown(); // saves state + stops tick loop
+  logServer.stop();
   wsServer.stop();
   telnetServer.stop();
   mcpServer.stop();
