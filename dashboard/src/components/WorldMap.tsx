@@ -8,7 +8,7 @@ import {
   prefersReducedMotion,
   stagger,
 } from "../lib/animations";
-import type { EntitySummary, WorldData } from "../lib/types";
+import type { WorldData } from "../lib/types";
 import {
   type RoomPosition,
   computeLayout,
@@ -205,7 +205,7 @@ const RoomNode = React.memo(function RoomNode({
 // ── Memoized Entity Dots ──────────────────────────────────────────────
 interface EntityDotsProps {
   roomId: string;
-  entities: EntitySummary[];
+  entities: { id: string; name: string; kind: string }[];
   pos: RoomPosition;
   isHub: boolean;
   onSelectEntity: (name: string) => void;
@@ -445,13 +445,7 @@ export function WorldMap({ worldData, backContent }: WorldMapProps) {
       tl.add(
         edgeEls,
         {
-          opacity: [
-            0,
-            (el: Element) => {
-              const current = el.getAttribute("opacity");
-              return current ? Number.parseFloat(current) : 0.3;
-            },
-          ],
+          opacity: [0, 0.3],
           delay: stagger(20),
           duration: 300,
         },

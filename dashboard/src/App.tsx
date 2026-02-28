@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type Layout,
+  type LayoutItem,
   ResponsiveGridLayout,
   type ResponsiveLayouts,
   useContainerWidth,
@@ -93,7 +94,7 @@ function computeFocusedLayout(
 
   for (const bp of ["lg", "md"] as const) {
     const slots = bp === "lg" ? FOCUS_SLOTS_LG : FOCUS_SLOTS_MD;
-    const current = currentLayouts[bp];
+    const current = currentLayouts[bp] ?? [];
 
     // Sort remaining panels by position (y, x) for stable slot assignment
     const remaining = current
@@ -104,7 +105,7 @@ function computeFocusedLayout(
     const minW = focusedItem?.minW ?? 2;
     const minH = focusedItem?.minH ?? 2;
 
-    const layouts: Layout[] = [
+    const items: LayoutItem[] = [
       {
         i: focusedKey,
         ...slots.focused,
@@ -116,7 +117,7 @@ function computeFocusedLayout(
     for (let idx = 0; idx < remaining.length; idx++) {
       const item = remaining[idx]!;
       const slot = slots.rest[idx]!;
-      layouts.push({
+      items.push({
         i: item.i,
         ...slot,
         minW: item.minW ?? 2,
@@ -124,7 +125,7 @@ function computeFocusedLayout(
       });
     }
 
-    result[bp] = layouts;
+    result[bp] = items;
   }
 
   return result;

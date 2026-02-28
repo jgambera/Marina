@@ -1,4 +1,4 @@
-import type { AnimationParams } from "animejs";
+import type { AnimationParams, TargetsParam } from "animejs";
 import { useCallback, useEffect, useRef } from "react";
 import { animate, prefersReducedMotion } from "../lib/animations";
 
@@ -27,7 +27,7 @@ export function useAnimeRef() {
   }, []);
 
   const run = useCallback(
-    (key: string, targets: AnimationParams["targets"], props: Omit<AnimationParams, "targets">) => {
+    (key: string, targets: TargetsParam, props: AnimationParams) => {
       if (prefersReducedMotion()) return null;
 
       // Cancel previous animation in this slot
