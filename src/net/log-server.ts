@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import type { Server, ServerWebSocket } from "bun";
-import type { EntityId, EngineEvent } from "../types";
+import type { EngineEvent, EntityId } from "../types";
 
 export interface LogEntry {
   timestamp: number;
@@ -21,7 +21,7 @@ const MAX_BUFFER = 500;
 const VIEWER_INTERVAL_MS = 5000;
 
 export class LogServer {
-  private server: Server | null = null;
+  private server: Server<LogWSData> | null = null;
   private clients = new Set<ServerWebSocket<LogWSData>>();
   private buffer: string[] = []; // pre-serialized LogEntry JSON strings
   private port: number;

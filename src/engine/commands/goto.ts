@@ -16,7 +16,7 @@ export function gotoCommand(deps: {
     name: "goto",
     aliases: ["tp", "teleport"],
     help: "Teleport to a room or entity. Usage: goto <room-id|entity-name>",
-    minRank: 2 as 2,
+    minRank: 2 as const,
     handler: (ctx: RoomContext, input) => {
       if (!input.args) {
         ctx.send(input.entity, "Usage: goto <room-id|entity-name>");
