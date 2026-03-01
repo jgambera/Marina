@@ -38,6 +38,12 @@ export function buildConnectManifest(req: Request, engine: Engine): Response {
         port: 4000,
         description: "Raw TCP for simple line-based interaction",
       },
+      model: {
+        url: `http://${bare}:3300/v1`,
+        description: "OpenAI-compatible chat completions — world as model",
+        openai: `http://${bare}:3300/v1/chat/completions`,
+        ollama: `http://${bare}:3300/api/chat`,
+      },
     },
     skill: "/api/skill",
     health: "/health",

@@ -11,6 +11,7 @@ import { CanvasBroadcaster } from "./canvas-ws";
 import { buildConnectManifest, handleSkillRequest } from "./connect-api";
 import { handleDashboardApi } from "./dashboard-api";
 import type { DashboardBroadcaster, DashboardWSData } from "./dashboard-ws";
+import { handleModelApi } from "./model-api";
 
 const WEBCHAT_PATH = join(import.meta.dir, "webchat.html");
 const DASHBOARD_DIST = join(import.meta.dir, "../../dist/dashboard");
@@ -60,7 +61,7 @@ export class WebSocketServer {
       port: this.port,
       idleTimeout: 255,
 
-      fetch(req, server) {
+      async fetch(req, server) {
         const url = new URL(req.url);
 
         // CORS preflight
@@ -142,6 +143,20 @@ export class WebSocketServer {
         // Skill document
         if (url.pathname === "/api/skill") {
           return handleSkillRequest();
+        }
+
+        // Model API routes (OpenAI + Ollama compatible)
+        if (url.pathname.startsWith("/v1/")) {
+          const modelResp = await handleModelApi(url, req.method, req, engine);
+          if (modelResp) return modelResp;
+        }
+        if (
+          url.pathname === "/api/tags" ||
+          url.pathname === "/api/chat" ||
+          url.pathname === "/api/generate"
+        ) {
+          const modelResp = await handleModelApi(url, req.method, req, engine);
+          if (modelResp) return modelResp;
         }
 
         // API routes

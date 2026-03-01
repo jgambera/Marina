@@ -33,11 +33,29 @@ function rowToChannel(row: ChannelRow): Channel {
   };
 }
 
+export type ChannelMessageListener = (
+  channelId: string,
+  senderId: string,
+  senderName: string,
+  content: string,
+) => void;
+
 export class ChannelManager {
+  private messageListeners: ChannelMessageListener[] = [];
+
   constructor(
     private db: ArtilectDB,
     private sendToEntity: (target: EntityId, message: string) => void,
   ) {}
+
+  /** Register a listener invoked on every send(). Returns an unsubscribe function. */
+  onMessage(listener: ChannelMessageListener): () => void {
+    this.messageListeners.push(listener);
+    return () => {
+      const idx = this.messageListeners.indexOf(listener);
+      if (idx >= 0) this.messageListeners.splice(idx, 1);
+    };
+  }
 
   createChannel(opts: {
     type: string;
@@ -126,6 +144,13 @@ export class ChannelManager {
           fmtChannel(channelName, senderName, content),
         );
       }
+    }
+
+    // Fire message listeners
+    for (const listener of this.messageListeners) {
+      try {
+        listener(channelId, senderId, senderName, content);
+      } catch {}
     }
   }
 
