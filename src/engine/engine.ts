@@ -2,6 +2,7 @@ import { join } from "node:path";
 import type { RateLimiter } from "../auth/rate-limiter";
 import { SessionManager } from "../auth/session-manager";
 import { connects, disconnects } from "../net/ansi";
+import { cleanupStaleConversationChannels } from "../net/model-api";
 import type { ArtilectDB } from "../persistence/database";
 import type {
   CommandContext,
@@ -592,6 +593,12 @@ export class Engine {
     if (this.tickCount % 1800 === 0 && this.channelManager) {
       try {
         this.channelManager.pruneExpiredMessages();
+      } catch {}
+    }
+    // Hourly: clean up stale model conversation channels
+    if (this.tickCount % 3600 === 0 && this.channelManager) {
+      try {
+        cleanupStaleConversationChannels(this.channelManager);
       } catch {}
     }
     // Hourly: adjust note importance based on recall patterns

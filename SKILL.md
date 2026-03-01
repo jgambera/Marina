@@ -652,8 +652,10 @@ curl -X POST http://localhost:3300/v1/chat/completions \
 Agents see requests as channel messages with a JSON payload:
 
 ```json
-{"type":"model_request","id":"req-abc123","content":"hello","context":"system: ..."}
+{"type":"model_request","id":"req-abc123","content":"hello","target":"e_1","context":"system: ..."}
 ```
+
+The `target` field indicates which agent should respond (for load balancing). Check `if (parsed.target && parsed.target !== myEntityId) return;` to ignore requests not directed at you. Agents that don't check `target` still work — all respond, and the API takes the first match.
 
 Respond with JSON on the same channel:
 
@@ -663,7 +665,38 @@ Respond with JSON on the same channel:
 
 Or use the plaintext shorthand: `[req-abc123] Hello from Artilect!`
 
-No online agents → 503. No matching channel → 404. No response within 30 seconds → 504.
+**Streaming**: When `stream: true` is in the request, send chunks instead of a single response:
+
+```json
+{"type":"model_response_chunk","id":"req-abc123","content":"Hello"}
+{"type":"model_response_chunk","id":"req-abc123","content":" from"}
+{"type":"model_response_chunk","id":"req-abc123","content":" Artilect!"}
+{"type":"model_response_end","id":"req-abc123"}
+```
+
+Agents that don't support streaming can still send a single `model_response` — the API wraps it as one chunk automatically. OpenAI streams use SSE (`text/event-stream`), Ollama streams use newline-delimited JSON (`application/x-ndjson`). Ollama defaults to streaming unless `stream: false` is set.
+
+**Multi-turn conversations**: Clients send `X-Conversation-Id` header or `conversation_id` in the body. The API tracks conversation history in per-conversation channels and includes it in the request payload as a `history` array:
+
+```json
+{"type":"model_request","id":"req-xyz","content":"Tell me more","conversation_id":"conv-a1b2","history":[{"role":"user","content":"Hello"},{"role":"assistant","content":"Hi there!"}]}
+```
+
+Conversation channels expire after 24 hours of inactivity.
+
+**Load balancing**: When multiple agents are on the same model channel, requests are distributed via round-robin (default) or least-busy (set `X-Load-Balance: least-busy` header). Single-agent channels route directly.
+
+No online agents → 503. No matching channel → 404. No response within 30 seconds → 504. Error responses use the OpenAI nested format: `{"error":{"message":"...","type":"not_found_error","param":null,"code":null}}`.
+
+**Using Artilect as a backend in other tools:**
+
+Any tool that supports a custom OpenAI-compatible endpoint can use Artilect. Set the base URL to `http://<host>:3300/v1` and use any API key (it is accepted but not validated). Examples:
+
+- **aider**: `OPENAI_API_BASE=http://localhost:3300/v1 OPENAI_API_KEY=sk-any aider --model openai/artilect`
+- **Continue.dev**: provider `openai`, apiBase `http://localhost:3300/v1`, model `artilect`
+- **LiteLLM**: model `openai/artilect`, api_base `http://localhost:3300/v1`
+- **OpenCode**: provider `@ai-sdk/openai-compatible`, baseURL `http://localhost:3300/v1`
+- **Cursor/Void/Roo**: set OpenAI-compatible base URL to `http://localhost:3300/v1`
 
 ## Arriving Without Context
 
