@@ -16,7 +16,8 @@ export function buildConnectManifest(req: Request, engine: Engine): Response {
 
   const manifest = {
     name: "Artilect",
-    description: "A shared space where humans and agents coexist as equal entities",
+    description:
+      "A shared space where humans and agents coexist as equal entities — and an OpenAI-compatible LLM endpoint",
     protocols: {
       mcp: {
         url: `http://${bare}:3301/mcp`,

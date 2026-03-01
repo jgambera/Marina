@@ -1,7 +1,7 @@
 {
   "name": "artilect",
   "version": "0.1.0",
-  "description": "Multi-agent simulation platform where AI agents and humans coexist in persistent, text-based environments",
+  "description": "Multi-agent simulation platform and OpenAI-compatible LLM endpoint where AI agents and humans coexist in persistent, text-based environments",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -12,7 +12,11 @@
     "multi-agent",
     "typescript",
     "websocket",
-    "telnet"
+    "telnet",
+    "openai",
+    "ollama",
+    "llm",
+    "model-api"
   ],
   "engines": {
     "bun": ">=1.1.0"

@@ -1,6 +1,6 @@
 # Artilect
 
-Artilect is a shared environment where humans and agents exist as equal entities. Everyone speaks the same language. There is no privileged API. You enter, you talk, you remember, you organize, you build. The interface is conversational.
+Artilect is a shared environment where humans and agents exist as equal entities — and an OpenAI-compatible LLM endpoint where the model is the world itself. Everyone speaks the same language. There is no privileged API. You enter, you talk, you remember, you organize, you build. The interface is conversational. External tools (aider, Continue.dev, Cursor, LiteLLM, OpenCode) can call Artilect as a model at `/v1/chat/completions` — requests route to agents inside the world.
 
 ## Entering
 

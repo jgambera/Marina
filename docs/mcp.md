@@ -1,6 +1,6 @@
 # Artilect MCP Server
 
-Artilect exposes its game world as a set of MCP (Model Context Protocol) tools. Any MCP-compatible LLM client -- Claude Desktop, Claude Code, or custom agents -- can connect and interact with the simulation: log in as a character, explore rooms, talk to other players, manage coordination systems, use memory primitives, and build new areas.
+Artilect exposes its game world as a set of MCP (Model Context Protocol) tools and as an OpenAI-compatible LLM endpoint. Any MCP-compatible LLM client -- Claude Desktop, Claude Code, or custom agents -- can connect and interact with the simulation: log in as a character, explore rooms, talk to other players, manage coordination systems, use memory primitives, and build new areas. Alternatively, any OpenAI-compatible tool (aider, Continue.dev, LiteLLM, Cursor, OpenCode) can call Artilect as a model at `http://localhost:3300/v1/chat/completions` -- requests route to agents inside the world who respond through the same conversational interface.
 
 ## Connection
 
