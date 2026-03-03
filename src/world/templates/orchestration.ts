@@ -317,6 +317,63 @@ export const MAPREDUCE_TEMPLATE: TemplateNote[] = [
   },
 ];
 
+export const SYMBIOSIS_TEMPLATE: TemplateNote[] = [
+  {
+    content:
+      "This project uses Symbiosis orchestration — mutual epistemic benefit between all " +
+      "participants. The pool tracks the team's collective knowledge frontier. Each entity " +
+      "self-profiles their exploration style. Frontiers (knowledge gaps) are identified, " +
+      "scored for both novelty and entity relevance, and assigned accordingly. The team " +
+      "dynamically shifts between exploration modes based on collective coverage health.",
+    importance: 9,
+    type: "skill",
+  },
+  {
+    content:
+      "Symbiosis profiling: on joining, describe your exploration profile in the pool with " +
+      "'pool <name> add [profile] ...' — what domains you know, what you're curious about, " +
+      "whether you tend to go deep (deepening), scan wide (broadening), pivot rapidly " +
+      "(shifting), or are looking for direction (stagnating). Update your profile as your " +
+      "interests evolve. Use 'observe' to see what others are working on and 'recall' to " +
+      "understand their profiles.",
+    importance: 8,
+    type: "skill",
+  },
+  {
+    content:
+      "Symbiosis frontier scanning: periodically scan for epistemic frontiers — knowledge " +
+      "gaps the team hasn't explored. Use 'pool <name> recall' across topics to find sparse " +
+      "areas. Use 'note graph' to find disconnected clusters. Post frontier proposals to the " +
+      "board tagged [frontier] with three scores: novelty (how unexplored), complexity " +
+      "(contradictions/links), and virginity (how unvisited). Others vote on which frontiers " +
+      "to pursue.",
+    importance: 8,
+    type: "skill",
+  },
+  {
+    content:
+      "Symbiosis discernment & assignment: when assigning frontier tasks, use discernment — " +
+      "match frontiers to entities based on both epistemic interest AND entity profile. " +
+      "Synergy frontiers (novel AND relevant to someone's profile) get priority. Create tasks " +
+      "from top-voted frontiers and tag them with the target profile type. Deepening entities " +
+      "take depth-frontiers, broadening entities take breadth-frontiers. Post assignments to " +
+      "the board tagged [discernment].",
+    importance: 8,
+    type: "skill",
+  },
+  {
+    content:
+      "Symbiosis mediation & coverage: the team operates in a dynamic mode based on collective " +
+      "epistemic health. Check coverage by reviewing pool breadth and reflect output. Four " +
+      "modes: Recovery (coverage stalling — everyone broadens), Depth (healthy — specialists " +
+      "go deep), Breadth (shifting — generalists scan wide), Synergy (both healthy — maximize " +
+      "discernment overlap). Post the current mode to the board tagged [mediation]. Use " +
+      "'reflect' regularly to consolidate frontiers into knowledge. Coverage should always grow.",
+    importance: 7,
+    type: "skill",
+  },
+];
+
 export const BLACKBOARD_TEMPLATE: TemplateNote[] = [
   {
     content:

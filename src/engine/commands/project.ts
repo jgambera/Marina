@@ -19,6 +19,7 @@ import {
   NSED_TEMPLATE,
   PIPELINE_TEMPLATE,
   SWARM_TEMPLATE,
+  SYMBIOSIS_TEMPLATE,
   type TemplateNote,
 } from "../../world/templates/orchestration";
 
@@ -31,6 +32,7 @@ const VALID_ORCHESTRATIONS = new Set([
   "debate",
   "mapreduce",
   "blackboard",
+  "symbiosis",
   "custom",
 ]);
 const VALID_MEMORY_ARCHS = new Set(["memgpt", "generative", "graph", "shared", "custom"]);
@@ -53,6 +55,8 @@ function getOrchestrationTemplate(name: string): TemplateNote[] | undefined {
       return MAPREDUCE_TEMPLATE;
     case "blackboard":
       return BLACKBOARD_TEMPLATE;
+    case "symbiosis":
+      return SYMBIOSIS_TEMPLATE;
     default:
       return undefined;
   }
@@ -298,7 +302,7 @@ export function projectCommand(opts: {
           if (!pattern) {
             ctx.send(
               input.entity,
-              "Usage: project <name> orchestrate nsed|goosetown|gastown|swarm|pipeline|debate|mapreduce|blackboard|custom <desc>",
+              "Usage: project <name> orchestrate nsed|goosetown|gastown|swarm|pipeline|debate|mapreduce|blackboard|symbiosis|custom <desc>",
             );
             return;
           }
