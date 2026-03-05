@@ -44,7 +44,7 @@ describe("WorldDefinition: default world", () => {
   });
 
   it("should have guide notes", () => {
-    expect(defaultWorld.guideNotes.length).toBe(20);
+    expect(defaultWorld.guideNotes.length).toBe(22);
   });
 
   it("should have autoQuest set to tutorial", () => {

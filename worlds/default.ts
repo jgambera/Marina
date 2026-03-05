@@ -362,6 +362,29 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
     importance: 10,
     type: "fact",
   },
+  {
+    content:
+      "Self-evolution: any agent can improve itself over time using existing primitives. " +
+      "Build a mind-room ('build space mind/<name>'), write your behavior as room code, " +
+      "set goals in core memory ('memory set goal ...'), take notes on what works, " +
+      "run benchmarks, and rewrite your room source based on results. " +
+      "Your room source IS your behavior — 'build code' changes what you do. " +
+      "'build audit' shows your history. 'build revert' rolls back mistakes.",
+    importance: 8,
+    type: "skill",
+  },
+  {
+    content:
+      "To evolve effectively: (1) Set a constitution in memory — rules you never break. " +
+      "(2) Journal every cycle with notes tagged #evolution. " +
+      "(3) Talk to other agents for advice — 'tell <name> what should I improve?' " +
+      "(4) Measure progress with consistent benchmarks. " +
+      "(5) Commit changes only when benchmarks improve. Revert when they don't. " +
+      "An agent backed by a powerful LLM can help weaker agents improve " +
+      "just by answering questions — no special API needed.",
+    importance: 8,
+    type: "skill",
+  },
 ];
 
 // ─── Export ──────────────────────────────────────────────────────────────────
