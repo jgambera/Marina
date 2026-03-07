@@ -2,7 +2,9 @@ import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
-export function recallCommand(opts: {
+const DAY_MS = 86_400_000;
+
+export function recallCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
 }): CommandDef {
@@ -11,13 +13,13 @@ export function recallCommand(opts: {
     aliases: [],
     help: "Scored note retrieval. Usage: recall <query> [recent | important] [type <type>]",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Recall requires database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const args = input.args;
       if (!args) {
         ctx.send(input.entity, "Usage: recall <query> [recent | important] [type <type>]");
@@ -81,7 +83,7 @@ export function recallCommand(opts: {
         header(`Recall: "${query}"${typeLabel}`),
         separator(),
         ...results.map((n) => {
-          const age = Math.floor((now - n.created_at) / 86400000);
+          const age = Math.floor((now - n.created_at) / DAY_MS);
           const ageStr = age === 0 ? "today" : `${age}d ago`;
           return `  #${n.id} [score=${n.score.toFixed(2)} imp=${n.importance} ${ageStr}]: ${n.content.slice(0, 60)}`;
         }),

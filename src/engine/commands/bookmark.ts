@@ -6,7 +6,7 @@ interface Bookmark {
   note?: string;
 }
 
-export function bookmarkCommand(opts: {
+export function bookmarkCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   getRoomShort: (id: RoomId) => string | undefined;
 }): CommandDef {
@@ -15,7 +15,7 @@ export function bookmarkCommand(opts: {
     aliases: ["bm"],
     help: "Save space bookmarks. Usage: bookmark | bookmark list | bookmark note <#> <text> | bookmark delete <#>",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
 
       const bookmarks: Bookmark[] = (entity.properties.bookmarks as Bookmark[]) ?? [];
@@ -31,7 +31,7 @@ export function bookmarkCommand(opts: {
         }
         bookmarks.push({ room: input.room });
         entity.properties.bookmarks = bookmarks;
-        const roomName = opts.getRoomShort(input.room) ?? input.room;
+        const roomName = deps.getRoomShort(input.room) ?? input.room;
         ctx.send(input.entity, `Bookmarked: ${roomName}`);
         return;
       }
@@ -46,7 +46,7 @@ export function bookmarkCommand(opts: {
             header("Bookmarks"),
             separator(),
             ...bookmarks.map((b, i) => {
-              const name = opts.getRoomShort(b.room) ?? b.room;
+              const name = deps.getRoomShort(b.room) ?? b.room;
               const note = b.note ? ` - ${b.note}` : "";
               return `  ${i + 1}. ${name} (${b.room})${note}`;
             }),

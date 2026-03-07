@@ -668,7 +668,9 @@ export class Engine {
           }
           entity.properties._greeted = greeted;
         }
-      } catch {}
+      } catch (err) {
+        console.error(`NPC behavior error for ${entity.name}:`, err);
+      }
     }
   }
 

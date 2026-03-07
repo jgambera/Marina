@@ -346,15 +346,18 @@ async function routeToChannel(
         if (senderId === "__model_api__") return;
 
         // Try JSON response format
+        let parsed: Record<string, string> | undefined;
         try {
-          const parsed = JSON.parse(content);
-          if (parsed.type === "model_response" && parsed.id === requestId) {
-            clearTimeout(timer);
-            unsub();
-            resolve({ content: parsed.content, conversationId: convId });
-            return;
-          }
-        } catch {}
+          parsed = JSON.parse(content);
+        } catch {
+          // Non-JSON — fall through to plaintext check
+        }
+        if (parsed?.type === "model_response" && parsed.id === requestId) {
+          clearTimeout(timer);
+          unsub();
+          resolve({ content: parsed.content, conversationId: convId });
+          return;
+        }
 
         // Fallback: plaintext "[req-abc123] response text"
         const prefix = `[${requestId}] `;
@@ -455,67 +458,68 @@ function routeToChannelStreaming(
         if (channelId !== channel.id) return;
         if (senderId === "__model_api__") return;
 
+        let parsed: Record<string, string>;
         try {
-          const parsed = JSON.parse(content);
+          parsed = JSON.parse(content);
+        } catch {
+          return; // Non-JSON message — skip
+        }
 
-          // Streaming chunk
-          if (parsed.type === "model_response_chunk" && parsed.id === reqId) {
-            collectedContent.push(parsed.content);
-            let chunk: string;
-            if (format === "openai") {
-              chunk = openaiStreamChunk(streamId, model, parsed.content);
-            } else {
-              chunk = ollamaStreamChunk(model, parsed.content, format === "ollama-chat");
-            }
-            controller.enqueue(encoder.encode(chunk));
-            return;
+        // Streaming chunk
+        if (parsed.type === "model_response_chunk" && parsed.id === reqId) {
+          collectedContent.push(parsed.content);
+          let chunk: string;
+          if (format === "openai") {
+            chunk = openaiStreamChunk(streamId, model, parsed.content);
+          } else {
+            chunk = ollamaStreamChunk(model, parsed.content, format === "ollama-chat");
           }
+          controller.enqueue(encoder.encode(chunk));
+          return;
+        }
 
-          // Streaming end
-          if (parsed.type === "model_response_end" && parsed.id === reqId) {
-            clearTimeout(timer);
-            unsub();
-            decrementPending(target);
-            let endChunk: string;
-            if (format === "openai") {
-              endChunk = openaiStreamEnd(streamId, model);
-            } else {
-              endChunk = ollamaStreamEnd(model, format === "ollama-chat");
-            }
-            controller.enqueue(encoder.encode(endChunk));
-            // Persist to conversation channel
-            if (convChannel) {
-              cm.send(convChannel.id, "__model_conv__", "user", userContent);
-              cm.send(convChannel.id, target, "agent", collectedContent.join(""));
-            }
-            controller.close();
-            return;
+        // Streaming end
+        if (parsed.type === "model_response_end" && parsed.id === reqId) {
+          clearTimeout(timer);
+          unsub();
+          decrementPending(target);
+          let endChunk: string;
+          if (format === "openai") {
+            endChunk = openaiStreamEnd(streamId, model);
+          } else {
+            endChunk = ollamaStreamEnd(model, format === "ollama-chat");
           }
+          controller.enqueue(encoder.encode(endChunk));
+          // Persist to conversation channel
+          if (convChannel) {
+            cm.send(convChannel.id, "__model_conv__", "user", userContent);
+            cm.send(convChannel.id, target, "agent", collectedContent.join(""));
+          }
+          controller.close();
+          return;
+        }
 
-          // Phase 1 compat: single model_response → wrap as one chunk + end
-          if (parsed.type === "model_response" && parsed.id === reqId) {
-            clearTimeout(timer);
-            unsub();
-            decrementPending(target);
-            collectedContent.push(parsed.content);
-            if (format === "openai") {
-              controller.enqueue(
-                encoder.encode(openaiStreamChunk(streamId, model, parsed.content)),
-              );
-              controller.enqueue(encoder.encode(openaiStreamEnd(streamId, model)));
-            } else {
-              controller.enqueue(
-                encoder.encode(ollamaStreamChunk(model, parsed.content, format === "ollama-chat")),
-              );
-              controller.enqueue(encoder.encode(ollamaStreamEnd(model, format === "ollama-chat")));
-            }
-            if (convChannel) {
-              cm.send(convChannel.id, "__model_conv__", "user", userContent);
-              cm.send(convChannel.id, target, "agent", parsed.content);
-            }
-            controller.close();
+        // Phase 1 compat: single model_response → wrap as one chunk + end
+        if (parsed.type === "model_response" && parsed.id === reqId) {
+          clearTimeout(timer);
+          unsub();
+          decrementPending(target);
+          collectedContent.push(parsed.content);
+          if (format === "openai") {
+            controller.enqueue(encoder.encode(openaiStreamChunk(streamId, model, parsed.content)));
+            controller.enqueue(encoder.encode(openaiStreamEnd(streamId, model)));
+          } else {
+            controller.enqueue(
+              encoder.encode(ollamaStreamChunk(model, parsed.content, format === "ollama-chat")),
+            );
+            controller.enqueue(encoder.encode(ollamaStreamEnd(model, format === "ollama-chat")));
           }
-        } catch {}
+          if (convChannel) {
+            cm.send(convChannel.id, "__model_conv__", "user", userContent);
+            cm.send(convChannel.id, target, "agent", parsed.content);
+          }
+          controller.close();
+        }
       });
 
       cm.send(channel.id, "__model_api__", "model-api", payload);

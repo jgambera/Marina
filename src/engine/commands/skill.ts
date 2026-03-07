@@ -2,7 +2,7 @@ import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
-export function skillCommand(opts: {
+export function skillCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
 }): CommandDef {
@@ -11,13 +11,13 @@ export function skillCommand(opts: {
     aliases: [],
     help: "Skill library. Usage: skill store <name> | <description> | <action_sequence> | skill search <query> | skill verify <id> | skill list | skill share <id> <pool> | skill compose <id1> <id2> ...",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Skills require database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const sub = input.tokens[0]?.toLowerCase();
 
       if (!sub) {

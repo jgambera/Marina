@@ -4,6 +4,9 @@ interface CanvasWSData {
   canvasId: string;
 }
 
+/** Any WebSocket that has at least a canvasId field. */
+type CanvasCompatibleWS = ServerWebSocket<{ canvasId?: string; [key: string]: unknown }>;
+
 export type CanvasEvent =
   | { type: "node_added"; canvasId: string; node: Record<string, unknown> }
   | { type: "node_updated"; canvasId: string; nodeId: string; changes: Record<string, unknown> }
@@ -14,10 +17,10 @@ export type CanvasEvent =
  * when nodes are added, updated, or deleted.
  */
 export class CanvasBroadcaster {
-  private clients = new Map<string, Set<ServerWebSocket<CanvasWSData>>>();
+  private clients = new Map<string, Set<CanvasCompatibleWS>>();
 
   /** Register a new WebSocket client for a specific canvas. */
-  addClient(ws: ServerWebSocket<CanvasWSData>, canvasId: string): void {
+  addClient(ws: CanvasCompatibleWS, canvasId: string): void {
     if (!this.clients.has(canvasId)) {
       this.clients.set(canvasId, new Set());
     }
@@ -25,7 +28,7 @@ export class CanvasBroadcaster {
   }
 
   /** Remove a WebSocket client. */
-  removeClient(ws: ServerWebSocket<CanvasWSData>): void {
+  removeClient(ws: CanvasCompatibleWS): void {
     for (const [, clients] of this.clients) {
       clients.delete(ws);
     }

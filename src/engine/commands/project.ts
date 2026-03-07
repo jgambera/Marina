@@ -88,7 +88,7 @@ function seedPoolWithNotes(
   }
 }
 
-export function projectCommand(opts: {
+export function projectCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
   taskManager?: TaskManager;
@@ -100,13 +100,13 @@ export function projectCommand(opts: {
     aliases: ["proj"],
     help: "Projects combine tasks, groups, pools, and orchestration.\nUsage: project create|list|info | project <name> orchestrate|memory|join|status|propose|tasks\n\nExamples:\n  project create Alpha | Investigate grid patterns\n  project Alpha orchestrate nsed\n  project Alpha memory memgpt\n  project Alpha join\n  project Alpha status",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Projects require database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const tokens = input.tokens;
       const sub = tokens[0]?.toLowerCase();
       const rawFirst = tokens[0]; // preserve original case for project name
@@ -141,7 +141,7 @@ export function projectCommand(opts: {
 
       // ─── project create <name> | <description> ────────────────────
       if (sub === "create") {
-        if (!opts.taskManager || !opts.groupManager) {
+        if (!deps.taskManager || !deps.groupManager) {
           ctx.send(input.entity, "Projects require task and group support.");
           return;
         }
@@ -174,7 +174,7 @@ export function projectCommand(opts: {
         }
 
         // 1. Create task bundle
-        const bundle = opts.taskManager.create({
+        const bundle = deps.taskManager.create({
           title: name,
           description: description || `Project: ${name}`,
           creatorId: input.entity,
@@ -187,7 +187,7 @@ export function projectCommand(opts: {
 
         // 3. Create group (auto-creates channel + board)
         const groupId = `project_${name.toLowerCase().replace(/\s+/g, "_")}`;
-        opts.groupManager.create({
+        deps.groupManager.create({
           id: groupId,
           name: `project:${name}`,
           description: description || `Project: ${name}`,
@@ -215,7 +215,7 @@ export function projectCommand(opts: {
           "fact",
         );
 
-        opts.promote?.(input.entity, 2);
+        deps.promote?.(input.entity, 2);
 
         const lines = [
           header(`Project "${name}" created`),
@@ -257,8 +257,8 @@ export function projectCommand(opts: {
         ];
 
         // Show bundle progress if available
-        if (project.bundle_id && opts.taskManager) {
-          const status = opts.taskManager.getBundleStatus(project.bundle_id);
+        if (project.bundle_id && deps.taskManager) {
+          const status = deps.taskManager.getBundleStatus(project.bundle_id);
           if (status.total > 0) {
             lines.push(
               `  Tasks: ${status.completed}/${status.total} completed (${status.open} open)`,
@@ -267,8 +267,8 @@ export function projectCommand(opts: {
         }
 
         // Show group members if available
-        if (project.group_id && opts.groupManager) {
-          const members = opts.groupManager.getMembers(project.group_id);
+        if (project.group_id && deps.groupManager) {
+          const members = deps.groupManager.getMembers(project.group_id);
           lines.push(`  Team: ${members.length} member(s)`);
         }
 
@@ -398,7 +398,7 @@ export function projectCommand(opts: {
         }
 
         case "join": {
-          if (!opts.groupManager) {
+          if (!deps.groupManager) {
             ctx.send(input.entity, "Groups not available.");
             return;
           }
@@ -406,16 +406,16 @@ export function projectCommand(opts: {
             ctx.send(input.entity, "This project has no group.");
             return;
           }
-          const group = opts.groupManager.get(project.group_id);
+          const group = deps.groupManager.get(project.group_id);
           if (!group) {
             ctx.send(input.entity, "Project group not found.");
             return;
           }
-          if (opts.groupManager.isMember(group.id, input.entity)) {
+          if (deps.groupManager.isMember(group.id, input.entity)) {
             ctx.send(input.entity, `You are already in project "${project.name}".`);
             return;
           }
-          opts.groupManager.addMember(group.id, input.entity);
+          deps.groupManager.addMember(group.id, input.entity);
 
           // Send orientation from pool
           const lines = [
@@ -457,8 +457,8 @@ export function projectCommand(opts: {
           ];
 
           // Bundle progress
-          if (project.bundle_id && opts.taskManager) {
-            const bundleStatus = opts.taskManager.getBundleStatus(project.bundle_id);
+          if (project.bundle_id && deps.taskManager) {
+            const bundleStatus = deps.taskManager.getBundleStatus(project.bundle_id);
             if (bundleStatus.total > 0) {
               lines.push(
                 `  Tasks: ${bundleStatus.completed}/${bundleStatus.total} (${bundleStatus.open} open)`,
@@ -469,8 +469,8 @@ export function projectCommand(opts: {
           }
 
           // Team
-          if (project.group_id && opts.groupManager) {
-            const members = opts.groupManager.getMembers(project.group_id);
+          if (project.group_id && deps.groupManager) {
+            const members = deps.groupManager.getMembers(project.group_id);
             lines.push(`  Team: ${members.length} member(s)`);
           }
 
@@ -484,11 +484,11 @@ export function projectCommand(opts: {
             ctx.send(input.entity, "Usage: project <name> propose <text>");
             return;
           }
-          if (!project.group_id || !opts.groupManager) {
+          if (!project.group_id || !deps.groupManager) {
             ctx.send(input.entity, "Project group not available.");
             return;
           }
-          const group = opts.groupManager.get(project.group_id);
+          const group = deps.groupManager.get(project.group_id);
           if (!group || !group.boardId) {
             ctx.send(input.entity, "Project board not available.");
             return;
@@ -507,16 +507,16 @@ export function projectCommand(opts: {
         }
 
         case "tasks": {
-          if (!project.bundle_id || !opts.taskManager) {
+          if (!project.bundle_id || !deps.taskManager) {
             ctx.send(input.entity, "No tasks for this project.");
             return;
           }
-          const children = opts.taskManager.listChildren(project.bundle_id);
+          const children = deps.taskManager.listChildren(project.bundle_id);
           if (children.length === 0) {
             ctx.send(input.entity, `Project "${project.name}" has no tasks yet.`);
             return;
           }
-          const bundleStatus = opts.taskManager.getBundleStatus(project.bundle_id);
+          const bundleStatus = deps.taskManager.getBundleStatus(project.bundle_id);
           const lines = [
             header(`${project.name} Tasks`),
             `Progress: ${bundleStatus.completed}/${bundleStatus.total} completed`,

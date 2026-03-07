@@ -231,8 +231,7 @@ export class WebSocketServer {
 
           // Canvas WebSocket
           if (ws.data.isCanvas && ws.data.canvasId) {
-            // biome-ignore lint: type assertion needed for branded WS data
-            self.canvasBroadcaster.addClient(ws as any, ws.data.canvasId);
+            self.canvasBroadcaster.addClient(ws, ws.data.canvasId);
             return;
           }
 
@@ -383,8 +382,7 @@ export class WebSocketServer {
 
           // Canvas WebSocket
           if (ws.data.isCanvas) {
-            // biome-ignore lint: type assertion needed for branded WS data
-            self.canvasBroadcaster.removeClient(ws as any);
+            self.canvasBroadcaster.removeClient(ws);
             return;
           }
 

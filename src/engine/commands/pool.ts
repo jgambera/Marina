@@ -2,7 +2,9 @@ import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
-export function poolCommand(opts: {
+const DAY_MS = 86_400_000;
+
+export function poolCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
 }): CommandDef {
@@ -11,13 +13,13 @@ export function poolCommand(opts: {
     aliases: [],
     help: "Shared memory pools for collaborative knowledge.\nUsage: pool create <name> | pool <name> add|recall|list | pool list\n\nExamples:\n  pool create findings\n  pool findings add The decode room responds to binary input importance 7\n  pool findings recall binary\n  pool findings list",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Pools require database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const tokens = input.tokens;
       const sub = tokens[0]?.toLowerCase();
 
@@ -150,7 +152,7 @@ export function poolCommand(opts: {
             separator(),
             ...results.map((n) => {
               const now = Date.now();
-              const age = Math.floor((now - n.created_at) / 86400000);
+              const age = Math.floor((now - n.created_at) / DAY_MS);
               const ageStr = age === 0 ? "today" : `${age}d ago`;
               return `  #${n.id} [score=${n.score.toFixed(2)} imp=${n.importance} ${ageStr}] (${n.entity_name}): ${n.content.slice(0, 60)}`;
             }),

@@ -2,7 +2,7 @@ import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
-export function memoryCommand(opts: {
+export function memoryCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
 }): CommandDef {
@@ -11,13 +11,13 @@ export function memoryCommand(opts: {
     aliases: [],
     help: "Core memory — mutable key-value store for beliefs and goals.\nUsage: memory list | memory set <key> <value> | memory get <key> | memory delete <key> | memory history <key>\n\nExamples:\n  memory set goal Explore the grid and document findings\n  memory set ally Alice is working on the relay\n  memory get goal\n  memory history goal",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Memory requires database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const tokens = input.tokens;
       const sub = tokens[0]?.toLowerCase();
 

@@ -158,7 +158,7 @@ function findContradictions(db: ArtilectDB, notes: NoteRow[]): string[] {
   return contradictions;
 }
 
-export function reflectCommand(opts: {
+export function reflectCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
 }): CommandDef {
@@ -167,13 +167,13 @@ export function reflectCommand(opts: {
     aliases: [],
     help: "Create a reflection/synthesis from recent notes. Usage: reflect [topic] | reflect failure <description>",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Reflect requires database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const args = input.args?.trim() ?? "";
       const tokens = args.split(/\s+/);
 

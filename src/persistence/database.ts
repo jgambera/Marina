@@ -679,6 +679,8 @@ INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('date', 'system
 
 // ─── Database Class ──────────────────────────────────────────────────────────
 
+const DAY_MS = 86_400_000;
+
 export class ArtilectDB {
   private db: Database;
 
@@ -1161,7 +1163,7 @@ export class ArtilectDB {
   }
 
   autoArchiveBoardPosts(daysOld: number, minVotes: number): number {
-    const cutoff = Date.now() - daysOld * 86400000;
+    const cutoff = Date.now() - daysOld * DAY_MS;
     const result = this.db.run(
       `UPDATE board_posts SET archived = 1, updated_at = ?
        WHERE archived = 0 AND created_at < ? AND id NOT IN (
@@ -1853,7 +1855,7 @@ export class ArtilectDB {
   /** Boost importance for frequently-recalled notes, decay for stale ones */
   adjustNoteImportance(): { boosted: number; decayed: number } {
     const now = Date.now();
-    const sevenDaysAgo = now - 7 * 86400000;
+    const sevenDaysAgo = now - 7 * DAY_MS;
 
     // Boost: notes recalled 3+ times, importance < 10
     const boosted = this.db.run(
@@ -2900,7 +2902,7 @@ export interface ChannelRow {
   created_at: number;
 }
 
-export interface ChannelMessageRow {
+interface ChannelMessageRow {
   id: number;
   channel_id: string;
   sender_id: string;
@@ -2909,7 +2911,7 @@ export interface ChannelMessageRow {
   created_at: number;
 }
 
-export interface ChannelMemberRow {
+interface ChannelMemberRow {
   channel_id: string;
   entity_id: string;
   can_read: number;
@@ -2953,7 +2955,7 @@ export interface GroupRow {
   created_at: number;
 }
 
-export interface GroupMemberRow {
+interface GroupMemberRow {
   group_id: string;
   entity_id: string;
   rank: number;
@@ -2998,7 +3000,7 @@ export interface MacroRow {
   updated_at: number;
 }
 
-export interface RoomSourceRow {
+interface RoomSourceRow {
   room_id: string;
   version: number;
   source: string;
@@ -3008,7 +3010,7 @@ export interface RoomSourceRow {
   created_at: number;
 }
 
-export interface RoomTemplateRow {
+interface RoomTemplateRow {
   name: string;
   source: string;
   author_id: string;
@@ -3017,7 +3019,7 @@ export interface RoomTemplateRow {
   created_at: number;
 }
 
-export interface UserRow {
+interface UserRow {
   id: string;
   name: string;
   created_at: number;
@@ -3026,14 +3028,14 @@ export interface UserRow {
   properties: string;
 }
 
-export interface BanRow {
+interface BanRow {
   name: string;
   reason: string;
   banned_by: string;
   created_at: number;
 }
 
-export interface AdapterLinkRow {
+interface AdapterLinkRow {
   adapter: string;
   external_id: string;
   user_id: string;
@@ -3053,11 +3055,11 @@ export interface NoteRow {
   created_at: number;
 }
 
-export interface ScoredNoteRow extends NoteRow {
+interface ScoredNoteRow extends NoteRow {
   score: number;
 }
 
-export interface CoreMemoryRow {
+interface CoreMemoryRow {
   entity_name: string;
   key: string;
   value: string;
@@ -3066,7 +3068,7 @@ export interface CoreMemoryRow {
   updated_at: number;
 }
 
-export interface CoreMemoryHistoryRow {
+interface CoreMemoryHistoryRow {
   id: number;
   entity_name: string;
   key: string;
@@ -3075,7 +3077,7 @@ export interface CoreMemoryHistoryRow {
   changed_at: number;
 }
 
-export interface NoteLinkRow {
+interface NoteLinkRow {
   id: number;
   source_id: number;
   target_id: number;
@@ -3083,7 +3085,7 @@ export interface NoteLinkRow {
   created_at: number;
 }
 
-export interface MemoryPoolRow {
+interface MemoryPoolRow {
   id: string;
   name: string;
   group_id: string | null;
@@ -3091,7 +3093,7 @@ export interface MemoryPoolRow {
   created_at: number;
 }
 
-export interface ExperimentRow {
+interface ExperimentRow {
   id: number;
   name: string;
   description: string;
@@ -3105,13 +3107,13 @@ export interface ExperimentRow {
   completed_at: number | null;
 }
 
-export interface ExperimentParticipantRow {
+interface ExperimentParticipantRow {
   experiment_id: number;
   entity_name: string;
   joined_at: number;
 }
 
-export interface ExperimentResultRow {
+interface ExperimentResultRow {
   id: number;
   experiment_id: number;
   entity_name: string;
@@ -3120,14 +3122,14 @@ export interface ExperimentResultRow {
   recorded_at: number;
 }
 
-export interface BoardVoteRow {
+interface BoardVoteRow {
   post_id?: number;
   entity_id: string;
   value?: number;
   score: number;
 }
 
-export interface ProjectRow {
+interface ProjectRow {
   id: string;
   name: string;
   description: string;
@@ -3141,7 +3143,7 @@ export interface ProjectRow {
   created_at: number;
 }
 
-export interface CommandSourceRow {
+interface CommandSourceRow {
   id: string;
   name: string;
   source: string;
@@ -3151,7 +3153,7 @@ export interface CommandSourceRow {
   created_at: number;
 }
 
-export interface CommandHistoryRow {
+interface CommandHistoryRow {
   id: number;
   command_id: string;
   source: string;
@@ -3160,7 +3162,7 @@ export interface CommandHistoryRow {
   edited_at: number;
 }
 
-export interface ConnectorRow {
+interface ConnectorRow {
   id: string;
   name: string;
   transport: string;
@@ -3175,7 +3177,7 @@ export interface ConnectorRow {
   status: string;
 }
 
-export interface AssetRow {
+interface AssetRow {
   id: string;
   entity_name: string;
   filename: string;
@@ -3186,7 +3188,7 @@ export interface AssetRow {
   created_at: number;
 }
 
-export interface CanvasRow {
+interface CanvasRow {
   id: string;
   name: string;
   description: string;
@@ -3197,7 +3199,7 @@ export interface CanvasRow {
   updated_at: number;
 }
 
-export interface CanvasNodeRow {
+interface CanvasNodeRow {
   id: string;
   canvas_id: string;
   type: string;
@@ -3212,7 +3214,7 @@ export interface CanvasNodeRow {
   updated_at: number;
 }
 
-export interface ShellLogRow {
+interface ShellLogRow {
   id: number;
   entity_id: string;
   binary: string;
@@ -3222,7 +3224,7 @@ export interface ShellLogRow {
   created_at: number;
 }
 
-export interface GlobalSearchResult {
+interface GlobalSearchResult {
   type: "board_post" | "channel_message" | "room";
   id: string;
   title: string;

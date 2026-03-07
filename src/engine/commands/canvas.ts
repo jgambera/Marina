@@ -7,7 +7,7 @@ import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 const HELP =
   "Canvas management. Subcommands: canvas create <name> [desc] | canvas list | canvas info <name> | canvas publish <type> <asset_id> [canvas] | canvas nodes <name> | canvas layout <grid|timeline> <name> | canvas delete <name> | canvas asset upload|list|info|delete";
 
-export function canvasCommand(opts: {
+export function canvasCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
   storage?: StorageProvider;
@@ -20,13 +20,13 @@ export function canvasCommand(opts: {
     help: HELP,
     minRank: 1,
     handler: async (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Canvas requires database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const eid = input.entity;
       const tokens = input.tokens;
       const sub = tokens[0]?.toLowerCase();
@@ -38,7 +38,7 @@ export function canvasCommand(opts: {
 
       switch (sub) {
         case "asset":
-          await handleAsset(ctx, eid, entity, db, opts.storage, tokens.slice(1), opts.scratchRoot);
+          await handleAsset(ctx, eid, entity, db, deps.storage, tokens.slice(1), deps.scratchRoot);
           return;
         case "create":
           handleCreate(ctx, eid, entity, db, tokens.slice(1));
@@ -50,7 +50,7 @@ export function canvasCommand(opts: {
           handleInfo(ctx, eid, db, tokens.slice(1));
           return;
         case "publish":
-          handlePublish(ctx, eid, entity, db, opts.storage, opts.logEvent, tokens.slice(1));
+          handlePublish(ctx, eid, entity, db, deps.storage, deps.logEvent, tokens.slice(1));
           return;
         case "nodes":
           handleNodes(ctx, eid, db, tokens.slice(1));

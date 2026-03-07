@@ -2,7 +2,7 @@ import { category, header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext, RoomId } from "../../types";
 
-export function searchCommand(opts: {
+export function searchCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
   getAllRooms: () => { id: RoomId; short: string; long: string }[];
@@ -12,7 +12,7 @@ export function searchCommand(opts: {
     aliases: [],
     help: "Global search across boards, spaces, and channels. Usage: search <query>",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
 
       const query = input.args.trim();
@@ -26,7 +26,7 @@ export function searchCommand(opts: {
 
       // 1. Search rooms (in-memory)
       const lowerQuery = query.toLowerCase();
-      const rooms = opts.getAllRooms();
+      const rooms = deps.getAllRooms();
       const matchingRooms = rooms.filter(
         (r) =>
           r.short.toLowerCase().includes(lowerQuery) ||
@@ -41,8 +41,8 @@ export function searchCommand(opts: {
       }
 
       // 2. Search DB (boards + channels)
-      if (opts.db) {
-        const dbResults = opts.db.globalSearch(query);
+      if (deps.db) {
+        const dbResults = deps.db.globalSearch(query);
         const boardResults = dbResults.filter((r) => r.type === "board_post");
         const channelResults = dbResults.filter((r) => r.type === "channel_message");
 

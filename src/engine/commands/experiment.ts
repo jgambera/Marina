@@ -3,7 +3,7 @@ import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 import { requireRank } from "../permissions";
 
-export function experimentCommand(opts: {
+export function experimentCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
 }): CommandDef {
@@ -12,13 +12,13 @@ export function experimentCommand(opts: {
     aliases: ["exp"],
     help: "Structured experiments with participants and recorded results.\nUsage: experiment list|create|join|start|status|results|complete|record\n\nExamples:\n  experiment create Temperature_Study 4 300\n  experiment join Temperature_Study\n  experiment start Temperature_Study\n  experiment record Temperature_Study accuracy 0.85",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Experiments require database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const tokens = input.tokens;
       const sub = tokens[0]?.toLowerCase() ?? "list";
 

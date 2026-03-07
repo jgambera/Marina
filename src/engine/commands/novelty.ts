@@ -20,7 +20,7 @@ function entropy(counts: number[]): number {
   return h / Math.log2(n); // Normalize to 0-1
 }
 
-export function noveltyCommand(opts: {
+export function noveltyCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
   getTotalRoomCount?: () => number;
@@ -30,19 +30,19 @@ export function noveltyCommand(opts: {
     aliases: [],
     help: "Exploration novelty scoring. Usage: novelty | novelty suggest | novelty stats",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Novelty requires database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const sub = input.tokens[0]?.toLowerCase();
 
       const stats = db.getActivityStats(entity.name);
 
       if (sub === "stats") {
-        const totalRooms = opts.getTotalRoomCount?.() ?? 0;
+        const totalRooms = deps.getTotalRoomCount?.() ?? 0;
         const worldPct = totalRooms > 0 ? Math.round((stats.roomsVisited / totalRooms) * 100) : 0;
         const lines = [
           header("Exploration Statistics"),

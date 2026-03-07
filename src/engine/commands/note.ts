@@ -71,7 +71,7 @@ function parseNoteText(input: string): {
   return { content: text, importance, noteType };
 }
 
-export function noteCommand(opts: {
+export function noteCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
 }): CommandDef {
@@ -80,13 +80,13 @@ export function noteCommand(opts: {
     aliases: [],
     help: "Personal notes. Usage: note <text> [importance N] [type T] | note list | note space | note search <query> | note delete <id> | note link <id1> <id2> <rel> | note correct <id> <text> | note trace <id> | note graph | note evolve <id> | note types",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Notes require database support.");
         return;
       }
-      const db = opts.db;
+      const db = deps.db;
       const tokens = input.tokens;
       const sub = tokens[0]?.toLowerCase();
 

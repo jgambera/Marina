@@ -3,7 +3,7 @@ import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, RoomContext, RoomId } from "../../types";
 import { getRank, requireRank } from "../permissions";
 
-export function observeCommand(opts: {
+export function observeCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   findEntity: (name: string) => Entity | undefined;
   db?: ArtilectDB;
@@ -16,7 +16,7 @@ export function observeCommand(opts: {
     aliases: [],
     help: "Observe agents. Usage: observe <entity> | observe stats | observe log <entity>",
     handler: (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
 
       const tokens = input.tokens;
@@ -33,8 +33,8 @@ export function observeCommand(opts: {
             ctx.send(input.entity, "Requires builder rank (2+).");
             return;
           }
-          const agents = opts.getOnlineAgents();
-          const events = opts.getEventLog();
+          const agents = deps.getOnlineAgents();
+          const events = deps.getEventLog();
           const commandEvents = events.filter((e) => e.type === "command");
           const uniqueEntities = new Set(commandEvents.map((e) => e.entity)).size;
 
@@ -62,7 +62,7 @@ export function observeCommand(opts: {
           if (topRooms.length > 0) {
             lines.push("  Most visited spaces:");
             for (const [room, count] of topRooms) {
-              const name = opts.getRoomShort(room as RoomId) ?? room;
+              const name = deps.getRoomShort(room as RoomId) ?? room;
               lines.push(`    ${name}: ${count} visits`);
             }
           }
@@ -80,14 +80,14 @@ export function observeCommand(opts: {
             ctx.send(input.entity, "Usage: observe log <entity>");
             return;
           }
-          const target = opts.findEntity(targetName);
+          const target = deps.findEntity(targetName);
           if (!target) {
             ctx.send(input.entity, `Entity "${targetName}" not found online.`);
             return;
           }
 
           // Get from in-memory event log
-          const events = opts.getEventLog();
+          const events = deps.getEventLog();
           const entityEvents = events
             .filter((e) => e.type === "command" && e.entity === target.id)
             .slice(-20);
@@ -114,17 +114,17 @@ export function observeCommand(opts: {
             ctx.send(input.entity, "Requires architect rank (3+).");
             return;
           }
-          const target = opts.findEntity(sub);
+          const target = deps.findEntity(sub);
           if (!target) {
             ctx.send(input.entity, `Entity "${sub}" not found online.`);
             return;
           }
 
-          const roomName = opts.getRoomShort(target.room) ?? target.room;
+          const roomName = deps.getRoomShort(target.room) ?? target.room;
           const rank = getRank(target);
 
           // Find last command from event log
-          const events = opts.getEventLog();
+          const events = deps.getEventLog();
           const lastCmd = events
             .filter((e) => e.type === "command" && e.entity === target.id)
             .pop();

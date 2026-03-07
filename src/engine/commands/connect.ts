@@ -4,7 +4,7 @@ import type { CommandDef, Entity, RoomContext } from "../../types";
 import type { ConnectorRuntime } from "../connector-runtime";
 import { getRank } from "../permissions";
 
-export function connectCommand(opts: {
+export function connectCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
   connectorRuntime?: ConnectorRuntime;
@@ -15,17 +15,17 @@ export function connectCommand(opts: {
     minRank: 2,
     help: "Manage external MCP connectors. Usage: connect add <name> <url> | connect add <name> stdio <cmd> [args] | connect remove <name> | connect list | connect tools <name> | connect call <name> <tool> [json] | connect auth <name> bearer <token> | connect auth <name> header <key> <value>",
     handler: async (ctx: RoomContext, input) => {
-      const entity = opts.getEntity(input.entity);
+      const entity = deps.getEntity(input.entity);
       if (!entity) return;
 
       const rank = getRank(entity);
 
-      if (!opts.db) {
+      if (!deps.db) {
         ctx.send(input.entity, "Connectors require database support.");
         return;
       }
-      const db = opts.db;
-      const runtime = opts.connectorRuntime;
+      const db = deps.db;
+      const runtime = deps.connectorRuntime;
 
       const tokens = input.tokens;
       const sub = tokens[0]?.toLowerCase();
