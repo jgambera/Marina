@@ -1,5 +1,7 @@
 import type { EntityId, Perception, RoomId } from "../types";
 
+export type { Perception };
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface SessionInfo {
