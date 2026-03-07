@@ -166,7 +166,7 @@ export class McpServerAdapter {
 
     for (const [, session] of this.sessions) {
       this.engine.removeConnection(session.connId);
-      session.mcp.close();
+      session.mcp.close().catch(() => {});
     }
     this.sessions.clear();
 

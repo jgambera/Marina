@@ -1,5 +1,6 @@
 import { header, rank, separator } from "../../net/ansi";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
+import { formatDuration } from "./format-duration";
 
 export function scoreCommand(deps: {
   getEntity: (id: EntityId) => Entity | undefined;
@@ -46,13 +47,4 @@ export function scoreCommand(deps: {
       ctx.send(input.entity, lines.join("\n"));
     },
   };
-}
-
-function formatDuration(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ${s % 60}s`;
-  const h = Math.floor(m / 60);
-  return `${h}h ${m % 60}m`;
 }

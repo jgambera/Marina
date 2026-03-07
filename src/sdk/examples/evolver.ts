@@ -204,8 +204,10 @@ async function main() {
         const newRoom = await agent.look();
         if ("id" in newRoom) {
           const nr = newRoom as RoomView;
-          await agent.note(
-            `Visited ${nr.short} during gen ${generation} exploration !5 #observation`,
+          await agent.typedNote(
+            `Visited ${nr.short} during gen ${generation} exploration`,
+            5,
+            "observation",
           );
         }
       }
@@ -238,7 +240,7 @@ async function main() {
     console.log("[evolver] Acting on advice...");
 
     // Take a note about what we learned
-    await agent.note(`Gen ${generation}: ${advice.slice(0, 200)} !7 #decision`);
+    await agent.typedNote(`Gen ${generation}: ${advice.slice(0, 200)}`, 7, "decision");
 
     // Try to improve: create or update a command, build something, or refine memory
     const actions = [
@@ -258,7 +260,7 @@ async function main() {
     const journalEntry =
       `Gen ${generation}: advice="${advice.slice(0, 100)}" ` +
       `score=${benchScore} action=${action.name}`;
-    await agent.note(`${journalEntry} !8 #evolution`);
+    await agent.typedNote(journalEntry, 8, "episode");
     await agent.memory("set", "generation", String(generation));
 
     // Update mind-room store if we're in it
@@ -278,7 +280,7 @@ async function main() {
       const view = await a.look();
       if ("id" in view) {
         const rv = view as RoomView;
-        await a.note(`Mapped ${rv.id}: ${rv.short} !5 #observation`);
+        await a.typedNote(`Mapped ${rv.id}: ${rv.short}`, 5, "observation");
       }
       await sleep(500);
     }
@@ -290,7 +292,7 @@ async function main() {
     console.log("[evolver] Action: organizing memory");
     await a.reflect("exploration");
     await a.reflect("evolution");
-    await a.note(`Gen ${gen}: consolidated notes via reflect !6 #skill`);
+    await a.typedNote(`Gen ${gen}: consolidated notes via reflect`, 6, "skill");
   }
 
   async function buildSomething(a: ArtilectAgent, gen: number) {
@@ -299,7 +301,7 @@ async function main() {
     await a.command(`build space ${buildRoomId} Generation ${gen} Archive`);
     await a.command(`build modify ${buildRoomId} long Notes and artifacts from generation ${gen}.`);
     await a.command(`build link ${roomId} down ${buildRoomId}`);
-    await a.note(`Gen ${gen}: created archive room ${buildRoomId} !6 #skill`);
+    await a.typedNote(`Gen ${gen}: created archive room ${buildRoomId}`, 6, "skill");
   }
 
   // ─── Self Benchmark ──────────────────────────────────────────────────────
@@ -353,7 +355,7 @@ async function main() {
       await evolve();
     } catch (err) {
       console.error(`[evolver] Cycle error: ${err}`);
-      await agent.note(`Gen ${generation}: ERROR ${String(err).slice(0, 100)} !9 #episode`);
+      await agent.typedNote(`Gen ${generation}: ERROR ${String(err).slice(0, 100)}`, 9, "episode");
     }
   }
 }

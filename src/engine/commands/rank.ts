@@ -23,11 +23,17 @@ export function rankCommand(deps: RankDeps): CommandDef {
       }
 
       const tokens = input.tokens;
+      const targetName = tokens[0];
+      if (!targetName) {
+        ctx.send(input.entity, "Usage: rank [entity [level]]");
+        return;
+      }
+
       if (tokens.length < 2) {
         // Check another player's rank
-        const target = deps.findEntity(tokens[0]!);
+        const target = deps.findEntity(targetName);
         if (!target) {
-          ctx.send(input.entity, `Entity "${tokens[0]}" not found.`);
+          ctx.send(input.entity, `Entity "${targetName}" not found.`);
           return;
         }
         const rank = getRank(target);
@@ -41,13 +47,13 @@ export function rankCommand(deps: RankDeps): CommandDef {
         return;
       }
 
-      const target = deps.findEntity(tokens[0]!);
+      const target = deps.findEntity(targetName);
       if (!target) {
-        ctx.send(input.entity, `Entity "${tokens[0]}" not found.`);
+        ctx.send(input.entity, `Entity "${targetName}" not found.`);
         return;
       }
 
-      const level = Number.parseInt(tokens[1]!, 10);
+      const level = Number.parseInt(tokens[1] ?? "", 10);
       if (Number.isNaN(level) || level < 0 || level > 4) {
         ctx.send(input.entity, "Rank must be 0-4 (guest, citizen, builder, architect, admin).");
         return;

@@ -283,13 +283,13 @@ export class Engine {
       return { error: "You are banned from this server." };
     }
 
-    // Reject duplicate names — sanitize first to match spawnEntity logic
+    // Sanitize name once, then pass through to spawnEntity
     const cleanName = name.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20);
     if (this.entities.findAgentByName(cleanName)) {
       return { error: "That name is already in use." };
     }
 
-    const entity = this.spawnEntity(connId, name);
+    const entity = this.spawnEntity(connId, cleanName);
     if (!entity) {
       return { error: "Login failed. Name must be 2-20 alphanumeric characters." };
     }

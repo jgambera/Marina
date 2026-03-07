@@ -1,5 +1,6 @@
 import { dim, entity, header, rank, separator } from "../../net/ansi";
 import type { CommandDef, Entity, RoomContext } from "../../types";
+import { formatDuration } from "./format-duration";
 
 export function whoCommand(
   getOnlineEntities: () => Entity[],
@@ -30,13 +31,4 @@ export function whoCommand(
       ctx.send(input.entity, lines.join("\n"));
     },
   };
-}
-
-function formatDuration(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  return `${h}h ${m % 60}m`;
 }
