@@ -1,24 +1,25 @@
 import { shout, shoutSelf } from "../../net/ansi";
-import type { CommandDef, EntityId, RoomContext } from "../../types";
+import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 
-export function shoutCommand(
-  broadcastAll: (senderId: EntityId, message: string) => void,
-): CommandDef {
+export function shoutCommand(deps: {
+  getEntity: (id: EntityId) => Entity | undefined;
+  broadcastAll: (senderId: EntityId, message: string) => void;
+}): CommandDef {
   return {
     name: "shout",
     aliases: ["yell"],
     help: "Shout a message to all entities on the server. Usage: shout <message>",
     handler: (ctx: RoomContext, input) => {
+      const entity = deps.getEntity(input.entity);
+      if (!entity) return;
+
       if (!input.args) {
         ctx.send(input.entity, "Shout what?");
         return;
       }
 
-      const entity = ctx.getEntity(input.entity);
-      const name = entity?.name ?? "Someone";
-
       ctx.send(input.entity, shoutSelf(input.args));
-      broadcastAll(input.entity, shout(name, input.args));
+      deps.broadcastAll(input.entity, shout(entity.name, input.args));
     },
   };
 }

@@ -1,8 +1,9 @@
 import { arrival, departure } from "../../net/ansi";
-import type { CommandDef, EntityId, RoomContext, RoomId } from "../../types";
+import type { CommandDef, Entity, EntityId, RoomContext, RoomId } from "../../types";
 import type { LoadedRoom } from "../../world/room-manager";
 
 export function moveCommand(deps: {
+  getEntity: (id: EntityId) => Entity | undefined;
   getRoom: (entity: EntityId) => LoadedRoom | undefined;
   getRoomById: (id: RoomId) => LoadedRoom | undefined;
   moveEntity: (entity: EntityId, to: RoomId) => boolean;
@@ -70,8 +71,9 @@ export function moveCommand(deps: {
       }
 
       // Leave current room
-      const entity = _ctx.getEntity(input.entity);
-      const name = entity?.name ?? "Someone";
+      const entity = deps.getEntity(input.entity);
+      if (!entity) return;
+      const name = entity.name;
 
       if (room.module.onLeave) {
         const ctx = deps.buildContext(room.id);

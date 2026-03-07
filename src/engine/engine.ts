@@ -1255,6 +1255,7 @@ export class Engine {
 
     this.commands.registerBuiltin(
       moveCommand({
+        getEntity: (id) => this.entities.get(id),
         getRoom: (entityId) => this.getEntityRoom(entityId),
         getRoomById: (id) => this.rooms.get(id),
         moveEntity: (entityId, to) => this.entities.move(entityId, to),
@@ -1288,33 +1289,37 @@ export class Engine {
       }),
     );
 
-    this.commands.registerBuiltin(sayCommand());
+    this.commands.registerBuiltin(sayCommand((id) => this.entities.get(id)));
     this.commands.registerPrefixAlias("'", "say");
     this.commands.registerBuiltin(
-      shoutCommand((senderId, msg) => {
-        const sender = this.entities.get(senderId);
-        const senderName = sender?.name;
-        for (const entity of this.entities.all()) {
-          if (entity.kind === "agent" && entity.id !== senderId) {
-            if (senderName && isIgnoring(entity, senderName)) continue;
-            this.sendToEntity(entity.id, msg);
+      shoutCommand({
+        getEntity: (id) => this.entities.get(id),
+        broadcastAll: (senderId, msg) => {
+          const sender = this.entities.get(senderId);
+          const senderName = sender?.name;
+          for (const entity of this.entities.all()) {
+            if (entity.kind === "agent" && entity.id !== senderId) {
+              if (senderName && isIgnoring(entity, senderName)) continue;
+              this.sendToEntity(entity.id, msg);
+            }
           }
-        }
+        },
       }),
     );
     this.commands.registerBuiltin(
-      tellCommand(
-        (name) => {
+      tellCommand({
+        getEntity: (id) => this.entities.get(id),
+        findEntityGlobal: (name) => {
           const e = this.findEntityGlobal(name);
           return e ? { id: e.id, name: e.name } : undefined;
         },
-        (target, msg, senderId) => {
+        sendGlobal: (target, msg, senderId) => {
           const targetEntity = this.entities.get(target);
           const sender = this.entities.get(senderId);
           if (targetEntity && sender && isIgnoring(targetEntity, sender.name)) return;
           this.sendToEntity(target, msg);
         },
-      ),
+      }),
     );
     this.commands.registerBuiltin(
       whoCommand(
@@ -1325,7 +1330,7 @@ export class Engine {
     this.commands.registerBuiltin(examineCommand((entityId) => this.getEntityRoom(entityId)));
     this.commands.registerBuiltin(helpCommand(() => this.commands.allBuiltins()));
     this.commands.registerBuiltin(inventoryCommand((id) => this.entities.get(id)));
-    this.commands.registerBuiltin(emoteCommand());
+    this.commands.registerBuiltin(emoteCommand((id) => this.entities.get(id)));
     this.commands.registerBuiltin(timeCommand());
     this.commands.registerBuiltin(uptimeCommand(() => this.getUptime()));
     this.commands.registerBuiltin(

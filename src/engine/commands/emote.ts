@@ -1,21 +1,21 @@
 import { emote } from "../../net/ansi";
-import type { CommandDef, RoomContext } from "../../types";
+import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 
-export function emoteCommand(): CommandDef {
+export function emoteCommand(getEntity: (id: EntityId) => Entity | undefined): CommandDef {
   return {
     name: "emote",
     aliases: ["me", "em"],
     help: "Perform an action. Usage: emote waves hello",
     handler: (ctx: RoomContext, input) => {
+      const entity = getEntity(input.entity);
+      if (!entity) return;
+
       if (!input.args) {
         ctx.send(input.entity, "Emote what?");
         return;
       }
 
-      const e = ctx.getEntity(input.entity);
-      const name = e?.name ?? "Someone";
-
-      const msg = emote(name, input.args);
+      const msg = emote(entity.name, input.args);
       ctx.send(input.entity, msg);
       ctx.broadcastExcept(input.entity, msg);
     },
