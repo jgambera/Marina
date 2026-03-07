@@ -639,6 +639,42 @@ CREATE TABLE meta (
 );
 `,
   },
+  // Migration 23: Shell (allowlist + execution log)
+  {
+    version: 23,
+    sql: `
+CREATE TABLE shell_allowlist (
+  binary TEXT PRIMARY KEY,
+  added_by TEXT NOT NULL,
+  added_at INTEGER NOT NULL
+);
+
+CREATE TABLE shell_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_id TEXT NOT NULL,
+  binary TEXT NOT NULL,
+  args TEXT NOT NULL,
+  exit_code INTEGER,
+  output_length INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX idx_shell_log_entity ON shell_log(entity_id);
+CREATE INDEX idx_shell_log_created ON shell_log(created_at);
+
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('curl', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('wget', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('ls', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('cat', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('head', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('tail', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('wc', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('grep', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('find', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('jq', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('echo', 'system', strftime('%s','now') * 1000);
+INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('date', 'system', strftime('%s','now') * 1000);
+`,
+  },
 ];
 
 // ─── Database Class ──────────────────────────────────────────────────────────
@@ -2743,6 +2779,62 @@ export class ArtilectDB {
     this.db.run("DELETE FROM dynamic_commands");
   }
 
+  // ─── Shell ─────────────────────────────────────────────────────────────
+
+  getShellAllowlist(): string[] {
+    const rows = this.db.query("SELECT binary FROM shell_allowlist ORDER BY binary").all() as {
+      binary: string;
+    }[];
+    return rows.map((r) => r.binary);
+  }
+
+  isShellAllowed(binary: string): boolean {
+    const row = this.db.query("SELECT 1 FROM shell_allowlist WHERE binary = ?").get(binary);
+    return row !== null;
+  }
+
+  addToShellAllowlist(binary: string, addedBy: string): void {
+    this.db.run(
+      "INSERT OR IGNORE INTO shell_allowlist (binary, added_by, added_at) VALUES (?, ?, ?)",
+      [binary, addedBy, Date.now()],
+    );
+  }
+
+  removeFromShellAllowlist(binary: string): boolean {
+    const result = this.db.run("DELETE FROM shell_allowlist WHERE binary = ?", [binary]);
+    return result.changes > 0;
+  }
+
+  logShellExec(
+    entityId: string,
+    binary: string,
+    args: string,
+    exitCode: number | null,
+    outputLength: number,
+  ): void {
+    this.db.run(
+      "INSERT INTO shell_log (entity_id, binary, args, exit_code, output_length, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      [entityId, binary, args, exitCode, outputLength, Date.now()],
+    );
+  }
+
+  getShellHistory(entityId: string, limit = 10): ShellLogRow[] {
+    return this.db
+      .query("SELECT * FROM shell_log WHERE entity_id = ? ORDER BY created_at DESC LIMIT ?")
+      .all(entityId, limit) as ShellLogRow[];
+  }
+
+  getShellLog(entityId: string | null, limit = 10): ShellLogRow[] {
+    if (entityId) {
+      return this.db
+        .query("SELECT * FROM shell_log WHERE entity_id = ? ORDER BY created_at DESC LIMIT ?")
+        .all(entityId, limit) as ShellLogRow[];
+    }
+    return this.db
+      .query("SELECT * FROM shell_log ORDER BY created_at DESC LIMIT ?")
+      .all(limit) as ShellLogRow[];
+  }
+
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
   close(): void {
@@ -3118,6 +3210,16 @@ export interface CanvasNodeRow {
   creator_name: string;
   created_at: number;
   updated_at: number;
+}
+
+export interface ShellLogRow {
+  id: number;
+  entity_id: string;
+  binary: string;
+  args: string;
+  exit_code: number | null;
+  output_length: number;
+  created_at: number;
 }
 
 export interface GlobalSearchResult {

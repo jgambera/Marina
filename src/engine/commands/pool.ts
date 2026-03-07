@@ -9,7 +9,7 @@ export function poolCommand(opts: {
   return {
     name: "pool",
     aliases: [],
-    help: "Shared memory pools for collaborative knowledge.\nUsage: pool create <name> | pool <name> add|recall|list | pool list\n\nExamples:\n  pool create findings\n  pool findings add The decode room responds to binary input !7\n  pool findings recall binary\n  pool findings list",
+    help: "Shared memory pools for collaborative knowledge.\nUsage: pool create <name> | pool <name> add|recall|list | pool list\n\nExamples:\n  pool create findings\n  pool findings add The decode room responds to binary input importance 7\n  pool findings recall binary\n  pool findings list",
     handler: (ctx: RoomContext, input) => {
       const entity = opts.getEntity(input.entity);
       if (!entity) return;
@@ -91,7 +91,7 @@ export function poolCommand(opts: {
           separator(),
           ...notes.map((n) => {
             const date = new Date(n.created_at).toISOString().slice(0, 10);
-            return `  #${n.id} ${date} (${n.entity_name}) !${n.importance}: ${n.content.slice(0, 60)}`;
+            return `  #${n.id} ${date} (${n.entity_name}) imp:${n.importance}: ${n.content.slice(0, 60)}`;
           }),
         ];
         ctx.send(input.entity, lines.join("\n"));
@@ -102,18 +102,28 @@ export function poolCommand(opts: {
         case "add": {
           const text = tokens.slice(2).join(" ");
           if (!text) {
-            ctx.send(input.entity, `Usage: pool ${poolName} add <text> [!importance]`);
+            ctx.send(input.entity, `Usage: pool ${poolName} add <text> [importance N]`);
             return;
           }
-          // Parse importance
+          // Parse importance — new: trailing "importance N"
           let importance = 5;
           let content = text;
-          const impMatch = text.match(/\s+!(\d{1,2})(?:\s|$)/);
-          if (impMatch) {
-            const val = Number.parseInt(impMatch[1]!, 10);
+          const impWordMatch = content.match(/\s+importance\s+(\d{1,2})\s*$/);
+          if (impWordMatch) {
+            const val = Number.parseInt(impWordMatch[1]!, 10);
             if (val >= 1 && val <= 10) {
               importance = val;
-              content = text.replace(impMatch[0], " ").trim();
+              content = content.slice(0, content.length - impWordMatch[0].length).trim();
+            }
+          } else {
+            // Legacy: !N — backward compatible
+            const impMatch = content.match(/\s+!(\d{1,2})(?:\s|$)/);
+            if (impMatch) {
+              const val = Number.parseInt(impMatch[1]!, 10);
+              if (val >= 1 && val <= 10) {
+                importance = val;
+                content = content.replace(impMatch[0], " ").trim();
+              }
             }
           }
           const noteId = db.addPoolNote(pool.id, entity.name, content, importance);

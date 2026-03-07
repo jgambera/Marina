@@ -369,8 +369,8 @@ export class ArtilectAgent extends ArtilectClient {
 
   /** Scored note retrieval. */
   async recall(query: string, mode?: "recent" | "important"): Promise<Perception[]> {
-    const flag = mode ? ` --${mode}` : "";
-    return this.command(`recall ${query}${flag}`);
+    const modifier = mode ? ` ${mode}` : "";
+    return this.command(`recall ${query}${modifier}`);
   }
 
   /** Create a reflection from recent notes. */
@@ -380,8 +380,8 @@ export class ArtilectAgent extends ArtilectClient {
 
   /** Note with importance and type. */
   async typedNote(text: string, importance?: number, type?: string): Promise<Perception[]> {
-    const imp = importance ? ` !${importance}` : "";
-    const t = type ? ` #${type}` : "";
+    const imp = importance ? ` importance ${importance}` : "";
+    const t = type ? ` type ${type}` : "";
     return this.command(`note ${text}${imp}${t}`);
   }
 
@@ -452,6 +452,23 @@ export class ArtilectAgent extends ArtilectClient {
   /** Delete a canvas. */
   async deleteCanvas(name: string): Promise<Perception[]> {
     return this.command(`canvas delete ${name}`);
+  }
+
+  // ─── Shell ─────────────────────────────────────────────────────────────
+
+  /** Run a shell command. */
+  async run(cmd: string): Promise<Perception[]> {
+    return this.command(`run ${cmd}`);
+  }
+
+  /** Run a shell command quietly (suppress output). */
+  async runQuiet(cmd: string): Promise<Perception[]> {
+    return this.command(`run quiet ${cmd}`);
+  }
+
+  /** Shell management operations. */
+  async shell(sub: string, ...args: string[]): Promise<Perception[]> {
+    return this.command(`shell ${sub} ${args.join(" ")}`.trim());
   }
 
   /** Gracefully quit and disconnect. */

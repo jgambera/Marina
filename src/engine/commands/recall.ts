@@ -9,7 +9,7 @@ export function recallCommand(opts: {
   return {
     name: "recall",
     aliases: [],
-    help: "Scored note retrieval. Usage: recall <query> [--recent | --important] [--type <type>]",
+    help: "Scored note retrieval. Usage: recall <query> [recent | important] [type <type>]",
     handler: (ctx: RoomContext, input) => {
       const entity = opts.getEntity(input.entity);
       if (!entity) return;
@@ -20,38 +20,43 @@ export function recallCommand(opts: {
       const db = opts.db;
       const args = input.args;
       if (!args) {
-        ctx.send(input.entity, "Usage: recall <query> [--recent | --important] [--type <type>]");
+        ctx.send(input.entity, "Usage: recall <query> [recent | important] [type <type>]");
         return;
       }
 
-      // Parse flags
+      // Parse modifiers from the end of input
       let weightImportance = 0.33;
       let weightRecency = 0.33;
       let weightRelevance = 0.34;
       let query = args;
       let noteType: string | undefined;
 
-      // Extract --type <type>
-      const typeMatch = query.match(/--type\s+(\w+)/);
+      // Support both new plain-word and legacy -- flag syntax
+      // Extract type modifier: "type <word>" or "--type <word>"
+      const typeMatch = query.match(/(?:--type|type)\s+(\w+)\s*$/);
       if (typeMatch) {
         noteType = typeMatch[1];
-        query = query.replace(typeMatch[0], "").trim();
+        query = query.slice(0, query.length - typeMatch[0].length).trim();
       }
 
-      if (query.includes("--recent")) {
+      // Extract weight modifier: trailing "recent"/"important" or "--recent"/"--important"
+      const trailingRecent = /(?:--recent|recent)\s*$/.test(query);
+      const trailingImportant = /(?:--important|important)\s*$/.test(query);
+
+      if (trailingRecent) {
         weightImportance = 0.2;
         weightRecency = 0.6;
         weightRelevance = 0.2;
-        query = query.replace("--recent", "").trim();
-      } else if (query.includes("--important")) {
+        query = query.replace(/(?:--recent|recent)\s*$/, "").trim();
+      } else if (trailingImportant) {
         weightImportance = 0.6;
         weightRecency = 0.2;
         weightRelevance = 0.2;
-        query = query.replace("--important", "").trim();
+        query = query.replace(/(?:--important|important)\s*$/, "").trim();
       }
 
       if (!query) {
-        ctx.send(input.entity, "Usage: recall <query> [--recent | --important] [--type <type>]");
+        ctx.send(input.entity, "Usage: recall <query> [recent | important] [type <type>]");
         return;
       }
 

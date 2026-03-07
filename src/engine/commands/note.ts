@@ -30,21 +30,42 @@ function parseNoteText(input: string): {
   let noteType: string | undefined;
   let text = input;
 
-  // Extract !N (importance 1-10)
-  const impMatch = text.match(/\s+!(\d{1,2})(?:\s|$)/);
-  if (impMatch) {
-    const val = Number.parseInt(impMatch[1]!, 10);
+  // New: trailing "type <word>" (plain word)
+  const typeWordMatch = text.match(/\s+type\s+(\w+)\s*$/);
+  if (typeWordMatch && VALID_NOTE_TYPES.has(typeWordMatch[1]!)) {
+    noteType = typeWordMatch[1];
+    text = text.slice(0, text.length - typeWordMatch[0].length).trim();
+  }
+
+  // New: trailing "importance N" (plain word)
+  const impWordMatch = text.match(/\s+importance\s+(\d{1,2})\s*$/);
+  if (impWordMatch) {
+    const val = Number.parseInt(impWordMatch[1]!, 10);
     if (val >= 1 && val <= 10) {
       importance = val;
-      text = text.replace(impMatch[0], " ").trim();
+      text = text.slice(0, text.length - impWordMatch[0].length).trim();
     }
   }
 
-  // Extract #type
-  const typeMatch = text.match(/\s+#(\w+)(?:\s|$)/);
-  if (typeMatch && VALID_NOTE_TYPES.has(typeMatch[1]!)) {
-    noteType = typeMatch[1];
-    text = text.replace(typeMatch[0], " ").trim();
+  // Legacy: !N (importance 1-10) — backward compatible
+  if (importance === undefined) {
+    const impMatch = text.match(/\s+!(\d{1,2})(?:\s|$)/);
+    if (impMatch) {
+      const val = Number.parseInt(impMatch[1]!, 10);
+      if (val >= 1 && val <= 10) {
+        importance = val;
+        text = text.replace(impMatch[0], " ").trim();
+      }
+    }
+  }
+
+  // Legacy: #type — backward compatible
+  if (noteType === undefined) {
+    const typeMatch = text.match(/\s+#(\w+)(?:\s|$)/);
+    if (typeMatch && VALID_NOTE_TYPES.has(typeMatch[1]!)) {
+      noteType = typeMatch[1];
+      text = text.replace(typeMatch[0], " ").trim();
+    }
   }
 
   return { content: text, importance, noteType };
@@ -57,7 +78,7 @@ export function noteCommand(opts: {
   return {
     name: "note",
     aliases: [],
-    help: "Personal notes. Usage: note <text> [!importance] [#type] | note list | note space | note search <query> | note delete <id> | note link <id1> <id2> <rel> | note correct <id> <text> | note trace <id> | note graph | note evolve <id> | note types",
+    help: "Personal notes. Usage: note <text> [importance N] [type T] | note list | note space | note search <query> | note delete <id> | note link <id1> <id2> <rel> | note correct <id> <text> | note trace <id> | note graph | note evolve <id> | note types",
     handler: (ctx: RoomContext, input) => {
       const entity = opts.getEntity(input.entity);
       if (!entity) return;
@@ -72,7 +93,7 @@ export function noteCommand(opts: {
       if (!sub) {
         ctx.send(
           input.entity,
-          "Usage: note <text> [!importance] [#type] | note list | note space | note search <query> | note delete <id> | note link <id1> <id2> <rel> | note correct <id> <text> | note trace <id> | note graph | note evolve <id> | note types",
+          "Usage: note <text> [importance N] [type T] | note list | note space | note search <query> | note delete <id> | note link <id1> <id2> <rel> | note correct <id> <text> | note trace <id> | note graph | note evolve <id> | note types",
         );
         return;
       }
@@ -90,8 +111,8 @@ export function noteCommand(opts: {
             ...notes.map((n) => {
               const room = n.room_id ? ` [${n.room_id}]` : "";
               const date = new Date(n.created_at).toISOString().slice(0, 10);
-              const imp = n.importance !== 5 ? ` !${n.importance}` : "";
-              const type = n.note_type !== "observation" ? ` #${n.note_type}` : "";
+              const imp = n.importance !== 5 ? ` imp:${n.importance}` : "";
+              const type = n.note_type !== "observation" ? ` (${n.note_type})` : "";
               return `  #${n.id} ${date}${room}${imp}${type}: ${n.content.slice(0, 60)}`;
             }),
           ];
@@ -226,7 +247,7 @@ export function noteCommand(opts: {
           const lines = [header("Note Graph"), separator()];
           for (const entry of graph) {
             const indent = "  ".repeat(entry.depth);
-            const type = entry.note.note_type !== "observation" ? ` #${entry.note.note_type}` : "";
+            const type = entry.note.note_type !== "observation" ? ` (${entry.note.note_type})` : "";
             lines.push(`${indent}#${entry.note.id}${type}: ${entry.note.content.slice(0, 50)}`);
             for (const link of entry.links) {
               const dir =
@@ -249,7 +270,7 @@ export function noteCommand(opts: {
             `Types: ${types.join(", ")}`,
             `Relationships: ${rels.join(", ")}`,
             "",
-            "Usage: note <text> #<type> !<importance>",
+            "Usage: note <text> importance <N> type <type>",
             "       note link <id1> <id2> <relationship>",
           ];
           ctx.send(input.entity, lines.join("\n"));
@@ -347,7 +368,7 @@ export function noteCommand(opts: {
         }
 
         default: {
-          // Save a note: "note <text> [!importance] [#type]"
+          // Save a note: "note <text> [importance N] [type T]"
           const content = input.args;
           if (!content) {
             ctx.send(input.entity, "Usage: note <text>");

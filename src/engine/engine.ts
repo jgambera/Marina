@@ -68,9 +68,11 @@ import { quitCommand } from "./commands/quit";
 import { rankCommand } from "./commands/rank";
 import { recallCommand } from "./commands/recall";
 import { reflectCommand } from "./commands/reflect";
+import { runCommand } from "./commands/run";
 import { sayCommand } from "./commands/say";
 import { scoreCommand } from "./commands/score";
 import { searchCommand } from "./commands/search";
+import { shellCommand } from "./commands/shell";
 import { shoutCommand } from "./commands/shout";
 import { skillCommand } from "./commands/skill";
 import { sourceCommand } from "./commands/source";
@@ -80,6 +82,7 @@ import { tellCommand } from "./commands/tell";
 import { timeCommand, uptimeCommand } from "./commands/utility";
 import { whoCommand } from "./commands/who";
 import { compileCommandModule, compileRoomModule } from "./sandbox";
+import { ShellRuntime } from "./shell-runtime";
 
 export interface NpcBehavior {
   type: "patrol" | "greet" | "stationary";
@@ -120,6 +123,7 @@ export class Engine {
   readonly world?: WorldDefinition;
   readonly sandbox: RoomSandbox;
   readonly connectorRuntime?: ConnectorRuntime;
+  readonly shellRuntime: ShellRuntime;
   readonly storage?: StorageProvider;
   private db?: ArtilectDB;
   private startedAt = Date.now();
@@ -159,6 +163,10 @@ export class Engine {
     if (this.db) {
       this.connectorRuntime = new ConnectorRuntime(this.db);
     }
+
+    // Initialize shell runtime
+    this.shellRuntime = new ShellRuntime(this.db);
+    this.shellRuntime.init();
 
     // Initialize coordination managers if db is available
     if (this.db) {
@@ -1587,6 +1595,23 @@ export class Engine {
         db: this.db,
         storage: this.storage,
         logEvent: (event) => this.logEvent(event as import("../types").EngineEvent),
+        scratchRoot: "data/scratch",
+      }),
+    );
+
+    // Shell commands (run + shell management)
+    this.commands.registerBuiltin(
+      runCommand({
+        getEntity: (id) => this.entities.get(id as EntityId),
+        shellRuntime: this.shellRuntime,
+      }),
+    );
+    this.commands.registerBuiltin(
+      shellCommand({
+        getEntity: (id) => this.entities.get(id as EntityId),
+        db: this.db,
+        shellRuntime: this.shellRuntime,
+        storage: this.storage,
       }),
     );
 

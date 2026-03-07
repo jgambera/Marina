@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { StorageProvider } from "../../storage/provider";
@@ -11,6 +12,7 @@ export function canvasCommand(opts: {
   db?: ArtilectDB;
   storage?: StorageProvider;
   logEvent?: (event: { type: string; entity: EntityId; [k: string]: unknown }) => void;
+  scratchRoot?: string;
 }): CommandDef {
   return {
     name: "canvas",
@@ -36,7 +38,7 @@ export function canvasCommand(opts: {
 
       switch (sub) {
         case "asset":
-          await handleAsset(ctx, eid, entity, db, opts.storage, tokens.slice(1));
+          await handleAsset(ctx, eid, entity, db, opts.storage, tokens.slice(1), opts.scratchRoot);
           return;
         case "create":
           handleCreate(ctx, eid, entity, db, tokens.slice(1));
@@ -324,6 +326,7 @@ async function handleAsset(
   db: ArtilectDB,
   storage: StorageProvider | undefined,
   tokens: string[],
+  scratchRoot?: string,
 ): Promise<void> {
   const action = tokens[0]?.toLowerCase();
 
@@ -339,13 +342,58 @@ async function handleAsset(
     case "upload": {
       const url = tokens[1];
       if (!url) {
-        ctx.send(eid, "Usage: canvas asset upload <url>");
+        ctx.send(eid, "Usage: canvas asset upload <url or file:filename>");
         return;
       }
       if (!storage) {
         ctx.send(eid, "Asset storage not configured.");
         return;
       }
+
+      // Local file from entity's scratch directory
+      if (url.startsWith("file:")) {
+        const filename = url.slice(5);
+        if (!filename || filename.includes("..") || filename.includes("/")) {
+          ctx.send(eid, "Invalid filename. Use a simple filename from your scratch directory.");
+          return;
+        }
+        const root = scratchRoot ?? "data/scratch";
+        const filePath = join(root, eid, filename);
+        try {
+          const file = Bun.file(filePath);
+          if (!(await file.exists())) {
+            ctx.send(eid, `File not found in scratch directory: ${filename}`);
+            return;
+          }
+          const bodyBytes = new Uint8Array(await file.arrayBuffer());
+          if (bodyBytes.byteLength === 0) {
+            ctx.send(eid, "File is empty.");
+            return;
+          }
+          const ext = filename.includes(".") ? filename.slice(filename.lastIndexOf(".")) : "";
+          const mime = guessMime(ext);
+          const id = crypto.randomUUID();
+          const storageKey = `${id}${ext}`;
+
+          await storage.put(storageKey, bodyBytes, mime);
+          db.createAsset({
+            id,
+            entityName: entity.name,
+            filename,
+            mimeType: mime,
+            size: bodyBytes.byteLength,
+            storageKey,
+          });
+
+          const sizeKb = Math.round(bodyBytes.byteLength / 1024);
+          ctx.send(eid, `Asset uploaded: ${id} (${filename}, ${sizeKb}KB, ${mime})`);
+        } catch (err) {
+          ctx.send(eid, `Upload failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        return;
+      }
+
+      // Remote URL fetch
       if (!ctx.fetch) {
         ctx.send(eid, "HTTP fetch not available in this context.");
         return;
@@ -366,7 +414,7 @@ async function handleAsset(
           return;
         }
         if (bodyBytes.byteLength > 50 * 1024 * 1024) {
-          ctx.send(eid, "File too large (max 50MB).");
+          ctx.send(eid, "File too large (max 50MB for remote URLs).");
           return;
         }
         const filename = url.split("/").pop()?.split("?")[0] ?? "download";

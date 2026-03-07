@@ -164,7 +164,7 @@ describe("Export/Import", () => {
 
       expect(snapshot.format).toBe("artilect-snapshot");
       expect(snapshot.version).toBe(1);
-      expect(snapshot.schema_version).toBe(22);
+      expect(snapshot.schema_version).toBe(23);
       expect(snapshot.exported_at).toBeTruthy();
 
       // Verify key tables are present
@@ -235,7 +235,9 @@ describe("Export/Import", () => {
 
       const snapshot = exportState(SRC_DB);
       expect(snapshot.format).toBe("artilect-snapshot");
-      expect(Object.keys(snapshot.tables).length).toBe(0);
+      // Migration 23 seeds 12 default shell_allowlist entries
+      expect(Object.keys(snapshot.tables).length).toBe(1);
+      expect(snapshot.tables.shell_allowlist).toBeDefined();
     });
 
     it("should preserve entity properties as JSON strings", () => {

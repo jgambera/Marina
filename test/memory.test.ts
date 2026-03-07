@@ -130,16 +130,16 @@ describe("Agent Memory Primitives", () => {
   // ─── Note Extensions ──────────────────────────────────────────────────
 
   describe("Note Extensions", () => {
-    it("should save note with importance via !N", () => {
-      engine.processCommand(conn1.entity!, "note Found a key !8");
+    it("should save note with importance via plain words", () => {
+      engine.processCommand(conn1.entity!, "note Found a key importance 8");
       expect(conn1.lastText()).toContain("importance=8");
       const note = db.getNote(1);
       expect(note).toBeDefined();
       expect(note!.importance).toBe(8);
     });
 
-    it("should save note with type via #type", () => {
-      engine.processCommand(conn1.entity!, "note The door is locked #fact");
+    it("should save note with type via plain words", () => {
+      engine.processCommand(conn1.entity!, "note The door is locked type fact");
       expect(conn1.lastText()).toContain("type=fact");
       const note = db.getNote(1);
       expect(note).toBeDefined();
@@ -147,9 +147,18 @@ describe("Agent Memory Primitives", () => {
     });
 
     it("should save note with both importance and type", () => {
-      engine.processCommand(conn1.entity!, "note Critical decision made !9 #decision");
+      engine.processCommand(
+        conn1.entity!,
+        "note Critical decision made importance 9 type decision",
+      );
       expect(conn1.lastText()).toContain("importance=9");
       expect(conn1.lastText()).toContain("type=decision");
+    });
+
+    it("should support legacy !N and #type syntax", () => {
+      engine.processCommand(conn1.entity!, "note Legacy note !7 #fact");
+      expect(conn1.lastText()).toContain("importance=7");
+      expect(conn1.lastText()).toContain("type=fact");
     });
 
     it("should default to importance=5 and type=observation", () => {
@@ -161,12 +170,12 @@ describe("Agent Memory Primitives", () => {
     });
 
     it("should show importance and type in note list", () => {
-      engine.processCommand(conn1.entity!, "note Important fact !8 #fact");
+      engine.processCommand(conn1.entity!, "note Important fact importance 8 type fact");
       conn1.clear();
       engine.processCommand(conn1.entity!, "note list");
       const text = conn1.lastText();
-      expect(text).toContain("!8");
-      expect(text).toContain("#fact");
+      expect(text).toContain("imp:8");
+      expect(text).toContain("(fact)");
     });
 
     it("should correct a note with supersedes link", () => {

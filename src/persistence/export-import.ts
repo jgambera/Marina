@@ -52,6 +52,8 @@ const EXPORT_TABLES = [
   "canvas_nodes",
   "entity_activity",
   "meta",
+  "shell_allowlist",
+  "shell_log",
 ] as const;
 
 // ─── Export ─────────────────────────────────────────────────────────────────
