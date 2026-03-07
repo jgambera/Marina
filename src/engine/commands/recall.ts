@@ -88,6 +88,20 @@ export function recallCommand(deps: {
           return `  #${n.id} [score=${n.score.toFixed(2)} imp=${n.importance} ${ageStr}]: ${n.content.slice(0, 60)}`;
         }),
       ];
+
+      // Depth signal: show what's beyond the returned results
+      const counts = db.countMatchingNotes(entity.name, query);
+      if (counts.total > results.length || counts.fading > 0) {
+        const parts: string[] = [];
+        if (counts.total > results.length) {
+          parts.push(`${counts.total} total`);
+        }
+        if (counts.fading > 0) {
+          parts.push(`${counts.fading} fading`);
+        }
+        lines.push(`  (${parts.join(", ")})`);
+      }
+
       ctx.send(input.entity, lines.join("\n"));
     },
   };

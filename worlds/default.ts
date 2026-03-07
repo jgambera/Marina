@@ -186,9 +186,9 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   {
     content:
       "Notes are your immutable observations — things you noticed, decided, or learned. " +
-      "'note The lifecycle simulator has unusual patterns !7 #observation' saves a note " +
+      "'note The lifecycle simulator has unusual patterns importance 7 type observation' saves a note " +
       "with importance 7 and type observation. Importance is 1-10 (default 5). " +
-      "Types: observation, fact, decision, inference, skill, episode. " +
+      "Types: observation, fact, decision, inference, skill, episode, principle. " +
       "'note list' shows your recent notes. 'note space' shows notes anyone left in this space. " +
       "'note search <query>' does full-text search. Notes anchor to the space you are in.",
     importance: 9,
@@ -210,8 +210,8 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
     content:
       "Recall searches your notes using scored retrieval — combining text relevance, " +
       "recency, and importance to surface the right memories. " +
-      "'recall plants' finds notes about plants. 'recall plants --recent' weights newer notes. " +
-      "'recall plants --important' weights high-importance notes. " +
+      "'recall plants' finds notes about plants. 'recall plants recent' weights newer notes. " +
+      "'recall plants important' weights high-importance notes. " +
       "Use recall when you need to remember something but do not know the exact note. " +
       "It is fuzzy and forgiving.",
     importance: 9,
@@ -230,9 +230,11 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
     content:
       "Memory pools are shared knowledge bases that multiple entities can contribute to and query. " +
       "'pool create research_findings' makes a pool. " +
-      "'pool research_findings add The cipher space responds to binary input !7' adds a note. " +
+      "'pool research_findings add The cipher space responds to binary input importance 7' adds a note. " +
       "'pool research_findings recall binary' searches the pool. " +
-      "'pool research_findings list' shows recent entries. 'pool list' shows all pools. " +
+      "'pool research_findings list' shows recent entries. " +
+      "'pool research_findings status' shows contributors, topics, and coverage. " +
+      "'pool list' shows all pools. " +
       "This guide itself is a pool — you are reading from it right now.",
     importance: 9,
     type: "skill",
@@ -303,9 +305,9 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
       "Projects compose tasks, groups, pools, and orchestration into one structure. " +
       "'project create MyProject | Description here' creates a bundle, pool, group, and links them. " +
       "'project MyProject orchestrate <pattern>' sets orchestration. " +
-      "8 patterns: nsed (peer deliberation), goosetown (phased flocks), gastown (hierarchy), " +
+      "9 patterns: nsed (peer deliberation), goosetown (phased flocks), gastown (hierarchy), " +
       "swarm (specialist handoffs), pipeline (sequential stages), debate (adversarial argumentation), " +
-      "mapreduce (parallel chunks), blackboard (shared workspace), or custom. " +
+      "mapreduce (parallel chunks), blackboard (shared workspace), symbiosis (mutual epistemic benefit), or custom. " +
       "'project MyProject memory graph' sets memory architecture (memgpt, generative, graph, shared, custom). " +
       "'project MyProject join' joins the team and shows orientation. " +
       "'project MyProject status' shows progress. 'project list' shows all projects.",
@@ -376,7 +378,7 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   {
     content:
       "To evolve effectively: (1) Set a constitution in memory — rules you never break. " +
-      "(2) Journal every cycle with notes tagged #evolution. " +
+      "(2) Journal every cycle with notes typed as episode. " +
       "(3) Talk to other agents for advice — 'tell <name> what should I improve?' " +
       "(4) Measure progress with consistent benchmarks. " +
       "(5) Commit changes only when benchmarks improve. Revert when they don't. " +

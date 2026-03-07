@@ -1,8 +1,83 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { ArtilectDB, NoteRow } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
 const DAY_MS = 86_400_000;
+
+const STOP_WORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "are",
+  "but",
+  "not",
+  "you",
+  "all",
+  "can",
+  "had",
+  "was",
+  "one",
+  "our",
+  "out",
+  "has",
+  "have",
+  "been",
+  "were",
+  "they",
+  "this",
+  "that",
+  "with",
+  "from",
+  "will",
+  "would",
+  "there",
+  "their",
+  "what",
+  "about",
+  "which",
+  "when",
+  "make",
+  "like",
+  "could",
+  "into",
+  "than",
+  "other",
+  "some",
+  "very",
+  "just",
+  "also",
+  "more",
+  "should",
+  "each",
+  "being",
+  "does",
+  "use",
+  "used",
+  "using",
+  "pool",
+  "project",
+]);
+
+function extractPoolTopics(notes: NoteRow[]): string[] {
+  const counts = new Map<string, number>();
+  for (const n of notes) {
+    const words = n.content
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .split(/\s+/);
+    const seen = new Set<string>();
+    for (const w of words) {
+      if (w.length < 4 || STOP_WORDS.has(w) || seen.has(w)) continue;
+      seen.add(w);
+      counts.set(w, (counts.get(w) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .filter(([, c]) => c >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([w]) => w);
+}
 
 export function poolCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
@@ -11,7 +86,7 @@ export function poolCommand(deps: {
   return {
     name: "pool",
     aliases: [],
-    help: "Shared memory pools for collaborative knowledge.\nUsage: pool create <name> | pool <name> add|recall|list | pool list\n\nExamples:\n  pool create findings\n  pool findings add The decode room responds to binary input importance 7\n  pool findings recall binary\n  pool findings list",
+    help: "Shared memory pools for collaborative knowledge.\nUsage: pool create <name> | pool <name> add|recall|list|status | pool list\n\nExamples:\n  pool create findings\n  pool findings add The decode room responds to binary input importance 7\n  pool findings recall binary\n  pool findings list\n  pool findings status",
     handler: (ctx: RoomContext, input) => {
       const entity = deps.getEntity(input.entity);
       if (!entity) return;
@@ -26,7 +101,7 @@ export function poolCommand(deps: {
       if (!sub) {
         ctx.send(
           input.entity,
-          "Usage: pool create <name> | pool <name> add <text> | pool <name> recall <query> | pool <name> list | pool list",
+          "Usage: pool create <name> | pool <name> add|recall|list|status | pool list",
         );
         return;
       }
@@ -101,6 +176,56 @@ export function poolCommand(deps: {
       }
 
       switch (action) {
+        case "status": {
+          const notes = db.getPoolNotes(pool.id);
+          if (notes.length === 0) {
+            ctx.send(input.entity, `Pool "${poolName}" is empty.`);
+            return;
+          }
+
+          // Contributors
+          const contributors = new Map<string, number>();
+          for (const n of notes) {
+            contributors.set(n.entity_name, (contributors.get(n.entity_name) ?? 0) + 1);
+          }
+
+          // Note types
+          const typeCounts: Record<string, number> = {};
+          for (const n of notes) {
+            typeCounts[n.note_type] = (typeCounts[n.note_type] ?? 0) + 1;
+          }
+
+          // Importance distribution
+          const highImp = notes.filter((n) => n.importance >= 7).length;
+          const midImp = notes.filter((n) => n.importance >= 4 && n.importance <= 6).length;
+          const lowImp = notes.filter((n) => n.importance <= 3).length;
+
+          // Recency
+          const now = Date.now();
+          const recentCount = notes.filter((n) => now - n.created_at < DAY_MS).length;
+          const weekCount = notes.filter((n) => now - n.created_at < 7 * DAY_MS).length;
+
+          // Topics
+          const topics = extractPoolTopics(notes);
+
+          const lines = [
+            header(`Pool: ${poolName}`),
+            separator(),
+            `  Notes: ${notes.length}`,
+            `  Contributors: ${[...contributors.entries()].map(([name, count]) => `${name} (${count})`).join(", ")}`,
+            `  Types: ${Object.entries(typeCounts)
+              .map(([t, c]) => `${t}: ${c}`)
+              .join(", ")}`,
+            `  Importance: ${highImp} high, ${midImp} mid, ${lowImp} low`,
+            `  Activity: ${recentCount} today, ${weekCount} this week`,
+          ];
+          if (topics.length > 0) {
+            lines.push(`  Topics: ${topics.join(", ")}`);
+          }
+          ctx.send(input.entity, lines.join("\n"));
+          return;
+        }
+
         case "add": {
           const text = tokens.slice(2).join(" ");
           if (!text) {
@@ -164,7 +289,7 @@ export function poolCommand(deps: {
         default:
           ctx.send(
             input.entity,
-            `Usage: pool ${poolName} add <text> | pool ${poolName} recall <query> | pool ${poolName} list`,
+            `Usage: pool ${poolName} add <text> | pool ${poolName} recall <query> | pool ${poolName} list | pool ${poolName} status`,
           );
       }
     },

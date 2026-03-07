@@ -185,7 +185,7 @@ export const PIPELINE_TEMPLATE: TemplateNote[] = [
     content:
       "This project uses Pipeline orchestration (sequential stage-by-stage processing). " +
       "Work flows through ordered stages. Each stage must complete before the next begins. " +
-      "Use the project board as a conveyor belt — post stage outputs for the next stage " +
+      "Use the project board as a conveyor belt - post stage outputs for the next stage " +
       "to consume.",
     importance: 9,
     type: "skill",
@@ -218,8 +218,8 @@ export const PIPELINE_TEMPLATE: TemplateNote[] = [
     content:
       "Pipeline quality: each stage reviews the previous stage's output before processing. " +
       "If the input is insufficient, reject by replying on the board and notifying via " +
-      "channel. The upstream agent reworks. Use 'pool <name> add' to record stage " +
-      "lessons for future pipeline runs.",
+      "channel. The upstream agent reworks. Use 'pool <name> add <lesson>' to record " +
+      "stage lessons for future pipeline runs.",
     importance: 7,
     type: "skill",
   },
@@ -291,8 +291,8 @@ export const MAPREDUCE_TEMPLATE: TemplateNote[] = [
   {
     content:
       "MapReduce execution: work your chunk in isolation. Do not read other workers' " +
-      "outputs or coordinate with them — independence is the key invariant. Add your " +
-      "chunk results to the pool with 'pool <name> add [chunk-N] <result>' and submit " +
+      "outputs or coordinate with them - independence is the key invariant. Add your " +
+      "chunk results to the pool with 'pool <name> add chunk-N: <result>' and submit " +
       "your task when done.",
     importance: 8,
     type: "skill",
@@ -396,9 +396,9 @@ export const BLACKBOARD_TEMPLATE: TemplateNote[] = [
   {
     content:
       "Blackboard writing: add observations, hypotheses, and partial solutions to " +
-      "the pool with 'pool <name> add <content> !<importance>'. Tag contributions " +
-      "by type: #observation for raw data, #inference for derived conclusions, " +
-      "#decision for agreed actions. Higher importance surfaces first in recall.",
+      "the pool with 'pool <name> add <content> importance <N>'. Tag contributions " +
+      "by type: observation for raw data, inference for derived conclusions, " +
+      "decision for agreed actions. Higher importance surfaces first in recall.",
     importance: 8,
     type: "skill",
   },

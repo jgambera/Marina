@@ -248,10 +248,31 @@ export function reflectCommand(deps: {
       }
 
       if (sourceNotes.length < 2) {
-        ctx.send(
-          input.entity,
-          "Not enough notes to reflect on. Need at least 2 high-importance notes.",
-        );
+        // Not enough to synthesize — show diagnostic instead
+        const allNotes = db.getNotesByEntity(entity.name, 100);
+        const nonEpisode = allNotes.filter((n) => n.note_type !== "episode");
+        if (nonEpisode.length < 2) {
+          ctx.send(input.entity, "Not enough notes to reflect on. Take more notes first.");
+          return;
+        }
+        // Find what topics have accumulated
+        const topics = extractThemes(nonEpisode.slice(0, 30));
+        const fading = allNotes.filter((n) => n.importance <= 2);
+        const lines = [
+          header("Reflection Diagnostic"),
+          separator(),
+          `  Notes: ${allNotes.length} (${nonEpisode.length} unconsolidated)`,
+        ];
+        if (fading.length > 0) {
+          lines.push(`  Fading: ${fading.length}`);
+        }
+        if (topics.length > 0) {
+          lines.push(`  Topics: ${topics.join(", ")}`);
+          lines.push("", "Try: reflect <topic>");
+        } else {
+          lines.push("", "Need at least 2 high-importance notes to synthesize.");
+        }
+        ctx.send(input.entity, lines.join("\n"));
         return;
       }
 

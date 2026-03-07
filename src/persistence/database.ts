@@ -1852,6 +1852,30 @@ export class ArtilectDB {
     }
   }
 
+  /** Count total and fading matches for a query (beyond the top-20 recall returns) */
+  countMatchingNotes(entityName: string, query: string): { total: number; fading: number } {
+    const safeQuery = query.replace(/['"*()]/g, "").trim();
+    if (!safeQuery) return { total: 0, fading: 0 };
+    const ftsQuery = safeQuery
+      .split(/\s+/)
+      .map((term) => `"${term}"`)
+      .join(" ");
+    try {
+      const row = this.db
+        .query(
+          `SELECT COUNT(*) as total,
+            SUM(CASE WHEN n.importance <= 2 THEN 1 ELSE 0 END) as fading
+           FROM notes n
+           JOIN notes_fts fts ON n.id = fts.rowid
+           WHERE n.entity_name = ? AND n.pool_id IS NULL AND notes_fts MATCH ?`,
+        )
+        .get(entityName, ftsQuery) as { total: number; fading: number } | null;
+      return { total: row?.total ?? 0, fading: row?.fading ?? 0 };
+    } catch {
+      return { total: 0, fading: 0 };
+    }
+  }
+
   /** Boost importance for frequently-recalled notes, decay for stale ones */
   adjustNoteImportance(): { boosted: number; decayed: number } {
     const now = Date.now();
@@ -2077,6 +2101,12 @@ export class ArtilectDB {
       noteType,
       poolId,
     });
+  }
+
+  getPoolNotes(poolId: string, limit = 100): NoteRow[] {
+    return this.db
+      .query("SELECT * FROM notes WHERE pool_id = ? ORDER BY id DESC LIMIT ?")
+      .all(poolId, limit) as NoteRow[];
   }
 
   recallPoolNotes(

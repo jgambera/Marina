@@ -1,6 +1,83 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { ArtilectDB, NoteRow } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
+
+const STOP_WORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "are",
+  "but",
+  "not",
+  "you",
+  "all",
+  "can",
+  "had",
+  "her",
+  "was",
+  "one",
+  "our",
+  "out",
+  "has",
+  "have",
+  "been",
+  "were",
+  "they",
+  "this",
+  "that",
+  "with",
+  "from",
+  "will",
+  "would",
+  "there",
+  "their",
+  "what",
+  "about",
+  "which",
+  "when",
+  "make",
+  "like",
+  "been",
+  "could",
+  "into",
+  "than",
+  "other",
+  "some",
+  "very",
+  "just",
+  "also",
+  "more",
+  "should",
+  "each",
+  "being",
+  "does",
+  "note",
+  "notes",
+  "used",
+  "using",
+]);
+
+/** Extract topic keywords from a set of notes (words appearing in 2+ notes) */
+function extractTopics(notes: NoteRow[]): string[] {
+  const counts = new Map<string, number>();
+  for (const n of notes) {
+    const words = n.content
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .split(/\s+/);
+    const seen = new Set<string>();
+    for (const w of words) {
+      if (w.length < 4 || STOP_WORDS.has(w) || seen.has(w)) continue;
+      seen.add(w);
+      counts.set(w, (counts.get(w) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .filter(([, c]) => c >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([w]) => w);
+}
 
 const VALID_NOTE_TYPES = new Set([
   "observation",
@@ -339,17 +416,20 @@ export function noteCommand(deps: {
           for (const n of notes) {
             typeCounts[n.note_type] = (typeCounts[n.note_type] ?? 0) + 1;
           }
-          // Count edges by relationship
+          // Count edges by relationship; track linked note IDs
           const edgeCounts: Record<string, number> = {};
+          const linkedIds = new Set<number>();
           for (const n of notes) {
             const links = db.getNoteLinks(n.id);
             for (const link of links) {
-              // Only count edges from source to avoid double-counting
+              linkedIds.add(link.source_id);
+              linkedIds.add(link.target_id);
               if (link.source_id === n.id) {
                 edgeCounts[link.relationship] = (edgeCounts[link.relationship] ?? 0) + 1;
               }
             }
           }
+
           const lines = [
             header("Knowledge Graph"),
             separator(),
@@ -363,6 +443,37 @@ export function noteCommand(deps: {
               lines.push(`  ${rel}: ${count}`);
             }
           }
+
+          // Cognitive landscape
+          const orphans = notes.filter((n) => !linkedIds.has(n.id));
+          const fading = notes.filter((n) => n.importance <= 2);
+          const contradictions = edgeCounts.contradicts ?? 0;
+
+          // Notes since last reflection (notes ordered by id DESC, first episode = most recent)
+          const lastEpisode = notes.find((n) => n.note_type === "episode");
+          const sinceReflection = lastEpisode
+            ? notes.filter((n) => n.id > lastEpisode.id && n.note_type !== "episode").length
+            : notes.filter((n) => n.note_type !== "episode").length;
+
+          lines.push("", "Landscape:");
+          lines.push(`  Unlinked: ${orphans.length}`);
+          if (fading.length > 0) {
+            lines.push(`  Fading: ${fading.length}`);
+          }
+          if (contradictions > 0) {
+            lines.push(`  Contradictions: ${contradictions}`);
+          }
+          lines.push(`  Since last reflection: ${sinceReflection}`);
+
+          // Frontier topics: themes from orphan + fading notes
+          const frontierSet = new Set([...orphans, ...fading]);
+          if (frontierSet.size >= 2) {
+            const topics = extractTopics([...frontierSet]);
+            if (topics.length > 0) {
+              lines.push(`  Frontiers: ${topics.join(", ")}`);
+            }
+          }
+
           ctx.send(input.entity, lines.join("\n"));
           return;
         }

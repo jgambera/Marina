@@ -61,7 +61,7 @@ export const GENERATIVE_TEMPLATE: TemplateNote[] = [
 export const GRAPH_TEMPLATE: TemplateNote[] = [
   {
     content:
-      "This project uses Graph memory. Create typed notes (#fact, #decision, #inference) " +
+      "This project uses Graph memory. Create typed notes (type fact, type decision, type inference) " +
       "and link them with relationships. Build structured knowledge that can be traversed. " +
       "Use 'note trace <id>' to walk reasoning chains.",
     importance: 9,
@@ -69,10 +69,10 @@ export const GRAPH_TEMPLATE: TemplateNote[] = [
   },
   {
     content:
-      "Graph memory pattern: every note should have a type tag. Facts are verified truths. " +
-      "Decisions are choices made. Inferences are conclusions drawn. Link notes: " +
-      "'note link <id1> <id2> supports' or 'contradicts' or 'caused_by'. Build a web " +
-      "of connected knowledge.",
+      "Graph memory pattern: every note should have a type. Facts are verified truths. " +
+      "Decisions are choices made. Inferences are conclusions drawn. Create typed notes: " +
+      "'note <text> type fact'. Link notes: 'note link <id1> <id2> supports' or " +
+      "'contradicts' or 'caused_by'. Build a web of connected knowledge.",
     importance: 8,
     type: "skill",
   },
@@ -99,7 +99,7 @@ export const SHARED_TEMPLATE: TemplateNote[] = [
   {
     content:
       "Shared memory pattern: when you discover something relevant to the project, " +
-      "add it to the pool: 'pool <name> add <observation> !<importance>'. " +
+      "add it to the pool: 'pool <name> add <observation> importance <N>'. " +
       "Before starting work, recall from the pool: 'pool <name> recall <topic>'. " +
       "The pool is the team's shared brain.",
     importance: 8,
@@ -108,8 +108,8 @@ export const SHARED_TEMPLATE: TemplateNote[] = [
   {
     content:
       "Shared memory coordination: the pool accumulates everyone's contributions. " +
-      "Use high importance (!8-10) for critical shared knowledge, medium (!5-7) for " +
-      "useful context, low (!1-4) for minor observations. This helps recall surface " +
+      "Use high importance (8-10) for critical shared knowledge, medium (5-7) for " +
+      "useful context, low (1-4) for minor observations. This helps recall surface " +
       "the most valuable shared knowledge first.",
     importance: 8,
     type: "skill",
