@@ -1353,7 +1353,6 @@ export class Engine {
         getEntity: (id) => this.entities.get(id),
         db: this.db,
         taskManager: this.taskManager,
-        groupManager: this.groupManager,
         getOnlineAgents: () => this.getOnlineAgents(),
       }),
     );
