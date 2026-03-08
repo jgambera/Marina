@@ -36,13 +36,17 @@ const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT ?? "";
 // ─── Parse model_request from channel perception ─────────────────────────────
 
 /** Strip ANSI escape codes from text */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape stripping requires ESC control char
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
 function stripAnsi(text: string): string {
-  return text.replace(/\x1b\[[0-9;]*m/g, "");
+  return text.replace(ANSI_RE, "");
 }
 
 /** Extract JSON payload from a channel message perception.
  *  Channel messages arrive as "[channel] sender: content" with ANSI codes. */
-function extractChannelPayload(text: string): { channel: string; sender: string; content: string } | undefined {
+function extractChannelPayload(
+  text: string,
+): { channel: string; sender: string; content: string } | undefined {
   const clean = stripAnsi(text);
   const match = clean.match(/^\[([^\]]+)\]\s+([^:]+):\s+(.*)/s);
   if (!match) return undefined;
@@ -62,7 +66,7 @@ async function callProvider(
 ): Promise<string | ReadableStream<Uint8Array>> {
   const url = `${PROVIDER_URL}/chat/completions`;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (PROVIDER_KEY) headers["Authorization"] = `Bearer ${PROVIDER_KEY}`;
+  if (PROVIDER_KEY) headers.Authorization = `Bearer ${PROVIDER_KEY}`;
 
   const allMessages: Message[] = [];
   if (SYSTEM_PROMPT) allMessages.push({ role: "system", content: SYSTEM_PROMPT });
@@ -101,7 +105,10 @@ async function streamProviderResponse(
   const body = await callProvider(messages, true);
   if (typeof body === "string") {
     // Provider didn't stream — send as single response
-    agent.channel(channel, JSON.stringify({ type: "model_response", id: requestId, content: body }));
+    agent.channel(
+      channel,
+      JSON.stringify({ type: "model_response", id: requestId, content: body }),
+    );
     return;
   }
 
@@ -121,10 +128,7 @@ async function streamProviderResponse(
       if (!line.startsWith("data: ")) continue;
       const payload = line.slice(6).trim();
       if (payload === "[DONE]") {
-        await agent.channel(
-          channel,
-          JSON.stringify({ type: "model_response_end", id: requestId }),
-        );
+        await agent.channel(channel, JSON.stringify({ type: "model_response_end", id: requestId }));
         return;
       }
 
@@ -144,10 +148,7 @@ async function streamProviderResponse(
   }
 
   // Ensure we always send an end marker
-  await agent.channel(
-    channel,
-    JSON.stringify({ type: "model_response_end", id: requestId }),
-  );
+  await agent.channel(channel, JSON.stringify({ type: "model_response_end", id: requestId }));
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
