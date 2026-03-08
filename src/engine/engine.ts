@@ -174,6 +174,10 @@ export class Engine {
       this.channelManager = new ChannelManager(this.db, (target, msg) =>
         this.sendToEntity(target, msg),
       );
+      // Ensure the default "model" channel exists so /v1/models always lists this instance
+      if (!this.channelManager.getChannelByName("model")) {
+        this.channelManager.createChannel({ type: "model", name: "model" });
+      }
       this.boardManager = new BoardManager(this.db);
       this.groupManager = new GroupManager(this.db, this.channelManager, this.boardManager);
       this.taskManager = new TaskManager(this.db);

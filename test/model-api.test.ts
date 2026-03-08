@@ -133,17 +133,19 @@ describe("Model API", () => {
     cleanupDb(TEST_DB);
   });
 
-  it("GET /v1/models returns empty list when no model channels exist", async () => {
+  it("GET /v1/models always lists the default artilect model", async () => {
     const [url, method, req] = makeRequest("/v1/models", "GET");
     const resp = await handleModelApi(url, method, req, engine);
     expect(resp).toBeDefined();
     const data = await resp!.json();
     expect(data.object).toBe("list");
-    expect(data.data).toHaveLength(0);
+    expect(data.data).toHaveLength(1);
+    expect(data.data[0].id).toBe("artilect");
+    expect(data.data[0].owned_by).toBe("artilect");
   });
 
   it("GET /v1/models lists channels matching model* pattern", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     const [url, method, req] = makeRequest("/v1/models", "GET");
     const resp = await handleModelApi(url, method, req, engine);
     const data = await resp!.json();
@@ -153,7 +155,7 @@ describe("Model API", () => {
   });
 
   it("GET /api/tags returns Ollama format model list", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     const [url, method, req] = makeRequest("/api/tags", "GET");
     const resp = await handleModelApi(url, method, req, engine);
     const data = await resp!.json();
@@ -161,9 +163,9 @@ describe("Model API", () => {
     expect(data.models[0].name).toBe("artilect");
   });
 
-  it("POST /v1/chat/completions returns 404 for unknown model", async () => {
+  it("POST /v1/chat/completions returns 404 for unknown model variant", async () => {
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "nonexistent",
+      model: "artilect:nonexistent",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -172,7 +174,7 @@ describe("Model API", () => {
 
   it("POST /v1/chat/completions returns 503 when no agents online", async () => {
     // Create channel but remove the agent's connection
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     engine.removeConnection("c1");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
@@ -184,7 +186,7 @@ describe("Model API", () => {
   });
 
   it("POST /v1/chat/completions routes through channel and gets JSON response", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Hello from Artilect!");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
@@ -199,7 +201,7 @@ describe("Model API", () => {
   });
 
   it("POST /v1/chat/completions accepts plaintext bracket response", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
 
     cm.onMessage((channelId, senderId, _senderName, content) => {
       if (senderId === "__model_api__") {
@@ -224,7 +226,7 @@ describe("Model API", () => {
   });
 
   it("POST /api/chat routes in Ollama format", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Ollama response");
 
     const [url, method, req] = makeRequest("/api/chat", "POST", {
@@ -240,7 +242,7 @@ describe("Model API", () => {
   });
 
   it("POST /api/generate routes single prompt in Ollama format", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Generated text");
 
     const [url, method, req] = makeRequest("/api/generate", "POST", {
@@ -294,7 +296,7 @@ describe("Model API", () => {
 
   it("error responses use OpenAI nested format", async () => {
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "nonexistent",
+      model: "artilect:nonexistent",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -317,7 +319,7 @@ describe("Model API", () => {
   // --- Streaming tests ---
 
   it("streaming: OpenAI SSE format with model_response_chunk + model_response_end", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     setupStreamingAgent(cm, conn1.entity!, "Agent1", ["Hello", " world", "!"]);
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
@@ -358,7 +360,7 @@ describe("Model API", () => {
   });
 
   it("streaming: Ollama chunked JSON lines format", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     setupStreamingAgent(cm, conn1.entity!, "Agent1", ["Hello", " world"]);
 
     const [url, method, req] = makeRequest("/api/chat", "POST", {
@@ -385,7 +387,7 @@ describe("Model API", () => {
   });
 
   it("streaming: fallback when agent sends single model_response (Phase 1 compat)", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     // Phase 1 agent: responds with model_response, not chunks
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Complete response");
 
@@ -418,7 +420,7 @@ describe("Model API", () => {
   // --- Multi-turn conversation tests ---
 
   it("multi-turn: first request creates conversation channel", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Response 1");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
@@ -437,7 +439,7 @@ describe("Model API", () => {
   });
 
   it("multi-turn: second request includes history from first exchange", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
 
     let capturedPayload: string | undefined;
 
@@ -511,7 +513,7 @@ describe("Model API", () => {
   });
 
   it("multi-turn: X-Conversation-Id header returned and reusable", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Response");
 
     const [url, method, req] = makeRequest(
@@ -534,7 +536,7 @@ describe("Model API", () => {
   // --- Load balancing tests ---
 
   it("load balancing: round-robin alternates between two agents", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
 
     // Add a second agent
     const conn2 = new MockConnection("c2");
@@ -598,7 +600,7 @@ describe("Model API", () => {
   });
 
   it("model-conv channels excluded from model listing", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
     // Create a conversation channel manually
     cm.createChannel({ type: "model", name: "model-conv-test123", retentionHours: 24 });
 
@@ -611,7 +613,7 @@ describe("Model API", () => {
   });
 
   it("request payload includes target field for load balancing", async () => {
-    engine.processCommand(conn1.entity!, "channel create model");
+    engine.processCommand(conn1.entity!, "channel join model");
 
     let capturedTarget: string | undefined;
     cm.onMessage((channelId, senderId, _senderName, content) => {
