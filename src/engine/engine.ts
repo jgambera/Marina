@@ -54,6 +54,7 @@ import { dropCommand, getCommand, giveCommand } from "./commands/items";
 import { linkCommand } from "./commands/link";
 import { lookCommand } from "./commands/look";
 import { lsCommand } from "./commands/ls";
+import { briefCommand } from "./commands/brief";
 import { macroCommand } from "./commands/macro";
 import { mapCommand } from "./commands/map";
 import { memoryCommand } from "./commands/memory";
@@ -733,6 +734,13 @@ export class Engine {
     this.processCommand(entityId, "look");
   }
 
+  /** Send a brief orientation to an entity (used on first login) */
+  sendBrief(entityId: EntityId): void {
+    const entity = this.entities.get(entityId);
+    if (!entity) return;
+    this.processCommand(entityId, "brief");
+  }
+
   // ─── NPC Management ─────────────────────────────────────────────────────
 
   /** Spawn an NPC entity in a room (not tied to any connection) */
@@ -1340,6 +1348,15 @@ export class Engine {
       }),
     );
     this.commands.registerBuiltin(talkCommand());
+    this.commands.registerBuiltin(
+      briefCommand({
+        getEntity: (id) => this.entities.get(id),
+        db: this.db,
+        taskManager: this.taskManager,
+        groupManager: this.groupManager,
+        getOnlineAgents: () => this.getOnlineAgents(),
+      }),
+    );
     this.commands.registerBuiltin(
       scoreCommand({
         getEntity: (id) => this.entities.get(id),

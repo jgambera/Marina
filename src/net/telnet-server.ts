@@ -101,6 +101,7 @@ export class TelnetServer {
                 socket.write(`\r\nWelcome, ${line}.\r\n\r\n`);
               }
               engine.sendLook(result.entityId);
+              engine.sendBrief(result.entityId);
               continue;
             }
 

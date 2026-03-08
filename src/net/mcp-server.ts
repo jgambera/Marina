@@ -217,6 +217,7 @@ export class McpServerAdapter {
         }
         session.entityId = result.entityId;
         engine.sendLook(result.entityId);
+        engine.sendBrief(result.entityId);
         const output = drainPerceptions(session);
         const tokenNote = result.token ? `\nSession token: \`${result.token}\`` : "";
         const skillHint = "\n\nTip: Fetch `/api/skill` for the full command reference.";

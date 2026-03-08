@@ -525,6 +525,7 @@ export function createRpcHandlers(
           },
         });
         engine.sendLook(result.entityId);
+        engine.sendBrief(result.entityId);
         return;
       }
 

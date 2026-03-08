@@ -118,16 +118,16 @@ describe("WebSocket Integration", () => {
       };
       ws.onmessage = (event) => {
         messages.push(event.data as string);
-        if (messages.length >= 3) {
-          // Now send a command
+        if (messages.length >= 4) {
+          // Now send a command (after system + look + brief messages)
           ws.send(JSON.stringify({ type: "command", command: "who" }));
         }
-        if (messages.length >= 4) resolve();
+        if (messages.length >= 5) resolve();
       };
       setTimeout(resolve, 2000);
     });
 
-    expect(messages.length).toBeGreaterThanOrEqual(4);
+    expect(messages.length).toBeGreaterThanOrEqual(5);
     const whoMsg = JSON.parse(messages[messages.length - 1]!);
     expect(whoMsg.data.text).toContain("CmdBot");
 
@@ -145,10 +145,10 @@ describe("WebSocket Integration", () => {
       };
       ws.onmessage = (event) => {
         messages.push(event.data as string);
-        if (messages.length === 3) {
+        if (messages.length === 4) {
           ws.send(JSON.stringify({ type: "command", command: "north" }));
         }
-        if (messages.length >= 4) resolve();
+        if (messages.length >= 5) resolve();
       };
       setTimeout(resolve, 2000);
     });
