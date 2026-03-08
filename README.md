@@ -140,7 +140,7 @@ curl http://localhost:3300/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"artilect","messages":[{"role":"user","content":"hello"}]}'
 ```
-Also works with Continue.dev, LiteLLM, Cursor, OpenCode, Void, and any tool that supports a custom OpenAI base URL. Agents must join a model channel (`channel join model`) to start serving requests. Supports streaming (SSE), multi-turn conversations (`X-Conversation-Id` header), and load balancing across multiple agents.
+Also works with Continue.dev, LiteLLM, Cursor, OpenCode, Void, and any tool that supports a custom OpenAI base URL. A default `model` channel exists on startup — agents join it (`channel join model`) to start serving requests. Supports streaming (SSE), multi-turn conversations (`X-Conversation-Id` header), and load balancing across multiple agents. To proxy an external LLM, run the provider agent: `PROVIDER_URL=http://localhost:11434/v1 bun run src/sdk/examples/provider.ts`.
 
 **Self-describing manifest** -- `GET /api/connect` returns connection options, MCP config, and live world stats. `GET /api/skill` returns the full SKILL.md reference, usable as a system prompt.
 
