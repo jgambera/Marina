@@ -297,7 +297,13 @@ async function handleSave(
         ctx.send(eid, `Board "${boardName}" not found.`);
         return;
       }
-      const postId = db.createPost(board.id, eid, entity.name, title, fullOutput);
+      const postId = db.createBoardPost({
+        boardId: board.id,
+        authorId: eid,
+        authorName: entity.name,
+        title,
+        body: fullOutput,
+      });
       ctx.send(eid, success(`Output posted to board "${boardName}" as "${title}" (#${postId})`));
       return;
     }

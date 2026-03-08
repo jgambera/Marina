@@ -355,7 +355,7 @@ async function routeToChannel(
         if (parsed?.type === "model_response" && parsed.id === requestId) {
           clearTimeout(timer);
           unsub();
-          resolve({ content: parsed.content, conversationId: convId });
+          resolve({ content: parsed.content ?? "", conversationId: convId });
           return;
         }
 
@@ -458,21 +458,23 @@ function routeToChannelStreaming(
         if (channelId !== channel.id) return;
         if (senderId === "__model_api__") return;
 
-        let parsed: Record<string, string>;
+        let parsed: { type?: string; id?: string; content?: string };
         try {
           parsed = JSON.parse(content);
         } catch {
           return; // Non-JSON message — skip
         }
 
+        const text = parsed.content ?? "";
+
         // Streaming chunk
         if (parsed.type === "model_response_chunk" && parsed.id === reqId) {
-          collectedContent.push(parsed.content);
+          collectedContent.push(text);
           let chunk: string;
           if (format === "openai") {
-            chunk = openaiStreamChunk(streamId, model, parsed.content);
+            chunk = openaiStreamChunk(streamId, model, text);
           } else {
-            chunk = ollamaStreamChunk(model, parsed.content, format === "ollama-chat");
+            chunk = ollamaStreamChunk(model, text, format === "ollama-chat");
           }
           controller.enqueue(encoder.encode(chunk));
           return;
@@ -504,19 +506,19 @@ function routeToChannelStreaming(
           clearTimeout(timer);
           unsub();
           decrementPending(target);
-          collectedContent.push(parsed.content);
+          collectedContent.push(text);
           if (format === "openai") {
-            controller.enqueue(encoder.encode(openaiStreamChunk(streamId, model, parsed.content)));
+            controller.enqueue(encoder.encode(openaiStreamChunk(streamId, model, text)));
             controller.enqueue(encoder.encode(openaiStreamEnd(streamId, model)));
           } else {
             controller.enqueue(
-              encoder.encode(ollamaStreamChunk(model, parsed.content, format === "ollama-chat")),
+              encoder.encode(ollamaStreamChunk(model, text, format === "ollama-chat")),
             );
             controller.enqueue(encoder.encode(ollamaStreamEnd(model, format === "ollama-chat")));
           }
           if (convChannel) {
             cm.send(convChannel.id, "__model_conv__", "user", userContent);
-            cm.send(convChannel.id, target, "agent", parsed.content);
+            cm.send(convChannel.id, target, "agent", text);
           }
           controller.close();
         }

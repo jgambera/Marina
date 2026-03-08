@@ -21,6 +21,7 @@ interface WSData {
   isDashboard?: boolean;
   isCanvas?: boolean;
   canvasId?: string;
+  [key: string]: unknown;
 }
 
 let wsIdCounter = 0;

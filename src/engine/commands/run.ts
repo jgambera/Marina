@@ -1,5 +1,5 @@
 import { dim, error as fmtError, header, separator } from "../../net/ansi";
-import type { CommandDef, Entity, RoomContext } from "../../types";
+import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 import { getRank } from "../permissions";
 import type { ShellRuntime } from "../shell-runtime";
 
@@ -96,7 +96,7 @@ export function runCommand(deps: RunDeps): CommandDef {
 
 function formatOutput(
   ctx: RoomContext,
-  eid: string,
+  eid: EntityId,
   cmdDisplay: string,
   result: {
     exitCode: number;
