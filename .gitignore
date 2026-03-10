@@ -17,3 +17,6 @@ artilect-desktop/node_modules/
 artilect-desktop/build/
 artilect-desktop/dist/
 artilect-desktop/.font-cache/
+benchmarks/datasets/
+benchmarks/results/
+benchmarks/.tmp-humaneval/

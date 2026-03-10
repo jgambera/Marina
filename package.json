@@ -30,7 +30,9 @@
     "lint": "biome check src/ test/",
     "format": "biome format --write src/ test/",
     "dashboard:dev": "cd dashboard && bunx vite",
-    "dashboard:build": "cd dashboard && bunx vite build"
+    "dashboard:build": "cd dashboard && bunx vite build",
+    "bench": "bun run benchmarks/harness.ts",
+    "bench:ui": "bun run benchmarks/server.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
