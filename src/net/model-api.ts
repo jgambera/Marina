@@ -8,6 +8,34 @@ const CORS_HEADERS = {
   "Access-Control-Expose-Headers": "X-Conversation-Id, x-request-id",
 };
 
+// --- API key authentication ---
+// When MODEL_API_KEYS is set, only requests with a valid Bearer token are accepted.
+// When unset, the API is open (suitable for local development).
+
+function getApiKeys(): Set<string> | null {
+  const raw = process.env.MODEL_API_KEYS;
+  if (!raw) return null;
+  const keys = raw
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+  return keys.length > 0 ? new Set(keys) : null;
+}
+
+function authenticate(req: Request): Response | null {
+  const keys = getApiKeys();
+  if (!keys) return null;
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) {
+    return errorJson(401, "Missing or invalid Authorization header");
+  }
+  const token = auth.slice(7);
+  if (!keys.has(token)) {
+    return errorJson(401, "Invalid API key");
+  }
+  return null;
+}
+
 function generateRequestId(): string {
   return `req-${crypto.randomUUID().slice(0, 8)}`;
 }
@@ -578,6 +606,12 @@ export async function handleModelApi(
   req: Request,
   engine: Engine,
 ): Promise<Response | undefined> {
+  // Authenticate (skipped for CORS preflight)
+  if (method !== "OPTIONS") {
+    const authError = authenticate(req);
+    if (authError) return authError;
+  }
+
   // OpenAI: GET /v1/models
   if (url.pathname === "/v1/models" && method === "GET") {
     return json(openaiModelList(listModels(engine)));

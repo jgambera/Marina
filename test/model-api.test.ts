@@ -645,4 +645,63 @@ describe("Model API", () => {
 
     expect(capturedTarget).toBe(conn1.entity!);
   });
+
+  describe("authentication", () => {
+    const TEST_KEY = "sk-test-key-12345";
+
+    afterEach(() => {
+      process.env.MODEL_API_KEYS = undefined;
+    });
+
+    it("allows requests when MODEL_API_KEYS is unset", async () => {
+      process.env.MODEL_API_KEYS = undefined;
+      const [url, method, req] = makeRequest("/v1/models", "GET");
+      const resp = await handleModelApi(url, method, req, engine);
+      expect(resp!.status).toBe(200);
+    });
+
+    it("rejects requests without Authorization header when keys are configured", async () => {
+      process.env.MODEL_API_KEYS = TEST_KEY;
+      const [url, method, req] = makeRequest("/v1/models", "GET");
+      const resp = await handleModelApi(url, method, req, engine);
+      expect(resp!.status).toBe(401);
+      const data = await resp!.json();
+      expect(data.error.type).toBe("authentication_error");
+    });
+
+    it("rejects requests with invalid bearer token", async () => {
+      process.env.MODEL_API_KEYS = TEST_KEY;
+      const [url, method, req] = makeRequest("/v1/models", "GET", undefined, {
+        Authorization: "Bearer wrong-key",
+      });
+      const resp = await handleModelApi(url, method, req, engine);
+      expect(resp!.status).toBe(401);
+    });
+
+    it("accepts requests with valid bearer token", async () => {
+      process.env.MODEL_API_KEYS = TEST_KEY;
+      const [url, method, req] = makeRequest("/v1/models", "GET", undefined, {
+        Authorization: `Bearer ${TEST_KEY}`,
+      });
+      const resp = await handleModelApi(url, method, req, engine);
+      expect(resp!.status).toBe(200);
+    });
+
+    it("supports multiple comma-separated keys", async () => {
+      process.env.MODEL_API_KEYS = `${TEST_KEY},sk-second-key`;
+      const [url, method, req] = makeRequest("/v1/models", "GET", undefined, {
+        Authorization: "Bearer sk-second-key",
+      });
+      const resp = await handleModelApi(url, method, req, engine);
+      expect(resp!.status).toBe(200);
+    });
+
+    it("allows OPTIONS requests without auth (CORS preflight)", async () => {
+      process.env.MODEL_API_KEYS = TEST_KEY;
+      const [url, , req] = makeRequest("/v1/models", "OPTIONS");
+      const resp = await handleModelApi(url, "OPTIONS", req, engine);
+      // OPTIONS returns undefined (handled by CORS in websocket-server), not 401
+      expect(resp).toBeUndefined();
+    });
+  });
 });

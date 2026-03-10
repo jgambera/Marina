@@ -489,8 +489,11 @@ export class Engine {
         try {
           this.db.trackActivity(entity.name, "command", input.verb);
           this.db.trackActivity(entity.name, "room_visit", entity.room);
-        } catch {
-          // Best-effort tracking
+        } catch (err) {
+          console.warn(
+            "[tick] Activity tracking failed:",
+            err instanceof Error ? err.message : err,
+          );
         }
       }
     }
@@ -601,24 +604,38 @@ export class Engine {
     if (this.tickCount % 3600 === 0 && this.boardManager) {
       try {
         this.boardManager.autoArchive(30, 0);
-      } catch {}
+      } catch (err) {
+        console.warn("[tick] Board auto-archive failed:", err instanceof Error ? err.message : err);
+      }
     }
     if (this.tickCount % 1800 === 0 && this.channelManager) {
       try {
         this.channelManager.pruneExpiredMessages();
-      } catch {}
+      } catch (err) {
+        console.warn("[tick] Channel prune failed:", err instanceof Error ? err.message : err);
+      }
     }
     // Hourly: clean up stale model conversation channels
     if (this.tickCount % 3600 === 0 && this.channelManager) {
       try {
         cleanupStaleConversationChannels(this.channelManager);
-      } catch {}
+      } catch (err) {
+        console.warn(
+          "[tick] Conversation cleanup failed:",
+          err instanceof Error ? err.message : err,
+        );
+      }
     }
     // Hourly: adjust note importance based on recall patterns
     if (this.tickCount % 3600 === 0 && this.db) {
       try {
         this.db.adjustNoteImportance();
-      } catch {}
+      } catch (err) {
+        console.warn(
+          "[tick] Note importance adjustment failed:",
+          err instanceof Error ? err.message : err,
+        );
+      }
     }
 
     // Every 60s: clean up orphaned agents (entities without active connections)
@@ -804,8 +821,8 @@ export class Engine {
     if (this.db) {
       try {
         this.db.deleteEntity(entityId);
-      } catch {
-        // Entity may not exist in DB
+      } catch (err) {
+        console.warn("[entity] DB delete failed:", err instanceof Error ? err.message : err);
       }
     }
 
@@ -1011,8 +1028,8 @@ export class Engine {
     if (this.db) {
       try {
         this.db.logEvent(event);
-      } catch {
-        // DB may be closed during shutdown
+      } catch (err) {
+        console.warn("[event] DB log failed:", err instanceof Error ? err.message : err);
       }
     }
 
@@ -1020,7 +1037,9 @@ export class Engine {
     for (const listener of this.eventListeners) {
       try {
         listener(event);
-      } catch {}
+      } catch (err) {
+        console.warn("[event] Listener failed:", err instanceof Error ? err.message : err);
+      }
     }
   }
 
