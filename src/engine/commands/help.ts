@@ -8,7 +8,7 @@ const COMMAND_CATEGORIES: Record<string, string[]> = {
   Information: ["who", "score", "help", "time", "uptime"],
   Social: ["ignore", "rank", "quest", "link"],
   Knowledge: ["note", "search", "bookmark", "export"],
-  Memory: ["memory", "recall", "reflect", "pool", "novelty", "skill"],
+  Memory: ["memory", "recall", "reflect", "pool", "novelty", "skill", "orient"],
   Coordination: ["channel", "board", "group", "task", "macro", "project"],
   Experiments: ["experiment", "observe"],
   Building: ["build", "connect"],

@@ -62,6 +62,7 @@ import { moveCommand } from "./commands/move";
 import { noteCommand } from "./commands/note";
 import { noveltyCommand } from "./commands/novelty";
 import { observeCommand } from "./commands/observe";
+import { orientCommand } from "./commands/orient";
 import { poolCommand } from "./commands/pool";
 import { projectCommand } from "./commands/project";
 import { questCommand, trackQuestProgress } from "./commands/quest";
@@ -1506,6 +1507,13 @@ export class Engine {
       skillCommand({
         getEntity: (id) => this.entities.get(id as EntityId),
         db: this.db,
+      }),
+    );
+    this.commands.registerBuiltin(
+      orientCommand({
+        getEntity: (id) => this.entities.get(id as EntityId),
+        db: this.db,
+        getTotalRoomCount: () => this.rooms.all().length,
       }),
     );
 

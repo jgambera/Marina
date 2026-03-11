@@ -462,5 +462,145 @@ describe("Agent Memory Primitives", () => {
       expect(results[0]!.content).toContain("keys");
       expect(results[0]!.pool_id).toBe("p1");
     });
+
+    it("countNoteLinks should count links for entity", () => {
+      const id1 = db.createNote("Alice", "First note about linking");
+      const id2 = db.createNote("Alice", "Second note about linking");
+      db.createNoteLink(id1, id2, "related_to");
+      const count = db.countNoteLinks("Alice");
+      expect(count).toBeGreaterThan(0);
+    });
+
+    it("countLinksForNote should count links for specific note", () => {
+      const id1 = db.createNote("Alice", "Hub note for counting");
+      const id2 = db.createNote("Alice", "Spoke note one");
+      const id3 = db.createNote("Alice", "Spoke note two");
+      db.createNoteLink(id1, id2, "related_to");
+      db.createNoteLink(id1, id3, "caused_by");
+      expect(db.countLinksForNote(id1)).toBe(2);
+      expect(db.countLinksForNote(id2)).toBe(1);
+    });
+
+    it("adjustNoteImportance should protect well-linked notes from early decay", () => {
+      // Create a well-linked note (3+ links) older than 7 days
+      const eightDaysAgo = Date.now() - 8 * 86_400_000;
+      const hubId = db.createNote("Alice", "Hub insight about everything", undefined, {
+        importance: 5,
+      });
+      const spoke1 = db.createNote("Alice", "Related idea one");
+      const spoke2 = db.createNote("Alice", "Related idea two");
+      const spoke3 = db.createNote("Alice", "Related idea three");
+      db.createNoteLink(hubId, spoke1, "related_to");
+      db.createNoteLink(hubId, spoke2, "related_to");
+      db.createNoteLink(hubId, spoke3, "related_to");
+
+      // Backdate the hub note (cast to bypass private access in test)
+      // biome-ignore lint/suspicious/noExplicitAny: test-only raw DB access
+      (db as any).db.run("UPDATE notes SET created_at = ? WHERE id = ?", [eightDaysAgo, hubId]);
+
+      // Run decay
+      db.adjustNoteImportance();
+
+      // Well-linked note should be protected (not decayed at 7 days)
+      const hub = db.getNote(hubId);
+      expect(hub!.importance).toBe(5);
+    });
+  });
+
+  // ─── Orient Command ────────────────────────────────────────────────────
+
+  describe("Orient Command", () => {
+    it("should produce a briefing with core memory", () => {
+      engine.processCommand(conn1.entity!, "memory set goal Explore the grid");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "orient");
+      const text = conn1.lastText();
+      expect(text).toContain("Orientation Briefing");
+      expect(text).toContain("Core Memory");
+      expect(text).toContain("goal");
+      expect(text).toContain("Explore the grid");
+    });
+
+    it("should show recent notes in briefing", () => {
+      engine.processCommand(conn1.entity!, "note The vault code is 7249 importance 8");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "orient");
+      const text = conn1.lastText();
+      expect(text).toContain("Recent Notes");
+      expect(text).toContain("vault code");
+    });
+
+    it("should show memory health stats", () => {
+      engine.processCommand(conn1.entity!, "note First observation");
+      engine.processCommand(conn1.entity!, "note Second observation");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "orient");
+      const text = conn1.lastText();
+      expect(text).toContain("Memory Health");
+      expect(text).toContain("Total notes:");
+    });
+
+    it("should work via status alias", () => {
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "status");
+      expect(conn1.lastText()).toContain("Orientation Briefing");
+    });
+  });
+
+  // ─── Intent-Aware Recall ───────────────────────────────────────────────
+
+  describe("Intent-Aware Recall", () => {
+    it("should recall with default weights for simple queries", () => {
+      engine.processCommand(conn1.entity!, "note The cipher key is 42 importance 8");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "recall cipher key");
+      expect(conn1.lastText()).toContain("cipher key");
+    });
+
+    it("should still respect explicit recent modifier", () => {
+      engine.processCommand(conn1.entity!, "note Found a map importance 5");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "recall map recent");
+      expect(conn1.lastText()).toContain("map");
+    });
+
+    it("should still respect explicit important modifier", () => {
+      engine.processCommand(conn1.entity!, "note Critical discovery importance 9");
+      conn1.clear();
+      engine.processCommand(conn1.entity!, "recall discovery important");
+      expect(conn1.lastText()).toContain("discovery");
+    });
+  });
+
+  // ─── Graph-Enhanced Recall ─────────────────────────────────────────────
+
+  describe("Graph-Enhanced Recall", () => {
+    it("should surface linked notes via spreading activation", () => {
+      // Create a note that matches the query
+      engine.processCommand(
+        conn1.entity!,
+        "note The main encryption cipher is AES-256 importance 8",
+      );
+      // Create a linked note that does NOT match the query keywords
+      engine.processCommand(conn1.entity!, "note The backup protocol uses RSA-4096 importance 7");
+      conn1.clear();
+
+      // Link them manually via the note link subcommand
+      // First get the IDs
+      engine.processCommand(conn1.entity!, "note list");
+      const listText = conn1.lastText();
+      // Extract note IDs from the list
+      const ids = [...listText.matchAll(/#(\d+)/g)].map((m) => m[1]);
+      if (ids.length >= 2) {
+        conn1.clear();
+        engine.processCommand(conn1.entity!, `note link ${ids[0]} ${ids[1]} related_to`);
+      }
+
+      conn1.clear();
+      // Recall for "cipher" — should find the AES note directly, and may boost the RSA note via graph link
+      engine.processCommand(conn1.entity!, "recall cipher");
+      const text = conn1.lastText();
+      expect(text).toContain("AES-256");
+    });
   });
 });

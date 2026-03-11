@@ -4,6 +4,32 @@ import type { CommandDef, Entity, RoomContext } from "../../types";
 
 const DAY_MS = 86_400_000;
 
+/** Auto-detect query intent and return adjusted weights */
+function detectIntent(query: string): {
+  weightImportance: number;
+  weightRecency: number;
+  weightRelevance: number;
+} | null {
+  const q = query.toLowerCase();
+  // Episodic: "when did", "last time", "yesterday", "earlier", "recently"
+  if (/\b(when did|last time|yesterday|earlier|recently|just now|today)\b/.test(q)) {
+    return { weightImportance: 0.15, weightRecency: 0.6, weightRelevance: 0.25 };
+  }
+  // Procedural: "how to", "how do", "steps to", "procedure", "method for"
+  if (/\b(how to|how do|steps to|procedure|method for|way to|process)\b/.test(q)) {
+    return { weightImportance: 0.2, weightRecency: 0.2, weightRelevance: 0.6 };
+  }
+  // Decision: "should I", "decide", "choice", "option", "trade-off"
+  if (/\b(should i|decide|decision|choice|option|trade.?off|pros and cons)\b/.test(q)) {
+    return { weightImportance: 0.5, weightRecency: 0.15, weightRelevance: 0.35 };
+  }
+  // Semantic: "what is", "define", "meaning of", "explain"
+  if (/\b(what is|what are|define|meaning of|explain|tell me about)\b/.test(q)) {
+    return { weightImportance: 0.4, weightRecency: 0.1, weightRelevance: 0.5 };
+  }
+  return null;
+}
+
 export function recallCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
@@ -55,6 +81,14 @@ export function recallCommand(deps: {
         weightRecency = 0.2;
         weightRelevance = 0.2;
         query = query.replace(/(?:--important|important)\s*$/, "").trim();
+      } else {
+        // No explicit modifier — auto-detect intent from query phrasing
+        const detected = detectIntent(query);
+        if (detected) {
+          weightImportance = detected.weightImportance;
+          weightRecency = detected.weightRecency;
+          weightRelevance = detected.weightRelevance;
+        }
       }
 
       if (!query) {
@@ -63,9 +97,41 @@ export function recallCommand(deps: {
       }
 
       const weights = { weightImportance, weightRecency, weightRelevance };
-      const results = noteType
+      let results = noteType
         ? db.recallNotesWithType(entity.name, query, noteType, weights)
         : db.recallNotes(entity.name, query, weights);
+
+      // Graph-enhanced recall: spread activation from top results to linked notes
+      if (results.length > 0 && results.length < 20) {
+        const SPREAD_DAMPING = 0.3;
+        const resultIds = new Set(results.map((r) => r.id));
+        const linkedBoosts = new Map<number, number>();
+
+        // Walk 1-hop links from top-5 results
+        for (const note of results.slice(0, 5)) {
+          const links = db.getNoteLinks(note.id);
+          for (const link of links) {
+            const linkedId = link.source_id === note.id ? link.target_id : link.source_id;
+            if (!resultIds.has(linkedId)) {
+              const boost = note.score * SPREAD_DAMPING;
+              linkedBoosts.set(linkedId, Math.max(linkedBoosts.get(linkedId) ?? 0, boost));
+            }
+          }
+        }
+
+        // Fetch and insert graph-discovered notes
+        if (linkedBoosts.size > 0) {
+          for (const [noteId, boost] of linkedBoosts) {
+            const linkedNote = db.getNote(noteId);
+            if (linkedNote && linkedNote.entity_name === entity.name && !linkedNote.pool_id) {
+              results.push({ ...linkedNote, score: boost } as (typeof results)[0]);
+            }
+          }
+          // Re-sort by score and cap at 20
+          results.sort((a, b) => b.score - a.score);
+          results = results.slice(0, 20);
+        }
+      }
 
       if (results.length === 0) {
         ctx.send(input.entity, "No matching memories found.");

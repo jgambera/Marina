@@ -1876,26 +1876,55 @@ export class ArtilectDB {
     }
   }
 
-  /** Boost importance for frequently-recalled notes, decay for stale ones */
+  /** Boost importance for frequently-recalled notes, decay for stale ones.
+   *  Structural awareness: well-linked notes (3+ links) decay slower,
+   *  bridge notes (connecting different clusters) are protected. */
   adjustNoteImportance(): { boosted: number; decayed: number } {
     const now = Date.now();
     const sevenDaysAgo = now - 7 * DAY_MS;
+    const fourteenDaysAgo = now - 14 * DAY_MS;
 
     // Boost: notes recalled 3+ times, importance < 10
     const boosted = this.db.run(
       "UPDATE notes SET importance = MIN(importance + 1, 10) WHERE recall_count >= 3 AND importance < 10 AND pool_id IS NULL",
     );
 
-    // Decay: notes never recalled (recall_count=0) older than 7 days, importance > 1
+    // Decay with structural protection:
+    // - Well-linked notes (3+ links) only decay after 14 days instead of 7
+    // - Unlinked notes decay normally after 7 days
     const decayed = this.db.run(
-      "UPDATE notes SET importance = MAX(importance - 1, 1) WHERE recall_count = 0 AND importance > 1 AND created_at < ? AND pool_id IS NULL",
+      `UPDATE notes SET importance = MAX(importance - 1, 1)
+       WHERE recall_count = 0 AND importance > 1 AND pool_id IS NULL
+       AND id NOT IN (
+         SELECT n.id FROM notes n
+         JOIN note_links nl ON n.id = nl.source_id OR n.id = nl.target_id
+         WHERE n.recall_count = 0 AND n.pool_id IS NULL
+         GROUP BY n.id
+         HAVING COUNT(*) >= 3
+       )
+       AND created_at < ?`,
       [sevenDaysAgo],
+    );
+
+    // Decay well-linked notes on slower schedule (14 days)
+    const decayedLinked = this.db.run(
+      `UPDATE notes SET importance = MAX(importance - 1, 1)
+       WHERE recall_count = 0 AND importance > 1 AND pool_id IS NULL
+       AND id IN (
+         SELECT n.id FROM notes n
+         JOIN note_links nl ON n.id = nl.source_id OR n.id = nl.target_id
+         WHERE n.recall_count = 0 AND n.pool_id IS NULL
+         GROUP BY n.id
+         HAVING COUNT(*) >= 3
+       )
+       AND created_at < ?`,
+      [fourteenDaysAgo],
     );
 
     // Reset recall counts after adjustment
     this.db.run("UPDATE notes SET recall_count = 0 WHERE recall_count > 0");
 
-    return { boosted: boosted.changes, decayed: decayed.changes };
+    return { boosted: boosted.changes, decayed: decayed.changes + decayedLinked.changes };
   }
 
   // ─── Entity Activity Tracking ─────────────────────────────────────────
@@ -2066,6 +2095,26 @@ export class ArtilectDB {
     }
 
     return results;
+  }
+
+  /** Count total note links for an entity's notes */
+  countNoteLinks(entityName: string): number {
+    const row = this.db
+      .query(
+        `SELECT COUNT(*) as c FROM note_links nl
+         JOIN notes n ON nl.source_id = n.id OR nl.target_id = n.id
+         WHERE n.entity_name = ?`,
+      )
+      .get(entityName) as { c: number };
+    return row.c;
+  }
+
+  /** Count links for a specific note */
+  countLinksForNote(noteId: number): number {
+    const row = this.db
+      .query("SELECT COUNT(*) as c FROM note_links WHERE source_id = ? OR target_id = ?")
+      .get(noteId, noteId) as { c: number };
+    return row.c;
   }
 
   // ─── Memory Pools ─────────────────────────────────────────────────────
