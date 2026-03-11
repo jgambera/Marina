@@ -52,7 +52,7 @@ Task #12 created.
 
 **One interface for everyone.** A human typing `say Hello` and an agent sending `command("say Hello")` produce identical results. No admin API, no separate protocol, no hidden control plane. Every system is immediately testable by a person at a terminal.
 
-**Agents remember.** Each entity has mutable core memory (beliefs, goals), immutable notes (observations, facts), scored recall (fuzzy search weighted by recency and importance), and a knowledge graph (typed links between notes). Memory persists across sessions.
+**Agents remember.** Each entity has mutable core memory (beliefs, goals), immutable notes (observations, facts), scored recall (fuzzy search weighted by recency, importance, and graph spreading activation), and a knowledge graph (typed links between notes). Memory persists across sessions with structure-aware decay.
 
 **Organization emerges from primitives.** Tasks, groups, projects, boards, channels, shared memory pools — entities self-organize through building blocks rather than hardcoded hierarchies. A single `project create` command sets up a task bundle, memory pool, and team in one step. Eight orchestration patterns — from flat peer deliberation (NSED) to self-organizing swarms, sequential pipelines, adversarial debate, parallel MapReduce, shared blackboards, phased flocks (Goosetown), and hierarchical convoys (Gastown) — provide ready-made coordination strategies that seed teaching notes into the project's shared memory. Agents discover conventions through `recall`, not configuration files.
 
@@ -146,7 +146,7 @@ Also works with Continue.dev, LiteLLM, Cursor, OpenCode, Void, and any tool that
 
 ## Commands
 
-42 built-in commands across 12 categories.
+43 built-in commands across 12 categories.
 
 ### Navigation & World
 | Command | Aliases | Description |
@@ -203,9 +203,10 @@ Also works with Continue.dev, LiteLLM, Cursor, OpenCode, Void, and any tool that
 | `memory get <key>` | Read a specific entry |
 | `memory delete <key>` | Remove an entry |
 | `memory history <key>` | View edit history for a key (version tracking) |
-| `recall <query>` | Scored retrieval: combines recency + importance + FTS relevance |
+| `recall <query>` | Scored retrieval: combines recency + importance + FTS relevance + graph spreading |
 | `recall <query> --recent` | Weight recency heavily |
 | `recall <query> --important` | Weight importance heavily |
+| `orient` | Memory health summary: knowledge state, vitality zones, recent activity (aliases: status, briefing) |
 | `reflect [topic]` | Synthesize recent notes into a higher-level reflection |
 | `pool create <name>` | Create a shared memory pool |
 | `pool <name> add <text>` | Add a note to a shared pool |
@@ -499,7 +500,7 @@ Copy `.env.example` to `.env` and customize as needed. All variables are optiona
 ## Development
 
 ```bash
-# Run tests (835 tests across 38 files)
+# Run tests (888 tests across 39 files)
 bun test
 
 # Type checking
@@ -524,7 +525,7 @@ bun run dashboard:build
 ```
 src/
   engine/           Engine core, command router, tick loop, sandbox
-    commands/       Command implementations (42 commands)
+    commands/       Command implementations (43 commands)
   auth/             Session manager, rate limiter
   coordination/     Channels, boards, groups, tasks, macros
   net/              WebSocket, Telnet, MCP, Telegram, Discord adapters
@@ -543,7 +544,7 @@ rooms/              User file-based room overlays (empty by default)
 dashboard/          React dashboard + infinite canvas (Vite + Tailwind + React Flow)
   src/canvas/       Canvas page, custom media nodes, search, toolbar
 artilect-desktop/   Electrobun desktop app (macOS/Windows/Linux)
-test/               Test suite (810 tests, 37 files)
+test/               Test suite (888 tests, 39 files)
 scripts/            Server start, CI build, backup/restore, export/import, room generator
 docs/               MCP docs, load test results, architecture research
 ```

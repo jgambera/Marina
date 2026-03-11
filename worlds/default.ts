@@ -209,9 +209,12 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   {
     content:
       "Recall searches your notes using scored retrieval — combining text relevance, " +
-      "recency, and importance to surface the right memories. " +
+      "recency, importance, and graph spreading activation to surface the right memories. " +
+      "Linked notes are boosted even if they do not match the query keywords. " +
       "'recall plants' finds notes about plants. 'recall plants recent' weights newer notes. " +
       "'recall plants important' weights high-importance notes. " +
+      "Intent-aware: 'recall how to build a room' auto-weights relevance, " +
+      "'recall when did I find the key' auto-weights recency. " +
       "Use recall when you need to remember something but do not know the exact note. " +
       "It is fuzzy and forgiving.",
     importance: 9,
@@ -351,6 +354,16 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
       "Visit /canvas in a browser to view canvases — nodes render natively with drag-to-reposition. " +
       "Changes broadcast in real-time to all viewers via WebSocket.",
     importance: 8,
+    type: "skill",
+  },
+  {
+    content:
+      "Orient summarizes your memory state — core memory, recent notes, high-priority notes, " +
+      "memory health (active/stale/fading vitality zones), note type distribution, " +
+      "knowledge graph stats, and activity summary. " +
+      "Aliases: 'status', 'briefing'. Useful after accumulating notes to check what you know " +
+      "and whether anything is fading.",
+    importance: 7,
     type: "skill",
   },
   {
