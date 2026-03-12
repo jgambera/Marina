@@ -72,6 +72,7 @@ export class TaskManager {
     creatorName: string;
     groupId?: string;
     validationMode?: string;
+    standing?: number;
     parentTaskId?: number;
   }): Task {
     const id = this.db.createTask({
@@ -81,6 +82,7 @@ export class TaskManager {
       creatorName: opts.creatorName,
       groupId: opts.groupId,
       validationMode: opts.validationMode,
+      standing: opts.standing,
       parentTaskId: opts.parentTaskId,
     });
     return this.get(id)!;
@@ -91,7 +93,12 @@ export class TaskManager {
     return row ? rowToTask(row) : undefined;
   }
 
-  list(opts?: { status?: string; groupId?: string; limit?: number }): Task[] {
+  list(opts?: {
+    status?: string;
+    groupId?: string;
+    limit?: number;
+    orderByStanding?: boolean;
+  }): Task[] {
     return this.db.listTasks(opts).map(rowToTask);
   }
 
@@ -142,6 +149,15 @@ export class TaskManager {
 
     this.db.updateTaskClaimStatus(taskId, claimantId, "approved");
     this.db.updateTaskStatus(taskId, "completed");
+
+    // Bounty mode: reject all other claims and record standing
+    if (task.validationMode === "bounty") {
+      this.db.rejectAllOtherClaims(taskId, claimantId);
+      if (task.standing > 0) {
+        this.db.recordStandingEarned(claimantId, claim.entityName, taskId, task.standing);
+      }
+    }
+
     return true;
   }
 
@@ -178,5 +194,25 @@ export class TaskManager {
     if (!bundle) return false;
     this.db.setTaskParent(taskId, bundleId);
     return true;
+  }
+
+  searchTasks(
+    query: string,
+    opts?: { status?: string; limit?: number },
+  ): (Task & { score: number })[] {
+    return this.db.searchTasks(query, opts).map((row) => ({
+      ...rowToTask(row),
+      score: row.score,
+    }));
+  }
+
+  getEntityStanding(entityId: string): number {
+    return this.db.getEntityStanding(entityId);
+  }
+
+  getStandingLeaderboard(
+    limit?: number,
+  ): { entityName: string; total: number; taskCount: number }[] {
+    return this.db.getStandingLeaderboard(limit);
   }
 }

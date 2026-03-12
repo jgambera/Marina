@@ -1482,6 +1482,7 @@ export class Engine {
       recallCommand({
         getEntity: (id) => this.entities.get(id as EntityId),
         db: this.db,
+        taskManager: this.taskManager,
       }),
     );
     this.commands.registerBuiltin(
@@ -1513,6 +1514,7 @@ export class Engine {
       orientCommand({
         getEntity: (id) => this.entities.get(id as EntityId),
         db: this.db,
+        taskManager: this.taskManager,
         getTotalRoomCount: () => this.rooms.all().length,
       }),
     );

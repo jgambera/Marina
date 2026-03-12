@@ -58,8 +58,15 @@ function sendCompass(
     if (projects.length > 0) parts.push(`${projects.length} projects`);
 
     if (deps.taskManager) {
-      const open = deps.taskManager.list().filter((t) => t.status === "open");
-      if (open.length > 0) parts.push(`${open.length} open tasks`);
+      const open = deps.taskManager.list({ status: "open" });
+      const bounties = open.filter((t) => t.validationMode === "bounty");
+      if (bounties.length > 0 && open.length > bounties.length) {
+        parts.push(`${bounties.length} bounties, ${open.length - bounties.length} tasks`);
+      } else if (bounties.length > 0) {
+        parts.push(`${bounties.length} bounties`);
+      } else if (open.length > 0) {
+        parts.push(`${open.length} open tasks`);
+      }
     }
 
     const pools = db.listMemoryPools();
@@ -123,13 +130,22 @@ function sendFullBrief(
   }
 
   if (deps.taskManager) {
-    const tasks = deps.taskManager
-      .list()
-      .filter((t) => t.status === "open" || t.status === "claimed");
+    const allTasks = deps.taskManager.list({ orderByStanding: true });
+    const tasks = allTasks.filter((t) => t.status === "open" || t.status === "claimed");
     if (tasks.length > 0) {
       const open = tasks.filter((t) => t.status === "open").length;
       const claimed = tasks.filter((t) => t.status === "claimed").length;
-      lines.push("", `Tasks: ${open} open, ${claimed} in progress`);
+      const bounties = tasks.filter((t) => t.validationMode === "bounty").length;
+      const taskParts = [`${open} open`, `${claimed} in progress`];
+      if (bounties > 0) taskParts.push(`${bounties} bounties`);
+      lines.push("", `Tasks: ${taskParts.join(", ")}`);
+
+      // Top 3 highest-standing open tasks
+      const topTasks = tasks.filter((t) => t.status === "open").slice(0, 3);
+      for (const t of topTasks) {
+        const bounty = t.validationMode === "bounty" && t.standing > 0 ? ` [!${t.standing}]` : "";
+        lines.push(`  #${t.id}: ${t.title}${bounty}`);
+      }
     }
   }
 

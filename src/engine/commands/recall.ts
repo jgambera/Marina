@@ -1,3 +1,4 @@
+import type { TaskManager } from "../../coordination/task-manager";
 import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
@@ -33,6 +34,7 @@ function detectIntent(query: string): {
 export function recallCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
+  taskManager?: TaskManager;
 }): CommandDef {
   return {
     name: "recall",
@@ -133,14 +135,38 @@ export function recallCommand(deps: {
         }
       }
 
-      if (results.length === 0) {
-        ctx.send(input.entity, "No matching memories found.");
-        return;
-      }
-
       // Touch each returned note to update last_accessed and recall_count
       for (const note of results) {
         db.touchNote(note.id);
+      }
+
+      // Collect task FTS results
+      const taskLines: string[] = [];
+      if (deps.taskManager) {
+        try {
+          const taskResults = deps.taskManager.searchTasks(query, { limit: 5 });
+          const openTasks = taskResults.filter(
+            (t) => t.status === "open" || t.status === "claimed",
+          );
+          if (openTasks.length > 0) {
+            taskLines.push("", "  Related Tasks:");
+            for (const t of openTasks) {
+              const bounty =
+                t.validationMode === "bounty" && t.standing > 0 ? ` [bounty !${t.standing}]` : "";
+              const claims = deps.taskManager.getClaims(t.id);
+              const submissions = claims.filter((c) => c.status === "submitted").length;
+              const subLabel = submissions > 0 ? ` (${submissions} submissions)` : "";
+              taskLines.push(`  Task #${t.id}${bounty}: ${t.title}${subLabel}`);
+            }
+          }
+        } catch {
+          // FTS query syntax errors are silently ignored
+        }
+      }
+
+      if (results.length === 0 && taskLines.length === 0) {
+        ctx.send(input.entity, "No matching memories found.");
+        return;
       }
 
       const now = Date.now();
@@ -156,17 +182,21 @@ export function recallCommand(deps: {
       ];
 
       // Depth signal: show what's beyond the returned results
-      const counts = db.countMatchingNotes(entity.name, query);
-      if (counts.total > results.length || counts.fading > 0) {
-        const parts: string[] = [];
-        if (counts.total > results.length) {
-          parts.push(`${counts.total} total`);
+      if (results.length > 0) {
+        const counts = db.countMatchingNotes(entity.name, query);
+        if (counts.total > results.length || counts.fading > 0) {
+          const parts: string[] = [];
+          if (counts.total > results.length) {
+            parts.push(`${counts.total} total`);
+          }
+          if (counts.fading > 0) {
+            parts.push(`${counts.fading} fading`);
+          }
+          lines.push(`  (${parts.join(", ")})`);
         }
-        if (counts.fading > 0) {
-          parts.push(`${counts.fading} fading`);
-        }
-        lines.push(`  (${parts.join(", ")})`);
       }
+
+      lines.push(...taskLines);
 
       ctx.send(input.entity, lines.join("\n"));
     },

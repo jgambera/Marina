@@ -164,7 +164,7 @@ describe("Export/Import", () => {
 
       expect(snapshot.format).toBe("artilect-snapshot");
       expect(snapshot.version).toBe(1);
-      expect(snapshot.schema_version).toBe(23);
+      expect(snapshot.schema_version).toBe(24);
       expect(snapshot.exported_at).toBeTruthy();
 
       // Verify key tables are present

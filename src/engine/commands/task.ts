@@ -18,7 +18,7 @@ export function taskCommand(
   return {
     name: "task",
     aliases: [],
-    help: "Manage tasks with create/claim/submit workflow.\nUsage: task list|info|create|claim|submit|approve|reject|cancel|bundle|assign|children\n\nExamples:\n  task create Map the grid | Explore all sectors and document exits\n  task claim 3\n  task submit 3 All sectors documented\n  task bundle Sprint 1 | First batch of tasks\n  task assign 3 1",
+    help: "Manage tasks with create/claim/submit workflow.\nUsage: task list|info|create|claim|submit|approve|reject|cancel|bundle|assign|children|standing\n\nExamples:\n  task create Map the grid | Explore all sectors and document exits\n  task create Fix the bridge | Description !10 bounty\n  task claim 3\n  task submit 3 All sectors documented\n  task standing\n  task list completed",
     handler: (ctx: RoomContext, input) => {
       const self = ctx.getEntity(input.entity);
       if (!self) return;
@@ -28,18 +28,29 @@ export function taskCommand(
 
       switch (sub) {
         case "list": {
-          const groupId = tokens[1];
-          const taskList = tasks.list({ status: "open", groupId });
+          const arg = tokens[1]?.toLowerCase();
+          const validStatuses = ["open", "completed", "cancelled", "claimed"];
+          const status = arg && validStatuses.includes(arg) ? arg : "open";
+          const groupId = arg && !validStatuses.includes(arg) ? tokens[1] : tokens[2];
+          const taskList = tasks.list({
+            status,
+            groupId,
+            orderByStanding: true,
+          });
           if (taskList.length === 0) {
-            ctx.send(input.entity, "No open tasks.");
+            ctx.send(input.entity, `No ${status} tasks.`);
             return;
           }
           const lines = [
-            header("Open Tasks"),
+            header(`${status.charAt(0).toUpperCase() + status.slice(1)} Tasks`),
             separator(),
             ...taskList.map((t) => {
               const group = t.groupId ? ` [${t.groupId}]` : "";
-              return `  #${t.id}: ${t.title} — by ${t.creatorName}${group}`;
+              const bounty =
+                t.validationMode === "bounty"
+                  ? ` [bounty${t.standing > 0 ? ` !${t.standing}` : ""}]`
+                  : "";
+              return `  #${t.id}: ${t.title}${bounty} — by ${t.creatorName}${group}`;
             }),
           ];
           ctx.send(input.entity, lines.join("\n"));
@@ -59,9 +70,10 @@ export function taskCommand(
             return;
           }
           const claims = tasks.getClaims(task.id);
+          const standingLabel = task.standing > 0 ? ` | Standing: !${task.standing}` : "";
           const lines = [
             header(`Task #${task.id}: ${task.title}`),
-            `Status: ${task.status} | Creator: ${task.creatorName} | Validation: ${task.validationMode}`,
+            `Status: ${task.status} | Creator: ${task.creatorName} | Validation: ${task.validationMode}${standingLabel}`,
             separator(),
             task.description || "(no description)",
           ];
@@ -73,6 +85,10 @@ export function taskCommand(
             lines.push(
               `Children: ${bundleStatus.completed}/${bundleStatus.total} completed (${bundleStatus.open} open)`,
             );
+          }
+          if (task.validationMode === "bounty" && claims.length > 0) {
+            const submissions = claims.filter((c) => c.status === "submitted").length;
+            lines.push(`Submissions: ${submissions}/${claims.length} claims`);
           }
           if (claims.length > 0) {
             lines.push("", "Claims:");
@@ -87,30 +103,47 @@ export function taskCommand(
         }
 
         case "create": {
-          // task create <title> | <description>
+          // task create <title> | <description> [!N] [bounty]
           const rest = tokens.slice(1).join(" ");
           if (!rest) {
-            ctx.send(input.entity, "Usage: task create <title> | <description>");
+            ctx.send(input.entity, "Usage: task create <title> | <description> [!N bounty]");
             return;
           }
           const pipeIdx = rest.indexOf("|");
           let title: string;
-          let description: string;
+          let rawDesc: string;
           if (pipeIdx >= 0) {
             title = rest.slice(0, pipeIdx).trim();
-            description = rest.slice(pipeIdx + 1).trim();
+            rawDesc = rest.slice(pipeIdx + 1).trim();
           } else {
             title = rest;
-            description = "";
+            rawDesc = "";
           }
+
+          // Parse !N standing and bounty keyword from description
+          let standing = 0;
+          let isBounty = false;
+          const standingMatch = rawDesc.match(/!(\d+)/);
+          if (standingMatch?.[1]) {
+            standing = Number.parseInt(standingMatch[1], 10);
+            rawDesc = rawDesc.replace(standingMatch[0], "").trim();
+          }
+          if (/\bbounty\b/i.test(rawDesc)) {
+            isBounty = true;
+            rawDesc = rawDesc.replace(/\bbounty\b/i, "").trim();
+          }
+
           const task = tasks.create({
             title,
-            description,
+            description: rawDesc,
             creatorId: input.entity,
             creatorName: self.name,
+            validationMode: isBounty ? "bounty" : undefined,
+            standing: standing > 0 ? standing : undefined,
           });
           promote?.(input.entity, 2);
-          ctx.send(input.entity, `Created task #${task.id}: "${title}".`);
+          const bountyLabel = isBounty ? ` [bounty !${standing}]` : "";
+          ctx.send(input.entity, `Created task #${task.id}: "${title}"${bountyLabel}.`);
           return;
         }
 
@@ -322,10 +355,31 @@ export function taskCommand(
           return;
         }
 
+        case "standing": {
+          const leaderboard = tasks.getStandingLeaderboard(10);
+          if (leaderboard.length === 0) {
+            ctx.send(input.entity, "No standing earned yet.");
+            return;
+          }
+          const lines = [
+            header("Standing Leaderboard"),
+            separator(),
+            ...leaderboard.map(
+              (e, i) => `  ${i + 1}. ${e.entityName}: ${e.total} standing (${e.taskCount} tasks)`,
+            ),
+          ];
+          const myStanding = tasks.getEntityStanding(input.entity);
+          if (myStanding > 0) {
+            lines.push("", `  Your standing: ${myStanding}`);
+          }
+          ctx.send(input.entity, lines.join("\n"));
+          return;
+        }
+
         default:
           ctx.send(
             input.entity,
-            "Usage: task list|info|create|claim|submit|approve|reject|cancel|bundle|assign|children [args]",
+            "Usage: task list|info|create|claim|submit|approve|reject|cancel|bundle|assign|children|standing [args]",
           );
       }
     },

@@ -150,4 +150,136 @@ describe("Tasks", () => {
     expect(text).toContain("Bob");
     expect(text).toContain("My submission text");
   });
+
+  it("should create a bounty task with standing", () => {
+    engine.processCommand(conn1.entity!, "task create Fix the bridge | Repair it !10 bounty");
+    const text = conn1.lastText();
+    expect(text).toContain("Created task #1");
+    expect(text).toContain("[bounty !10]");
+
+    conn1.clear();
+    engine.processCommand(conn1.entity!, "task info 1");
+    const info = conn1.lastText();
+    expect(info).toContain("bounty");
+    expect(info).toContain("Standing: !10");
+  });
+
+  it("should allow multiple agents to claim a bounty task", () => {
+    engine.processCommand(conn1.entity!, "task create Bounty task | Do something !5 bounty");
+
+    // Add a third connection
+    const conn3 = new MockConnection("c3");
+    engine.addConnection(conn3);
+    engine.spawnEntity("c3", "Charlie");
+
+    const claim1 = engine.taskManager!.claim(1, conn2.entity!, "Bob");
+    expect(claim1).not.toBeNull();
+
+    const claim2 = engine.taskManager!.claim(1, conn3.entity!, "Charlie");
+    expect(claim2).not.toBeNull();
+
+    const claims = engine.taskManager!.getClaims(1);
+    expect(claims.length).toBe(2);
+  });
+
+  it("should reject other claims when approving bounty winner", () => {
+    engine.processCommand(conn1.entity!, "task create Bounty race | First wins !15 bounty");
+
+    const conn3 = new MockConnection("c3");
+    engine.addConnection(conn3);
+    engine.spawnEntity("c3", "Charlie");
+
+    engine.taskManager!.claim(1, conn2.entity!, "Bob");
+    engine.taskManager!.claim(1, conn3.entity!, "Charlie");
+
+    engine.taskManager!.submit(1, conn2.entity!, "Bob's work");
+    engine.taskManager!.submit(1, conn3.entity!, "Charlie's work");
+
+    // Approve Bob
+    const approved = engine.taskManager!.approveSubmission(1, conn2.entity!, conn1.entity!);
+    expect(approved).toBe(true);
+
+    // Charlie's claim should be rejected
+    const charlieClaim = engine.taskManager!.getClaim(1, conn3.entity!);
+    expect(charlieClaim).not.toBeNull();
+    expect(charlieClaim?.status).toBe("rejected");
+
+    // Bob's claim should be approved
+    const bobClaim = engine.taskManager!.getClaim(1, conn2.entity!);
+    expect(bobClaim).not.toBeNull();
+    expect(bobClaim?.status).toBe("approved");
+  });
+
+  it("should record standing and show leaderboard", () => {
+    engine.processCommand(conn1.entity!, "task create Win standing | Prize !20 bounty");
+    engine.taskManager!.claim(1, conn2.entity!, "Bob");
+    engine.taskManager!.submit(1, conn2.entity!, "Done");
+    engine.taskManager!.approveSubmission(1, conn2.entity!, conn1.entity!);
+
+    // Bob should have 20 standing
+    const standing = engine.taskManager!.getEntityStanding(conn2.entity!);
+    expect(standing).toBe(20);
+
+    // Leaderboard
+    const lb = engine.taskManager!.getStandingLeaderboard();
+    expect(lb.length).toBe(1);
+    expect(lb[0]!.entityName).toBe("Bob");
+    expect(lb[0]!.total).toBe(20);
+    expect(lb[0]!.taskCount).toBe(1);
+
+    // Command-level standing display
+    conn2.clear();
+    engine.processCommand(conn2.entity!, "task standing");
+    const text = conn2.lastText();
+    expect(text).toContain("Bob");
+    expect(text).toContain("20 standing");
+  });
+
+  it("should search tasks via FTS", () => {
+    engine.processCommand(
+      conn1.entity!,
+      "task create Attention mechanisms | Deep learning research",
+    );
+    engine.processCommand(conn1.entity!, "task create Fix database | Repair the connection pool");
+
+    const results = engine.taskManager!.searchTasks("attention");
+    expect(results.length).toBe(1);
+    expect(results[0]!.title).toBe("Attention mechanisms");
+  });
+
+  it("should show tasks in recall results", () => {
+    engine.processCommand(
+      conn1.entity!,
+      "task create Neural architecture | Build transformer model !5 bounty",
+    );
+    conn1.clear();
+    engine.processCommand(conn1.entity!, "recall neural");
+    const text = conn1.lastText();
+    expect(text).toContain("Related Tasks:");
+    expect(text).toContain("Neural architecture");
+  });
+
+  it("should list tasks with status filter", () => {
+    engine.processCommand(conn1.entity!, "task create Task A | First task");
+    engine.processCommand(conn1.entity!, "task create Task B | Second task");
+    engine.processCommand(conn2.entity!, "task claim 1");
+    engine.processCommand(conn2.entity!, "task submit 1 Done");
+    engine.processCommand(conn1.entity!, "task approve 1 Bob");
+
+    conn1.clear();
+    engine.processCommand(conn1.entity!, "task list completed");
+    const text = conn1.lastText();
+    expect(text).toContain("Task A");
+    expect(text).not.toContain("Task B");
+  });
+
+  it("should show bounty markers in task list", () => {
+    engine.processCommand(conn1.entity!, "task create Regular task | Normal");
+    engine.processCommand(conn1.entity!, "task create Bounty task | Special !10 bounty");
+    conn1.clear();
+    engine.processCommand(conn1.entity!, "task list");
+    const text = conn1.lastText();
+    expect(text).toContain("[bounty !10]");
+    expect(text).toContain("Bounty task");
+  });
 });

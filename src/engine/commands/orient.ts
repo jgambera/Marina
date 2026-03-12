@@ -1,3 +1,4 @@
+import type { TaskManager } from "../../coordination/task-manager";
 import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
@@ -16,6 +17,7 @@ function relativeTime(ts: number, now: number): string {
 export function orientCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   db?: ArtilectDB;
+  taskManager?: TaskManager;
   getTotalRoomCount?: () => number;
 }): CommandDef {
   return {
@@ -124,6 +126,48 @@ export function orientCommand(deps: {
       if (last7d.length > 0) {
         const avgImp = last7d.reduce((s, n) => s + n.importance, 0) / last7d.length;
         lines.push(`  7-Day Summary: ${last7d.length} notes, avg importance ${avgImp.toFixed(1)}`);
+      }
+
+      // Open bounties / tasks
+      if (deps.taskManager) {
+        const openTasks = deps.taskManager.list({
+          status: "open",
+          orderByStanding: true,
+          limit: 5,
+        });
+        if (openTasks.length > 0) {
+          lines.push("", "  Open Tasks:");
+          for (const t of openTasks) {
+            const bounty =
+              t.validationMode === "bounty"
+                ? ` [bounty${t.standing > 0 ? ` !${t.standing}` : ""}]`
+                : "";
+            const claims = deps.taskManager.getClaims(t.id);
+            const submissions = claims.filter((c) => c.status === "submitted").length;
+            const subLabel = submissions > 0 ? ` (${submissions} submissions)` : "";
+            lines.push(`    #${t.id}: ${t.title}${bounty}${subLabel}`);
+          }
+        }
+
+        // Show entity's own claimed tasks
+        const allOpen = deps.taskManager.list({ status: "open", limit: 50 });
+        const myClaims: string[] = [];
+        for (const t of allOpen) {
+          const claim = deps.taskManager.getClaim(t.id, input.entity);
+          if (claim) {
+            myClaims.push(`    #${t.id}: ${t.title} (${claim.status})`);
+          }
+        }
+        if (myClaims.length > 0) {
+          lines.push("", "  Your Claims:");
+          lines.push(...myClaims);
+        }
+
+        // Entity's earned standing
+        const standing = deps.taskManager.getEntityStanding(input.entity);
+        if (standing > 0) {
+          lines.push("", `  Your Standing: ${standing}`);
+        }
       }
 
       ctx.send(input.entity, lines.join("\n"));

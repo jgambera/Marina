@@ -675,6 +675,40 @@ INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('echo', 'system
 INSERT INTO shell_allowlist (binary, added_by, added_at) VALUES ('date', 'system', strftime('%s','now') * 1000);
 `,
   },
+  // Migration 24: Task FTS + entity standing ledger
+  {
+    version: 24,
+    sql: `
+CREATE VIRTUAL TABLE tasks_fts USING fts5(
+  title, description, content=tasks, content_rowid=id
+);
+
+INSERT INTO tasks_fts(rowid, title, description)
+  SELECT id, title, description FROM tasks;
+
+CREATE TRIGGER tasks_fts_ai AFTER INSERT ON tasks BEGIN
+  INSERT INTO tasks_fts(rowid, title, description) VALUES (new.id, new.title, new.description);
+END;
+
+CREATE TRIGGER tasks_fts_ad AFTER DELETE ON tasks BEGIN
+  INSERT INTO tasks_fts(tasks_fts, rowid, title, description) VALUES('delete', old.id, old.title, old.description);
+END;
+
+CREATE TRIGGER tasks_fts_au AFTER UPDATE ON tasks BEGIN
+  INSERT INTO tasks_fts(tasks_fts, rowid, title, description) VALUES('delete', old.id, old.title, old.description);
+  INSERT INTO tasks_fts(rowid, title, description) VALUES (new.id, new.title, new.description);
+END;
+
+CREATE TABLE entity_standing (
+  entity_id TEXT NOT NULL,
+  entity_name TEXT NOT NULL,
+  task_id INTEGER NOT NULL REFERENCES tasks(id),
+  amount INTEGER NOT NULL,
+  earned_at INTEGER NOT NULL,
+  PRIMARY KEY (entity_id, task_id)
+);
+`,
+  },
 ];
 
 // ─── Database Class ──────────────────────────────────────────────────────────
@@ -1301,12 +1335,13 @@ export class ArtilectDB {
     creatorId: string;
     creatorName: string;
     validationMode?: string;
+    standing?: number;
     parentTaskId?: number;
   }): number {
     const now = Date.now();
     const result = this.db.run(
       `INSERT INTO tasks (group_id, title, description, creator_id, creator_name, validation_mode, status, standing, parent_task_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'open', 0, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?)`,
       [
         task.groupId ?? null,
         task.title,
@@ -1314,6 +1349,7 @@ export class ArtilectDB {
         task.creatorId,
         task.creatorName,
         task.validationMode ?? "creator",
+        task.standing ?? 0,
         task.parentTaskId ?? null,
         now,
         now,
@@ -1333,6 +1369,7 @@ export class ArtilectDB {
     groupId?: string;
     parentId?: number;
     limit?: number;
+    orderByStanding?: boolean;
   }): TaskRow[] {
     const conditions: string[] = [];
     const params: (string | number)[] = [];
@@ -1351,11 +1388,12 @@ export class ArtilectDB {
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const order = opts?.orderByStanding ? "ORDER BY standing DESC, id DESC" : "ORDER BY id DESC";
     const limit = opts?.limit ?? 20;
     params.push(limit);
 
     return this.db
-      .query(`SELECT * FROM tasks ${where} ORDER BY id DESC LIMIT ?`)
+      .query(`SELECT * FROM tasks ${where} ${order} LIMIT ?`)
       .all(...params) as TaskRow[];
   }
 
@@ -1424,6 +1462,70 @@ export class ArtilectDB {
       Date.now(),
       taskId,
     ]);
+  }
+
+  searchTasks(
+    query: string,
+    opts?: { status?: string; limit?: number },
+  ): (TaskRow & { score: number })[] {
+    const conditions = ["tasks_fts MATCH ?"];
+    const params: (string | number)[] = [query];
+
+    if (opts?.status) {
+      conditions.push("t.status = ?");
+      params.push(opts.status);
+    }
+
+    const limit = opts?.limit ?? 10;
+    params.push(limit);
+
+    const where = conditions.join(" AND ");
+    return this.db
+      .query(
+        `SELECT t.*, rank * -1 AS score
+         FROM tasks t
+         JOIN tasks_fts fts ON t.id = fts.rowid
+         WHERE ${where}
+         ORDER BY score DESC
+         LIMIT ?`,
+      )
+      .all(...params) as (TaskRow & { score: number })[];
+  }
+
+  recordStandingEarned(entityId: string, entityName: string, taskId: number, amount: number): void {
+    this.db.run(
+      `INSERT OR REPLACE INTO entity_standing (entity_id, entity_name, task_id, amount, earned_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [entityId, entityName, taskId, amount, Date.now()],
+    );
+  }
+
+  getEntityStanding(entityId: string): number {
+    const row = this.db
+      .query("SELECT COALESCE(SUM(amount), 0) AS total FROM entity_standing WHERE entity_id = ?")
+      .get(entityId) as { total: number };
+    return row.total;
+  }
+
+  getStandingLeaderboard(limit = 10): { entityName: string; total: number; taskCount: number }[] {
+    return this.db
+      .query(
+        `SELECT entity_name AS entityName, SUM(amount) AS total, COUNT(*) AS taskCount
+         FROM entity_standing
+         GROUP BY entity_id
+         ORDER BY total DESC
+         LIMIT ?`,
+      )
+      .all(limit) as { entityName: string; total: number; taskCount: number }[];
+  }
+
+  rejectAllOtherClaims(taskId: number, winnerEntityId: string): void {
+    const now = Date.now();
+    this.db.run(
+      `UPDATE task_claims SET status = 'rejected', resolved_at = ?
+       WHERE task_id = ? AND entity_id != ? AND status IN ('claimed', 'submitted')`,
+      [now, taskId, winnerEntityId],
+    );
   }
 
   // ─── Macro Persistence ────────────────────────────────────────────────────
