@@ -20,3 +20,4 @@ artilect-desktop/.font-cache/
 benchmarks/datasets/
 benchmarks/results/
 benchmarks/.tmp-humaneval/
+artilect-export-*.json
