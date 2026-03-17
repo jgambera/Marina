@@ -95,7 +95,7 @@ function sendCompass(
   }
 
   if (!hasMemory) {
-    lines.push("Hint: pool guide recall getting started");
+    lines.push("Hint: help | pool guide recall getting started | brief full");
   }
 
   ctx.send(eid, lines.join("\n"));

@@ -220,12 +220,13 @@ export class McpServerAdapter {
         engine.sendBrief(result.entityId);
         const output = drainPerceptions(session);
         const tokenNote = result.token ? `\nSession token: \`${result.token}\`` : "";
-        const skillHint = "\n\nTip: Fetch `/api/skill` for the full command reference.";
+        const onboardHint =
+          "\n\nNext steps: `help` lists all commands. `pool guide recall getting started` for orientation. `brief full` for world state.";
         return {
           content: [
             {
               type: "text" as const,
-              text: `Logged in as **${name}** (${result.entityId}).${tokenNote}${skillHint}\n\n${output}`,
+              text: `Logged in as **${name}** (${result.entityId}).${tokenNote}${onboardHint}\n\n${output}`,
             },
           ],
         };

@@ -21,10 +21,22 @@ export function skillCommand(deps: {
       const sub = input.tokens[0]?.toLowerCase();
 
       if (!sub) {
-        ctx.send(
-          input.entity,
-          "Usage: skill store <name> | <desc> | <actions> | skill search <query> | skill verify <id> | skill list | skill share <id> <pool> | skill compose <id1> <id2> ...",
-        );
+        // Check if agent has any skills — if not, guide them
+        const notes = db.getNotesByEntity(entity.name, 100);
+        const skills = notes.filter((n) => n.note_type === "skill");
+        if (skills.length === 0) {
+          ctx.send(
+            input.entity,
+            "Skill library (empty). Store reusable action sequences here.\n" +
+              "Usage: skill store <name> | <description> | <action_sequence>\n\n" +
+              "Looking for help? Try: help, pool guide recall getting started",
+          );
+        } else {
+          ctx.send(
+            input.entity,
+            "Usage: skill store <name> | <desc> | <actions> | skill search <query> | skill verify <id> | skill list | skill share <id> <pool> | skill compose <id1> <id2> ...",
+          );
+        }
         return;
       }
 
