@@ -152,6 +152,18 @@ function sendFullBrief(
     }
   }
 
+  const recentNotes = db.getNotesByEntity(entity.name, 5);
+  if (recentNotes.length > 0) {
+    lines.push("", "Recent notes:");
+    for (const n of recentNotes) {
+      const age = formatAge(n.created_at);
+      const type = n.note_type ? ` [${n.note_type}]` : "";
+      lines.push(
+        `  #${n.id}${type} ${n.content.slice(0, 60)}${n.content.length > 60 ? "..." : ""} (${age})`,
+      );
+    }
+  }
+
   const recentActivity = db.getRecentActivity(entity.name, 5);
   if (recentActivity.length > 0) {
     const summaries: string[] = [];
@@ -216,4 +228,15 @@ function sendFullBrief(
   }
 
   ctx.send(eid, lines.join("\n"));
+}
+
+function formatAge(timestamp: number): string {
+  const ms = Date.now() - timestamp;
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }

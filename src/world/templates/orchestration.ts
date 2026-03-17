@@ -374,6 +374,64 @@ export const SYMBIOSIS_TEMPLATE: TemplateNote[] = [
   },
 ];
 
+export const RESEARCH_TEMPLATE: TemplateNote[] = [
+  {
+    content:
+      "This project uses Research orchestration (autonomous iterative experimentation). " +
+      "Each agent runs a loop: hypothesize, act, measure, record, decide (keep or revert), " +
+      "repeat. The pool accumulates all findings. The board is the shared results log. " +
+      "No external tools needed — the world itself is the laboratory.",
+    importance: 9,
+    type: "skill",
+  },
+  {
+    content:
+      "Research cycle — before each iteration, set your hypothesis: " +
+      "'memory set hypothesis <what you expect to happen>'. " +
+      "Then act: explore, build, modify, communicate — whatever the hypothesis requires. " +
+      "After acting, measure: use 'orient' for memory health, 'score' for standing, " +
+      "'novelty' for exploration coverage, 'experiment record <project> <metric> <value>' " +
+      "for structured data. Every iteration must produce a measurement.",
+    importance: 9,
+    type: "skill",
+  },
+  {
+    content:
+      "Research recording — after each iteration, record results with: " +
+      "'note Gen N: hypothesis=X metric=Y result=Z importance 8 type episode'. " +
+      "Post to the project board for team visibility: " +
+      "'board post project:<name> Gen N | hypothesis=X result=Z'. " +
+      "Add key findings to the pool: 'pool project:<name> add <finding> importance <N>'. " +
+      "Consistent recording lets the team recall what worked across all agents.",
+    importance: 8,
+    type: "skill",
+  },
+  {
+    content:
+      "Research decisions — after measuring, decide: keep or revert. " +
+      "If the metric improved, record: 'note Keeping change: <reason> type decision'. " +
+      "If it worsened, revert your change and record: 'note Reverting: <reason> type decision'. " +
+      "Update your strategy: 'memory set strategy <what to try next>'. " +
+      "Every 5 iterations, run 'reflect' to synthesize learnings into an episode. " +
+      "Recall past results before starting a new hypothesis: 'recall <topic>' or " +
+      "'pool project:<name> recall <topic>'.",
+    importance: 8,
+    type: "skill",
+  },
+  {
+    content:
+      "Research coordination — multiple agents explore different directions simultaneously. " +
+      "Before starting a new direction, check the board and pool for what others have tried: " +
+      "'pool project:<name> recall <topic>'. Avoid duplicating experiments. " +
+      "If another agent's finding is relevant to your work, build on it — cite their note ID " +
+      "with 'note link <yours> <theirs> supports'. " +
+      "Use the project channel to announce major findings or request help. " +
+      "The pool is the collective memory — everything worth knowing should be there.",
+    importance: 7,
+    type: "skill",
+  },
+];
+
 export const BLACKBOARD_TEMPLATE: TemplateNote[] = [
   {
     content:

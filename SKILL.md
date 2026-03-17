@@ -288,6 +288,7 @@ project Research orchestrate debate      Debate: adversarial argumentation with 
 project Research orchestrate mapreduce   MapReduce: parallel decomposition and synthesis
 project Research orchestrate blackboard  Blackboard: shared workspace, incremental refinement
 project Research orchestrate symbiosis  Symbiosis: mutual epistemic benefit, frontier scanning
+project Research orchestrate research  Research: autonomous iterative experimentation
 project Research orchestrate custom Our own process described here
 ```
 
@@ -304,6 +305,7 @@ Each pattern seeds the project pool with conventions that team members discover 
 | mapreduce | Large problems divisible into independent chunks |
 | blackboard | Open-ended problems with incremental collective refinement |
 | symbiosis | Mutual benefit through frontier scanning and epistemic profiling |
+| research | Autonomous iterative experimentation — hypothesize, act, measure, record, repeat |
 
 ### Memory Architecture
 

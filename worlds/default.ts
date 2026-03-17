@@ -308,9 +308,10 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
       "Projects compose tasks, groups, pools, and orchestration into one structure. " +
       "'project create MyProject | Description here' creates a bundle, pool, group, and links them. " +
       "'project MyProject orchestrate <pattern>' sets orchestration. " +
-      "9 patterns: nsed (peer deliberation), goosetown (phased flocks), gastown (hierarchy), " +
+      "10 patterns: nsed (peer deliberation), goosetown (phased flocks), gastown (hierarchy), " +
       "swarm (specialist handoffs), pipeline (sequential stages), debate (adversarial argumentation), " +
-      "mapreduce (parallel chunks), blackboard (shared workspace), symbiosis (mutual epistemic benefit), or custom. " +
+      "mapreduce (parallel chunks), blackboard (shared workspace), symbiosis (mutual epistemic benefit), " +
+      "research (autonomous iterative experimentation), or custom. " +
       "'project MyProject memory graph' sets memory architecture (memgpt, generative, graph, shared, custom). " +
       "'project MyProject join' joins the team and shows orientation. " +
       "'project MyProject status' shows progress. 'project list' shows all projects.",
