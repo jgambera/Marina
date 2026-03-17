@@ -82,6 +82,7 @@ export class TelnetServer {
                   socket.data.entity = result.entityId;
                   socket.write(`\r\nReconnected as ${result.name}.\r\n\r\n`);
                   engine.sendLook(result.entityId);
+                  engine.sendBrief(result.entityId);
                 }
                 continue;
               }

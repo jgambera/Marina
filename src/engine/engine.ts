@@ -24,6 +24,8 @@ import { EntityManager } from "../world/entity-manager";
 import { type LoadedRoom, RoomManager } from "../world/room-manager";
 import { CommandRouter } from "./command-router";
 import { ConnectorRuntime } from "./connector-runtime";
+import { getErrorMessage, tryLog } from "./errors";
+import { Logger } from "./logger";
 import { getRank, rankName, setRank } from "./permissions";
 import { RoomSandbox } from "./room-sandbox";
 
@@ -35,6 +37,7 @@ import { TaskManager } from "../coordination/task-manager";
 import type { StorageProvider } from "../storage/provider";
 import type { WorldDefinition } from "../world/world-definition";
 import { adminCommand } from "./commands/admin";
+import { batchCommand } from "./commands/batch";
 import { boardCommand } from "./commands/board";
 import { bookmarkCommand } from "./commands/bookmark";
 import { briefCommand } from "./commands/brief";
@@ -101,6 +104,7 @@ export interface EngineConfig {
   rateLimiter?: RateLimiter; // optional rate limiter
   storage?: StorageProvider; // optional asset storage
   world?: WorldDefinition; // optional world definition
+  logger?: Logger; // optional structured logger
 }
 
 const DEFAULT_TICK_INTERVAL = 1000;
@@ -138,6 +142,7 @@ export class Engine {
   private running = false;
   private tickCount = 0;
   private eventListeners: Array<(event: EngineEvent) => void> = [];
+  private readonly logger: Logger;
 
   constructor(config?: Partial<EngineConfig>) {
     // Derive startRoom: explicit config > world definition > generic fallback
@@ -148,6 +153,7 @@ export class Engine {
       startRoom,
     };
     this.world = this.config.world;
+    this.logger = this.config.logger ?? new Logger();
     this.entities = new EntityManager();
     this.rooms = new RoomManager();
     this.commands = new CommandRouter();
@@ -194,7 +200,7 @@ export class Engine {
 
   registerRoom(id: RoomId, module: RoomModule): void {
     const wrapped = this.sandbox.wrapModule(id, module, (_roomId, error) => {
-      console.error(`[sandbox] ${error}`);
+      this.logger.error("sandbox", error);
     });
     this.rooms.register(id, wrapped);
   }
@@ -355,12 +361,14 @@ export class Engine {
 
     // Clean up stale entity with same name (dead connection) or reject if active
     const existing = this.entities.findAgentByName(session.name);
+    let oldEntityId: EntityId | undefined;
     if (existing) {
       const existingConnId = this.entityToConnection.get(existing.id);
       if (existingConnId && this.connections.has(existingConnId)) {
         return { error: "That name is already in use." };
       }
-      // Stale entity — remove it before spawning new one
+      // Capture old ID for state migration before removal
+      oldEntityId = existing.id;
       if (existingConnId) this.entityToConnection.delete(existing.id);
       this.entities.remove(existing.id);
     }
@@ -369,6 +377,20 @@ export class Engine {
     const entity = this.spawnEntity(connId, session.name);
     if (!entity) {
       return { error: "Reconnection failed." };
+    }
+
+    // Migrate EntityId-keyed state (channels, groups, tasks, votes) to the new entity
+    if (this.db) {
+      if (oldEntityId) {
+        tryLog(this.logger, "reconnect", "Entity state migration failed", () =>
+          this.db!.migrateEntityId(oldEntityId!, entity.id),
+        );
+      } else {
+        // Server restarted — old entity unknown. Migrate task claims by name as fallback.
+        tryLog(this.logger, "reconnect", "Task claim migration failed", () =>
+          this.db!.migrateTaskClaimsByName(session.name, entity.id),
+        );
+      }
     }
 
     // Update the session to point to the new entity
@@ -468,14 +490,14 @@ export class Engine {
       // Catch unhandled rejections from async handlers
       if (result instanceof Promise) {
         (result as Promise<unknown>).catch((err) => {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.error(`[command] Async error in "${input.verb}": ${msg}`);
+          const msg = getErrorMessage(err);
+          this.logger.error("command", `Async error in "${input.verb}"`, { error: msg });
           this.sendToEntity(entityId, `Command error: ${msg}`);
         });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[command] Error in "${input.verb}": ${msg}`);
+      const msg = getErrorMessage(err);
+      this.logger.error("command", `Error in "${input.verb}"`, { error: msg });
       this.sendToEntity(entityId, `Command error: ${msg}`);
       return;
     }
@@ -487,15 +509,10 @@ export class Engine {
     if (this.db) {
       const entity = this.entities.get(entityId);
       if (entity) {
-        try {
-          this.db.trackActivity(entity.name, "command", input.verb);
-          this.db.trackActivity(entity.name, "room_visit", entity.room);
-        } catch (err) {
-          console.warn(
-            "[tick] Activity tracking failed:",
-            err instanceof Error ? err.message : err,
-          );
-        }
+        tryLog(this.logger, "tick", "Activity tracking failed", () => {
+          this.db!.trackActivity(entity.name, "command", input.verb);
+          this.db!.trackActivity(entity.name, "room_visit", entity.room);
+        });
       }
     }
 
@@ -589,54 +606,38 @@ export class Engine {
         }
         const ctx = this.buildContext(room.id);
         if (ctx) {
-          try {
-            room.module.onTick(ctx);
-          } catch (err) {
-            console.error(`Room tick error in ${room.id}:`, err);
-          }
+          tryLog(this.logger, "tick", `Room tick error in ${room.id}`, () =>
+            room.module.onTick!(ctx),
+          );
         }
       }
     }
     if (roomsSkipped > 0) {
-      console.warn(`Tick budget exceeded: skipped ${roomsSkipped} room tick(s).`);
+      this.logger.warn("tick", `Tick budget exceeded: skipped ${roomsSkipped} room tick(s)`);
     }
 
     // 3. Periodic maintenance (boards auto-archive, channel pruning, note importance adjustment)
     if (this.tickCount % 3600 === 0 && this.boardManager) {
-      try {
-        this.boardManager.autoArchive(30, 0);
-      } catch (err) {
-        console.warn("[tick] Board auto-archive failed:", err instanceof Error ? err.message : err);
-      }
+      const bm = this.boardManager;
+      tryLog(this.logger, "tick", "Board auto-archive failed", () => bm.autoArchive(30, 0));
     }
     if (this.tickCount % 1800 === 0 && this.channelManager) {
-      try {
-        this.channelManager.pruneExpiredMessages();
-      } catch (err) {
-        console.warn("[tick] Channel prune failed:", err instanceof Error ? err.message : err);
-      }
+      const cm = this.channelManager;
+      tryLog(this.logger, "tick", "Channel prune failed", () => cm.pruneExpiredMessages());
     }
     // Hourly: clean up stale model conversation channels
     if (this.tickCount % 3600 === 0 && this.channelManager) {
-      try {
-        cleanupStaleConversationChannels(this.channelManager);
-      } catch (err) {
-        console.warn(
-          "[tick] Conversation cleanup failed:",
-          err instanceof Error ? err.message : err,
-        );
-      }
+      const cm = this.channelManager;
+      tryLog(this.logger, "tick", "Conversation cleanup failed", () =>
+        cleanupStaleConversationChannels(cm),
+      );
     }
     // Hourly: adjust note importance based on recall patterns
     if (this.tickCount % 3600 === 0 && this.db) {
-      try {
-        this.db.adjustNoteImportance();
-      } catch (err) {
-        console.warn(
-          "[tick] Note importance adjustment failed:",
-          err instanceof Error ? err.message : err,
-        );
-      }
+      const db = this.db;
+      tryLog(this.logger, "tick", "Note importance adjustment failed", () =>
+        db.adjustNoteImportance(),
+      );
     }
 
     // Every 60s: clean up orphaned agents (entities without active connections)
@@ -692,7 +693,9 @@ export class Engine {
           entity.properties._greeted = greeted;
         }
       } catch (err) {
-        console.error(`NPC behavior error for ${entity.name}:`, err);
+        this.logger.error("npc", `Behavior error for ${entity.name}`, {
+          error: getErrorMessage(err),
+        });
       }
     }
   }
@@ -820,11 +823,8 @@ export class Engine {
 
     // Clean up persisted data if db is available
     if (this.db) {
-      try {
-        this.db.deleteEntity(entityId);
-      } catch (err) {
-        console.warn("[entity] DB delete failed:", err instanceof Error ? err.message : err);
-      }
+      const db = this.db;
+      tryLog(this.logger, "entity", "DB delete failed", () => db.deleteEntity(entityId));
     }
 
     return { ok: true, name };
@@ -971,7 +971,7 @@ export class Engine {
         body: body.length > 10240 ? body.slice(0, 10240) : body,
       };
     } catch (err) {
-      return { error: `Fetch failed: ${err instanceof Error ? err.message : "Unknown error"}` };
+      return { error: `Fetch failed: ${getErrorMessage(err)}` };
     }
   }
 
@@ -1027,20 +1027,13 @@ export class Engine {
       this.eventLog = this.eventLog.slice(-5_000);
     }
     if (this.db) {
-      try {
-        this.db.logEvent(event);
-      } catch (err) {
-        console.warn("[event] DB log failed:", err instanceof Error ? err.message : err);
-      }
+      const db = this.db;
+      tryLog(this.logger, "event", "DB log failed", () => db.logEvent(event));
     }
 
     // Notify external listeners
     for (const listener of this.eventListeners) {
-      try {
-        listener(event);
-      } catch (err) {
-        console.warn("[event] Listener failed:", err instanceof Error ? err.message : err);
-      }
+      tryLog(this.logger, "event", "Listener failed", () => listener(event));
     }
   }
 
@@ -1055,7 +1048,7 @@ export class Engine {
         this.db.setRoomStoreValue(room.id, key, room.store.get(key));
       }
     }
-    console.log("World state saved to database.");
+    this.logger.info("engine", "World state saved to database.");
   }
 
   /** Load world state from the database */
@@ -1115,11 +1108,13 @@ export class Engine {
         this.registerRoom(roomId as RoomId, module);
         loaded++;
       } catch (err) {
-        console.error(`Failed to load dynamic room ${roomId}:`, err);
+        this.logger.error("engine", `Failed to load dynamic room ${roomId}`, {
+          error: getErrorMessage(err),
+        });
       }
     }
     if (loaded > 0) {
-      console.log(`Loaded ${loaded} dynamic rooms from database.`);
+      this.logger.info("engine", `Loaded ${loaded} dynamic rooms from database.`);
     }
     return loaded;
   }
@@ -1137,11 +1132,13 @@ export class Engine {
         this.commands.registerBuiltin(compiled);
         loaded++;
       } catch (err) {
-        console.error(`Failed to load dynamic command "${name}":`, err);
+        this.logger.error("engine", `Failed to load dynamic command "${name}"`, {
+          error: getErrorMessage(err),
+        });
       }
     }
     if (loaded > 0) {
-      console.log(`Loaded ${loaded} dynamic commands from database.`);
+      this.logger.info("engine", `Loaded ${loaded} dynamic commands from database.`);
     }
     return loaded;
   }
@@ -1603,7 +1600,7 @@ export class Engine {
           registerRoom: (id, module) => this.registerRoom(id, module),
           replaceRoom: (id, module) => {
             const wrapped = this.sandbox.wrapModule(id, module, (_roomId, error) => {
-              console.error(`[sandbox] ${error}`);
+              this.logger.error("sandbox", error);
             });
             this.rooms.replace(id, wrapped);
           },
@@ -1641,6 +1638,13 @@ export class Engine {
     this.commands.registerBuiltin(
       quitCommand({
         getConnection: (id) => this.getConnectionForEntity(id),
+      }),
+    );
+
+    // Batch command (multi-command execution)
+    this.commands.registerBuiltin(
+      batchCommand({
+        processCommand: (entityId, raw) => this.processCommand(entityId, raw),
       }),
     );
 

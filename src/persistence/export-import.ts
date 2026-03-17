@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+import { getErrorMessage } from "../engine/errors";
 
 // ─── Export Format ──────────────────────────────────────────────────────────
 
@@ -193,7 +194,7 @@ export function importState(
             stmt.run(...(values as (string | number | bigint | null)[]));
             result.rowsImported++;
           } catch (err) {
-            result.errors.push(`${table}: ${err instanceof Error ? err.message : String(err)}`);
+            result.errors.push(`${table}: ${getErrorMessage(err)}`);
           }
         }
 
@@ -204,7 +205,7 @@ export function importState(
     // Rebuild FTS indexes outside the transaction
     rebuildFtsIndexes(db, result);
   } catch (err) {
-    result.errors.push(`Transaction failed: ${err instanceof Error ? err.message : String(err)}`);
+    result.errors.push(`Transaction failed: ${getErrorMessage(err)}`);
   } finally {
     db.exec("PRAGMA foreign_keys=ON");
     db.close();
@@ -276,9 +277,7 @@ function rebuildFtsIndexes(db: Database, result: ImportResult): void {
         db.run("INSERT INTO board_posts_fts(board_posts_fts) VALUES('rebuild')");
       }
     } catch (err) {
-      result.errors.push(
-        `FTS rebuild (board_posts): ${err instanceof Error ? err.message : String(err)}`,
-      );
+      result.errors.push(`FTS rebuild (board_posts): ${getErrorMessage(err)}`);
     }
 
     try {
@@ -286,9 +285,7 @@ function rebuildFtsIndexes(db: Database, result: ImportResult): void {
         db.run("INSERT INTO notes_fts(notes_fts) VALUES('rebuild')");
       }
     } catch (err) {
-      result.errors.push(
-        `FTS rebuild (notes): ${err instanceof Error ? err.message : String(err)}`,
-      );
+      result.errors.push(`FTS rebuild (notes): ${getErrorMessage(err)}`);
     }
   }
 }

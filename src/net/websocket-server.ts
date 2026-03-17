@@ -342,6 +342,7 @@ export class WebSocketServer {
               }),
             );
             engine.sendLook(result.entityId);
+            engine.sendBrief(result.entityId);
             return;
           }
 

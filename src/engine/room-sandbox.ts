@@ -1,4 +1,5 @@
 import type { EntityId, RoomContext, RoomModule } from "../types";
+import { getErrorMessage } from "./errors";
 
 /**
  * Runtime sandbox for room module handlers.
@@ -109,7 +110,7 @@ export class RoomSandbox {
     try {
       fn();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = getErrorMessage(err);
       m.lastError = `${handlerName}: ${msg}`;
       this.recordViolation(roomId, m, `Error in ${handlerName}: ${msg}`, onError);
       return;

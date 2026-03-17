@@ -471,6 +471,11 @@ export class ArtilectAgent extends ArtilectClient {
     return this.command(`shell ${sub} ${args.join(" ")}`.trim());
   }
 
+  /** Execute multiple commands in sequence. */
+  async batch(...commands: string[]): Promise<Perception[]> {
+    return this.command(`batch ${commands.join(" ; ")}`);
+  }
+
   /** Gracefully quit and disconnect. */
   async quit(): Promise<void> {
     await this.command("quit");

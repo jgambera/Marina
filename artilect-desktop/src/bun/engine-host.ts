@@ -76,6 +76,7 @@ export class EngineHost {
       rateLimiter: this.rateLimiter,
       storage,
       world: this.config.world,
+      logger: this.logger,
     });
 
     // Register inline rooms from world definition (if provided)

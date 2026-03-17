@@ -1,5 +1,6 @@
 import { dim, error as fmtError, header, separator } from "../../net/ansi";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
+import { getErrorMessage } from "../errors";
 import { getRank } from "../permissions";
 import type { ShellRuntime } from "../shell-runtime";
 
@@ -54,7 +55,7 @@ export function runCommand(deps: RunDeps): CommandDef {
             result.newFiles.length > 0 ? ` — new files: ${result.newFiles.join(", ")}` : "";
           ctx.send(eid, `${dim(status)}${files} output: ${result.outputFile}`);
         } catch (err) {
-          ctx.send(eid, fmtError(err instanceof Error ? err.message : String(err)));
+          ctx.send(eid, fmtError(getErrorMessage(err)));
         }
         return;
       }
@@ -75,7 +76,7 @@ export function runCommand(deps: RunDeps): CommandDef {
           const result = await deps.shellRuntime.execRaw(eid, commandString);
           formatOutput(ctx, eid, commandString, result);
         } catch (err) {
-          ctx.send(eid, fmtError(err instanceof Error ? err.message : String(err)));
+          ctx.send(eid, fmtError(getErrorMessage(err)));
         }
         return;
       }
@@ -88,7 +89,7 @@ export function runCommand(deps: RunDeps): CommandDef {
         const cmdDisplay = `${binary}${args.length > 0 ? ` ${args.join(" ")}` : ""}`;
         formatOutput(ctx, eid, cmdDisplay, result);
       } catch (err) {
-        ctx.send(eid, fmtError(err instanceof Error ? err.message : String(err)));
+        ctx.send(eid, fmtError(getErrorMessage(err)));
       }
     },
   };

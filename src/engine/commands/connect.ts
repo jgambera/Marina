@@ -2,6 +2,7 @@ import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 import type { ConnectorRuntime } from "../connector-runtime";
+import { getErrorMessage } from "../errors";
 import { getRank } from "../permissions";
 
 export function connectCommand(deps: {
@@ -96,7 +97,7 @@ export function connectCommand(deps: {
                   `Connector "${name}" added (stdio: ${cmd} ${args.join(" ")}).`,
                 );
               } catch (err) {
-                const msg = err instanceof Error ? err.message : String(err);
+                const msg = getErrorMessage(err);
                 ctx.send(input.entity, `Connector "${name}" saved but failed to connect: ${msg}`);
               }
             } else {
@@ -136,7 +137,7 @@ export function connectCommand(deps: {
               await runtime.addHttpServer(name, url);
               ctx.send(input.entity, `Connector "${name}" added (${url}).`);
             } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
+              const msg = getErrorMessage(err);
               ctx.send(input.entity, `Connector "${name}" saved but failed to connect: ${msg}`);
             }
           } else {
@@ -226,7 +227,7 @@ export function connectCommand(deps: {
             ];
             ctx.send(input.entity, lines.join("\n"));
           } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = getErrorMessage(err);
             ctx.send(input.entity, `Failed to list tools: ${msg}`);
           }
           return;
@@ -265,7 +266,7 @@ export function connectCommand(deps: {
             const truncated = text.length > 2000 ? `${text.slice(0, 2000)}... (truncated)` : text;
             ctx.send(input.entity, truncated);
           } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = getErrorMessage(err);
             ctx.send(input.entity, `Call failed: ${msg}`);
           }
           return;

@@ -8,7 +8,7 @@ import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
  * On login (auto-sent), outputs a single-line compass — just enough for
  * the agent to know what continuation commands to issue. No walls of text.
  *
- * When invoked manually (`brief`), shows the full briefing with details.
+ * When invoked manually (`brief full`), shows the full briefing with details.
  */
 export function briefCommand(deps: {
   getEntity: (id: EntityId) => Entity | undefined;
@@ -69,6 +69,10 @@ function sendCompass(
       }
     }
 
+    // Personal: show claimed task count
+    const myClaims = db.getActiveClaimsByName(entity.name);
+    if (myClaims.length > 0) parts.push(`${myClaims.length} yours`);
+
     const pools = db.listMemoryPools();
     if (pools.length > 0) parts.push(`${pools.length} pools`);
 
@@ -80,9 +84,21 @@ function sendCompass(
   }
 
   const compass = parts.join(" · ");
-  const hint = hasMemory ? "" : " — pool guide recall getting started";
 
-  ctx.send(eid, `[${compass}]${hint}`);
+  // After the compass line, show the agent's goal if they have one
+  const lines: string[] = [`[${compass}]`];
+  if (deps.db) {
+    const goalEntry = deps.db.getCoreMemory(entity.name, "goal");
+    if (goalEntry) {
+      lines.push(`Goal: ${goalEntry.value.slice(0, 80)}`);
+    }
+  }
+
+  if (!hasMemory) {
+    lines.push("Hint: pool guide recall getting started");
+  }
+
+  ctx.send(eid, lines.join("\n"));
 }
 
 /** Full brief: invoked manually via `brief full` or `sitrep full`. */
@@ -116,6 +132,42 @@ function sendFullBrief(
     return;
   }
   const db = deps.db;
+
+  // ─── Your context (personal state) ──────────────────────────────────
+
+  const memories = db.listCoreMemory(entity.name);
+  if (memories.length > 0) {
+    lines.push("", "Your memory:");
+    for (const m of memories.slice(0, 8)) {
+      lines.push(`  ${m.key}: ${m.value.slice(0, 60)}`);
+    }
+  }
+
+  const myClaims = db.getActiveClaimsByName(entity.name);
+  if (myClaims.length > 0) {
+    lines.push("", "Your tasks:");
+    for (const c of myClaims.slice(0, 5)) {
+      const status = c.status === "submitted" ? " (submitted)" : "";
+      lines.push(`  #${c.task_id}: ${c.title}${status}`);
+    }
+  }
+
+  const recentActivity = db.getRecentActivity(entity.name, 5);
+  if (recentActivity.length > 0) {
+    const summaries: string[] = [];
+    for (const a of recentActivity) {
+      if (a.activity_type === "room_visit") {
+        summaries.push(`visited ${a.activity_key}`);
+      } else if (a.activity_type === "command") {
+        summaries.push(`${a.activity_key} (x${a.count})`);
+      }
+    }
+    if (summaries.length > 0) {
+      lines.push("", `Recent: ${summaries.join(", ")}`);
+    }
+  }
+
+  // ─── World state ────────────────────────────────────────────────────
 
   const projects = db.listProjects().filter((p) => p.status === "active");
   if (projects.length > 0) {
@@ -157,14 +209,6 @@ function sendFullBrief(
       return `${p.name} (${count})`;
     });
     lines.push("", `Pools: ${poolSummaries.join(", ")}`);
-  }
-
-  const memories = db.listCoreMemory(entity.name);
-  if (memories.length > 0) {
-    lines.push("", "Your memory:");
-    for (const m of memories.slice(0, 5)) {
-      lines.push(`  ${m.key}: ${m.value.slice(0, 50)}`);
-    }
   }
 
   if (memories.length === 0 && projects.length === 0) {

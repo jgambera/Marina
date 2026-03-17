@@ -3018,6 +3018,89 @@ export class ArtilectDB {
       .all(limit) as ShellLogRow[];
   }
 
+  // ─── Entity Migration ───────────────────────────────────────────────────
+
+  /**
+   * Migrate all EntityId-keyed state from an old entity to a new one.
+   * Called on reconnection when the agent gets a fresh EntityId but
+   * should retain channel memberships, group memberships, task claims, etc.
+   */
+  migrateEntityId(oldId: string, newId: string): void {
+    this.db.transaction(() => {
+      this.db.run("UPDATE OR REPLACE channel_members SET entity_id = ? WHERE entity_id = ?", [
+        newId,
+        oldId,
+      ]);
+      this.db.run("UPDATE OR REPLACE group_members SET entity_id = ? WHERE entity_id = ?", [
+        newId,
+        oldId,
+      ]);
+      this.db.run("UPDATE groups_ SET leader_id = ? WHERE leader_id = ?", [newId, oldId]);
+      this.db.run("UPDATE task_claims SET entity_id = ? WHERE entity_id = ?", [newId, oldId]);
+      this.db.run("UPDATE OR REPLACE board_votes SET entity_id = ? WHERE entity_id = ?", [
+        newId,
+        oldId,
+      ]);
+      this.db.run("UPDATE OR REPLACE entity_standing SET entity_id = ? WHERE entity_id = ?", [
+        newId,
+        oldId,
+      ]);
+      this.db.run("UPDATE board_posts SET author_id = ? WHERE author_id = ?", [newId, oldId]);
+      this.db.run("UPDATE macros SET author_id = ? WHERE author_id = ?", [newId, oldId]);
+    })();
+  }
+
+  /**
+   * Migrate task claims by entity name (fallback when old EntityId is unknown,
+   * e.g. after a server restart where in-memory entities were lost).
+   */
+  migrateTaskClaimsByName(entityName: string, newId: string): void {
+    this.db.run(
+      "UPDATE task_claims SET entity_id = ? WHERE entity_name = ? AND status IN ('claimed', 'submitted')",
+      [newId, entityName],
+    );
+  }
+
+  /** Get active task claims for an entity by name. */
+  getActiveClaimsByName(
+    entityName: string,
+  ): { task_id: number; title: string; status: string; claimed_at: number }[] {
+    return this.db
+      .query(
+        `SELECT tc.task_id, t.title, tc.status, tc.claimed_at
+         FROM task_claims tc JOIN tasks t ON tc.task_id = t.id
+         WHERE tc.entity_name = ? AND tc.status IN ('claimed', 'submitted')
+         ORDER BY tc.claimed_at DESC`,
+      )
+      .all(entityName) as {
+      task_id: number;
+      title: string;
+      status: string;
+      claimed_at: number;
+    }[];
+  }
+
+  /** Get recent activity entries for an entity. */
+  getRecentActivity(
+    entityName: string,
+    limit = 5,
+  ): { activity_type: string; activity_key: string; count: number; last_seen: number }[] {
+    return this.db
+      .query(
+        `SELECT activity_type, activity_key, count, last_seen
+         FROM entity_activity
+         WHERE entity_name = ?
+         ORDER BY last_seen DESC
+         LIMIT ?`,
+      )
+      .all(entityName, limit) as {
+      activity_type: string;
+      activity_key: string;
+      count: number;
+      last_seen: number;
+    }[];
+  }
+
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
   close(): void {

@@ -1,6 +1,7 @@
 import { error as fmtError, header, separator, success } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext, RoomId, RoomModule } from "../../types";
+import { getErrorMessage } from "../errors";
 import { getRank } from "../permissions";
 import {
   DEFAULT_COMMAND_SOURCE,
@@ -328,7 +329,7 @@ export function buildCommand(deps: BuildDeps): CommandDef {
               success(`Reloaded space "${roomIdStr}" from v${source.version}.`),
             );
           } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = getErrorMessage(err);
             ctx.send(input.entity, `${fmtError("Reload failed:")} ${msg}`);
           }
           return;
@@ -413,7 +414,7 @@ export function buildCommand(deps: BuildDeps): CommandDef {
               `Reverted "${roomIdStr}" to v${targetVersion} (saved as v${newVersion}).`,
             );
           } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = getErrorMessage(err);
             ctx.send(input.entity, `${fmtError("Revert failed:")} ${msg}`);
           }
           return;
@@ -553,7 +554,7 @@ export function buildCommand(deps: BuildDeps): CommandDef {
                   `Applied template "${templateName}" to create space "${newRoomIdStr}".`,
                 );
               } catch (err) {
-                const msg = err instanceof Error ? err.message : String(err);
+                const msg = getErrorMessage(err);
                 ctx.send(input.entity, `${fmtError("Template apply failed:")} ${msg}`);
               }
               return;
@@ -745,7 +746,7 @@ export function buildCommand(deps: BuildDeps): CommandDef {
                   );
                 }
               } catch (err) {
-                const msg = err instanceof Error ? err.message : String(err);
+                const msg = getErrorMessage(err);
                 ctx.send(input.entity, `${fmtError("Reload failed:")} ${msg}`);
               }
               return;

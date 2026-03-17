@@ -3,6 +3,7 @@ import { header, separator } from "../../net/ansi";
 import type { ArtilectDB } from "../../persistence/database";
 import type { StorageProvider } from "../../storage/provider";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
+import { getErrorMessage } from "../errors";
 
 const HELP =
   "Canvas management. Subcommands: canvas create <name> [desc] | canvas list | canvas info <name> | canvas publish <type> <asset_id> [canvas] | canvas nodes <name> | canvas layout <grid|timeline> <name> | canvas delete <name> | canvas asset upload|list|info|delete";
@@ -388,7 +389,7 @@ async function handleAsset(
           const sizeKb = Math.round(bodyBytes.byteLength / 1024);
           ctx.send(eid, `Asset uploaded: ${id} (${filename}, ${sizeKb}KB, ${mime})`);
         } catch (err) {
-          ctx.send(eid, `Upload failed: ${err instanceof Error ? err.message : String(err)}`);
+          ctx.send(eid, `Upload failed: ${getErrorMessage(err)}`);
         }
         return;
       }
@@ -436,7 +437,7 @@ async function handleAsset(
         const sizeKb = Math.round(bodyBytes.byteLength / 1024);
         ctx.send(eid, `Asset uploaded: ${id} (${filename}, ${sizeKb}KB, ${mime})`);
       } catch (err) {
-        ctx.send(eid, `Upload failed: ${err instanceof Error ? err.message : String(err)}`);
+        ctx.send(eid, `Upload failed: ${getErrorMessage(err)}`);
       }
       return;
     }

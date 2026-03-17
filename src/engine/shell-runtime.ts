@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import type { ArtilectDB } from "../persistence/database";
+import { getErrorMessage } from "./errors";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ export class ShellRuntime {
     try {
       return readdirSync(dir);
     } catch {
+      // Expected: directory may not exist yet
       return [];
     }
   }
@@ -236,7 +238,7 @@ export class ShellRuntime {
       stdout = await new Response(proc.stdout).text();
       stderr = await new Response(proc.stderr).text();
     } catch (err) {
-      stderr = err instanceof Error ? err.message : String(err);
+      stderr = getErrorMessage(err);
       exitCode = 127;
     }
 

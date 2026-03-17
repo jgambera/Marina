@@ -1,6 +1,7 @@
 import type { ArtilectDB } from "../../persistence/database";
 import { exportState } from "../../persistence/export-import";
 import type { CommandDef, Connection, Entity, EntityId } from "../../types";
+import { getErrorMessage } from "../errors";
 
 interface AdminDeps {
   db: ArtilectDB;
@@ -199,10 +200,7 @@ export function adminCommand(deps: AdminDeps): CommandDef {
               },
             );
           } catch (err) {
-            ctx.send(
-              input.entity,
-              `Export failed: ${err instanceof Error ? err.message : String(err)}`,
-            );
+            ctx.send(input.entity, `Export failed: ${getErrorMessage(err)}`);
           }
           break;
         }

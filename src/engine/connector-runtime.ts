@@ -1,4 +1,5 @@
 import type { ArtilectDB } from "../persistence/database";
+import { getErrorMessage } from "./errors";
 
 /**
  * MCPorter-backed connector runtime.
@@ -110,7 +111,7 @@ export class ConnectorRuntime {
     try {
       await this.runtime.close(name);
     } catch {
-      // Server may not be connected
+      // Expected: server may not be connected
     }
   }
 
@@ -120,6 +121,7 @@ export class ConnectorRuntime {
     try {
       return this.runtime.listServers?.() ?? [];
     } catch {
+      // Expected: runtime may not support listServers
       return [];
     }
   }
@@ -137,9 +139,7 @@ export class ConnectorRuntime {
       }
       return [];
     } catch (err) {
-      throw new Error(
-        `Failed to list tools for "${server}": ${err instanceof Error ? err.message : String(err)}`,
-      );
+      throw new Error(`Failed to list tools for "${server}": ${getErrorMessage(err)}`);
     }
   }
 
@@ -167,7 +167,7 @@ export class ConnectorRuntime {
       const result = await this.runtime.callTool(server, tool, args);
       return result;
     } catch (err) {
-      throw new Error(`Tool call failed: ${err instanceof Error ? err.message : String(err)}`);
+      throw new Error(`Tool call failed: ${getErrorMessage(err)}`);
     }
   }
 
@@ -194,7 +194,7 @@ export class ConnectorRuntime {
       const body = await response.text();
       return { status: response.status, body: body.length > 20480 ? body.slice(0, 20480) : body };
     } catch (err) {
-      return { error: `Fetch failed: ${err instanceof Error ? err.message : "Unknown error"}` };
+      return { error: `Fetch failed: ${getErrorMessage(err)}` };
     }
   }
 
@@ -230,7 +230,7 @@ export class ConnectorRuntime {
         body: respBody.length > 20480 ? respBody.slice(0, 20480) : respBody,
       };
     } catch (err) {
-      return { error: `Fetch failed: ${err instanceof Error ? err.message : "Unknown error"}` };
+      return { error: `Fetch failed: ${getErrorMessage(err)}` };
     }
   }
 
@@ -240,7 +240,7 @@ export class ConnectorRuntime {
     try {
       await this.runtime.close();
     } catch {
-      // Ignore close errors
+      // Expected: runtime may already be closed
     }
   }
 }

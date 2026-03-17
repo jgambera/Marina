@@ -47,6 +47,7 @@ const engine = new Engine({
   rateLimiter,
   storage,
   world,
+  logger,
 });
 
 // Register inline rooms from world definition

@@ -256,6 +256,7 @@ export class McpServerAdapter {
         }
         session.entityId = result.entityId;
         engine.sendLook(result.entityId);
+        engine.sendBrief(result.entityId);
         const output = drainPerceptions(session);
         return {
           content: [
@@ -603,6 +604,28 @@ export class McpServerAdapter {
           return { content: [{ type: "text" as const, text: check.error }] };
         }
         engine.processCommand(check.entityId, `build ${input}`);
+        return { content: [{ type: "text" as const, text: drainPerceptions(session) }] };
+      },
+    );
+
+    // ── batch (multi-command execution) ───────────────────────────────────
+
+    mcp.tool(
+      "batch",
+      "Execute multiple commands in sequence, separated by semicolons. Returns combined output. Example: look ; north ; look ; note Found something",
+      {
+        input: z.string().describe("Commands separated by semicolons, e.g. 'look ; north ; look'"),
+      },
+      async ({ input }, extra) => {
+        const session = getSession(extra);
+        if (!session) {
+          return { content: [{ type: "text" as const, text: "Error: no active MCP session." }] };
+        }
+        const check = requireEntity(session);
+        if ("error" in check) {
+          return { content: [{ type: "text" as const, text: check.error }] };
+        }
+        engine.processCommand(check.entityId, `batch ${input}`);
         return { content: [{ type: "text" as const, text: drainPerceptions(session) }] };
       },
     );
