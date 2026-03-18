@@ -111,6 +111,9 @@ export interface RoomContext {
 
   /** The current room's ID */
   roomId: RoomId;
+
+  /** Send a brief orientation to an entity */
+  brief?: (entityId: EntityId) => void;
 }
 
 // ─── Command Context (extended context for dynamic commands) ─────────────────

@@ -108,6 +108,7 @@ export class RoomManager {
       boards?: RoomBoardAPI;
       channels?: RoomChannelAPI;
       roomFetch?: RoomFetchFn;
+      brief?: (entityId: EntityId) => void;
     },
   ): RoomContext | undefined {
     const room = this.rooms.get(roomId);
@@ -128,6 +129,7 @@ export class RoomManager {
       boards: deps.boards,
       channels: deps.channels,
       fetch: deps.roomFetch ? (url: string) => deps.roomFetch!(roomId, url) : undefined,
+      brief: deps.brief,
     };
   }
 }

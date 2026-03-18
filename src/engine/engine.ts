@@ -134,6 +134,7 @@ export class Engine {
   private db?: ArtilectDB;
   private startedAt = Date.now();
   private fetchLastCall = new Map<string, number>(); // roomId -> timestamp
+  private briefSubscribers = new Map<EntityId, number>(); // entityId -> tick interval
   private connections = new Map<string, Connection>();
   private entityToConnection = new Map<EntityId, string>();
   private commandQueue: { entity: EntityId; raw: string }[] = [];
@@ -234,6 +235,7 @@ export class Engine {
     if (!conn) return;
 
     if (conn.entity) {
+      this.briefSubscribers.delete(conn.entity);
       this.entityToConnection.delete(conn.entity);
       const entity = this.entities.get(conn.entity);
       if (entity) {
@@ -645,6 +647,13 @@ export class Engine {
       this.cleanupOrphanedAgents();
     }
 
+    // Brief heartbeat: send compass to subscribed entities
+    for (const [eid, interval] of this.briefSubscribers) {
+      if (this.tickCount % interval === 0) {
+        this.sendBrief(eid);
+      }
+    }
+
     // 4. Process NPC behaviors
     this.processNpcBehaviors();
 
@@ -749,6 +758,7 @@ export class Engine {
       boards: this.buildBoardAPI(),
       channels: this.buildChannelAPI(),
       roomFetch: (room, url) => this.roomFetch(room, url),
+      brief: (eid) => this.sendBrief(eid),
     });
   }
 
@@ -764,6 +774,21 @@ export class Engine {
     const entity = this.entities.get(entityId);
     if (!entity) return;
     this.processCommand(entityId, "brief");
+  }
+
+  /** Subscribe an entity to periodic brief pulses */
+  subscribeBrief(entityId: EntityId, interval: number): void {
+    this.briefSubscribers.set(entityId, interval);
+  }
+
+  /** Unsubscribe an entity from periodic brief pulses */
+  unsubscribeBrief(entityId: EntityId): void {
+    this.briefSubscribers.delete(entityId);
+  }
+
+  /** Check if an entity is subscribed to brief pulses */
+  isBriefSubscribed(entityId: EntityId): boolean {
+    return this.briefSubscribers.has(entityId);
   }
 
   // ─── NPC Management ─────────────────────────────────────────────────────
@@ -1375,6 +1400,10 @@ export class Engine {
         db: this.db,
         taskManager: this.taskManager,
         getOnlineAgents: () => this.getOnlineAgents(),
+        groupManager: this.groupManager,
+        subscribeBrief: (eid, interval) => this.subscribeBrief(eid, interval),
+        unsubscribeBrief: (eid) => this.unsubscribeBrief(eid),
+        isBriefSubscribed: (eid) => this.isBriefSubscribed(eid),
       }),
     );
     this.commands.registerBuiltin(

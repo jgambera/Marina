@@ -95,6 +95,11 @@ await engine.initConnectors();
 // Seed the guide memory pool (idempotent)
 seedGuidePool(db, world.guideNotes);
 
+// Run world seed function (idempotent)
+if (world.seed) {
+  world.seed(db);
+}
+
 // Seed canvas from world definition (idempotent)
 if (world.canvas && !db.getCanvasByName(world.canvas.name)) {
   const id = crypto.randomUUID();

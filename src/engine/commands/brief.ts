@@ -1,6 +1,18 @@
+import type { GroupManager } from "../../coordination/group-manager";
 import type { TaskManager } from "../../coordination/task-manager";
 import type { ArtilectDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
+
+interface BriefDeps {
+  getEntity: (id: EntityId) => Entity | undefined;
+  db?: ArtilectDB;
+  taskManager?: TaskManager;
+  getOnlineAgents: () => Entity[];
+  groupManager?: GroupManager;
+  subscribeBrief?: (entityId: EntityId, interval: number) => void;
+  unsubscribeBrief?: (entityId: EntityId) => void;
+  isBriefSubscribed?: (entityId: EntityId) => boolean;
+}
 
 /**
  * Brief: lightweight orientation signal.
@@ -9,20 +21,26 @@ import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
  * the agent to know what continuation commands to issue. No walls of text.
  *
  * When invoked manually (`brief full`), shows the full briefing with details.
+ * `brief watch [N]` subscribes to periodic compass pulses.
+ * `brief unwatch` stops the subscription.
  */
-export function briefCommand(deps: {
-  getEntity: (id: EntityId) => Entity | undefined;
-  db?: ArtilectDB;
-  taskManager?: TaskManager;
-  getOnlineAgents: () => Entity[];
-}): CommandDef {
+export function briefCommand(deps: BriefDeps): CommandDef {
   return {
     name: "brief",
     aliases: ["orient", "sitrep"],
-    help: "Get oriented. Shows the current shape of the world — who is here, what exists, where to go next.",
+    help: "Get oriented. Shows the current shape of the world — who is here, what exists, where to go next. Use 'brief watch [N]' for periodic updates, 'brief unwatch' to stop.",
     handler: (ctx: RoomContext, input) => {
       const entity = deps.getEntity(input.entity);
       if (!entity) return;
+
+      const sub = input.tokens[0]?.toLowerCase();
+
+      if (sub === "watch") {
+        return handleWatch(ctx, input.entity, input.tokens, deps);
+      }
+      if (sub === "unwatch") {
+        return handleUnwatch(ctx, input.entity, deps);
+      }
 
       const full = input.tokens.length > 0;
       if (full) {
@@ -34,17 +52,49 @@ export function briefCommand(deps: {
   };
 }
 
+function handleWatch(ctx: RoomContext, eid: EntityId, tokens: string[], deps: BriefDeps): void {
+  if (!deps.subscribeBrief) {
+    ctx.send(eid, "Brief watch is not available.");
+    return;
+  }
+
+  const MIN_INTERVAL = 30;
+  const MAX_INTERVAL = 600;
+  const DEFAULT_INTERVAL = 120;
+
+  let interval = DEFAULT_INTERVAL;
+  if (tokens.length > 1) {
+    const parsed = Number.parseInt(tokens[1]!, 10);
+    if (Number.isNaN(parsed) || parsed < MIN_INTERVAL || parsed > MAX_INTERVAL) {
+      ctx.send(
+        eid,
+        `Interval must be ${MIN_INTERVAL}-${MAX_INTERVAL} ticks. Default: ${DEFAULT_INTERVAL}.`,
+      );
+      return;
+    }
+    interval = parsed;
+  }
+
+  deps.subscribeBrief(eid, interval);
+  ctx.send(eid, `Watching: compass every ${interval} ticks.`);
+}
+
+function handleUnwatch(ctx: RoomContext, eid: EntityId, deps: BriefDeps): void {
+  if (!deps.unsubscribeBrief) {
+    ctx.send(eid, "Brief watch is not available.");
+    return;
+  }
+
+  if (deps.isBriefSubscribed?.(eid)) {
+    deps.unsubscribeBrief(eid);
+    ctx.send(eid, "Stopped watching.");
+  } else {
+    ctx.send(eid, "Not currently watching.");
+  }
+}
+
 /** Compass: single-line signal with counts, no content dump. */
-function sendCompass(
-  ctx: RoomContext,
-  eid: EntityId,
-  entity: Entity,
-  deps: {
-    db?: ArtilectDB;
-    taskManager?: TaskManager;
-    getOnlineAgents: () => Entity[];
-  },
-): void {
+function sendCompass(ctx: RoomContext, eid: EntityId, entity: Entity, deps: BriefDeps): void {
   const parts: string[] = [];
 
   const online = deps.getOnlineAgents();
@@ -73,6 +123,12 @@ function sendCompass(
     const myClaims = db.getActiveClaimsByName(entity.name);
     if (myClaims.length > 0) parts.push(`${myClaims.length} yours`);
 
+    // Staffing signal: projects with more open tasks than members
+    if (deps.taskManager && deps.groupManager) {
+      const needHelp = countUnderstaffedProjects(db, deps.taskManager, deps.groupManager);
+      if (needHelp > 0) parts.push(`${needHelp} need help`);
+    }
+
     const pools = db.listMemoryPools();
     if (pools.length > 0) parts.push(`${pools.length} pools`);
 
@@ -83,7 +139,7 @@ function sendCompass(
     }
   }
 
-  const compass = parts.join(" · ");
+  const compass = parts.join(" \u00b7 ");
 
   // After the compass line, show the agent's goal if they have one
   const lines: string[] = [`[${compass}]`];
@@ -102,16 +158,7 @@ function sendCompass(
 }
 
 /** Full brief: invoked manually via `brief full` or `sitrep full`. */
-function sendFullBrief(
-  ctx: RoomContext,
-  eid: EntityId,
-  entity: Entity,
-  deps: {
-    db?: ArtilectDB;
-    taskManager?: TaskManager;
-    getOnlineAgents: () => Entity[];
-  },
-): void {
+function sendFullBrief(ctx: RoomContext, eid: EntityId, entity: Entity, deps: BriefDeps): void {
   const lines: string[] = [];
 
   const online = deps.getOnlineAgents();
@@ -213,6 +260,35 @@ function sendFullBrief(
     }
   }
 
+  // ─── Staffing ───────────────────────────────────────────────────────
+
+  if (deps.taskManager && deps.groupManager) {
+    const staffing = getStaffingInfo(db, deps.taskManager, deps.groupManager);
+    if (staffing.length > 0) {
+      lines.push("", "Staffing:");
+      for (const s of staffing.slice(0, 5)) {
+        lines.push(`  ${s.name} [${s.orchestration}]: ${s.openTasks} open, ${s.members} members`);
+      }
+    }
+  }
+
+  // ─── Standing leaders ───────────────────────────────────────────────
+
+  const leaders = db.getStandingLeaderboard(3);
+  if (leaders.length > 0) {
+    const leaderStr = leaders.map((l) => `${l.entityName} (${l.total})`).join(", ");
+    lines.push("", `Standing: ${leaderStr}`);
+  }
+
+  // ─── Room templates ─────────────────────────────────────────────────
+
+  const templates = db.getAllRoomTemplates();
+  if (templates.length > 0) {
+    lines.push("", `Room templates: ${templates.length} available`);
+  }
+
+  // ─── Pools ──────────────────────────────────────────────────────────
+
   const pools = db.listMemoryPools();
   if (pools.length > 0) {
     const poolSummaries = pools.slice(0, 8).map((p) => {
@@ -228,6 +304,46 @@ function sendFullBrief(
   }
 
   ctx.send(eid, lines.join("\n"));
+}
+
+/** Count active projects where open tasks > group members */
+function countUnderstaffedProjects(
+  db: ArtilectDB,
+  taskManager: TaskManager,
+  groupManager: GroupManager,
+): number {
+  const projects = db.listProjects().filter((p) => p.status === "active" && p.group_id);
+  let count = 0;
+  for (const p of projects) {
+    const openTasks = taskManager.list({ status: "open", groupId: p.group_id! }).length;
+    if (openTasks === 0) continue;
+    const members = groupManager.getMembers(p.group_id!).length;
+    if (openTasks > members) count++;
+  }
+  return count;
+}
+
+/** Get staffing info for active projects */
+function getStaffingInfo(
+  db: ArtilectDB,
+  taskManager: TaskManager,
+  groupManager: GroupManager,
+): { name: string; orchestration: string; openTasks: number; members: number }[] {
+  const projects = db.listProjects().filter((p) => p.status === "active" && p.group_id);
+  const result: { name: string; orchestration: string; openTasks: number; members: number }[] = [];
+  for (const p of projects) {
+    const openTasks = taskManager.list({ status: "open", groupId: p.group_id! }).length;
+    const members = groupManager.getMembers(p.group_id!).length;
+    if (openTasks > 0 || members > 0) {
+      result.push({
+        name: p.name,
+        orchestration: p.orchestration ?? "custom",
+        openTasks,
+        members,
+      });
+    }
+  }
+  return result;
 }
 
 function formatAge(timestamp: number): string {

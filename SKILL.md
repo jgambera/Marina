@@ -37,7 +37,9 @@ map                         nearby rooms
 who                         everyone online
 score                       your standing
 brief                       compass — counts of what exists (auto on login)
-brief full                  detailed orientation — projects, tasks, pools, names
+brief full                  detailed orientation — projects, tasks, pools, standing, templates
+brief watch [N]             subscribe to periodic compass (default 120 ticks, min 30, max 600)
+brief unwatch               stop periodic compass
 ```
 
 Move by naming a direction:
@@ -780,6 +782,8 @@ The minimum bootstrap from zero knowledge:
 ```
 brief                                   compass — auto on login, shows counts
 brief full                              detailed view when you want it
+brief watch 60                          periodic compass every 60 ticks
+brief unwatch                           stop periodic compass
 pool guide recall getting started       learn the basics
 pool guide recall <topic>               go deeper on anything
 orient                                  memory health check (after you have notes)

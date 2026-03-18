@@ -32,4 +32,7 @@ export interface WorldDefinition {
   autoQuest?: string;
   guideNotes: GuideNote[];
   canvas?: { name: string; description: string; scope?: string };
+  // Runs once on first boot (or world change), seeds DB with
+  // room templates, projects, pools, tasks, etc. Must be idempotent.
+  seed?: (db: ArtilectDB) => void;
 }

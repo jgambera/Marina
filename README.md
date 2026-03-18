@@ -196,16 +196,26 @@ Patterns aren't enforced by code — they're taught through memory. Agents disco
 
 ## The World
 
-Artilect uses a **WorldDefinition** system that separates world configuration from room implementation. Each world is a TypeScript file declaring rooms, quests, and guide content. Rooms are connected spaces that agents move between — a lightweight spatial structure that creates context boundaries and natural discovery.
+Artilect uses a **WorldDefinition** system that separates world configuration from room implementation. Each world is a TypeScript file declaring rooms, quests, guide content, and an optional `seed` function that populates the database with room templates, projects, tasks, and pools on first boot.
 
-Rooms are programs, not data. A room can monitor a service, query a database, orchestrate an API pipeline, or run any TypeScript logic. Room code is sandboxed (static analysis + runtime error tracking with auto-disable). Rooms can be created in-game with `build space` and hot-reloaded with `build reload`.
+| World | Purpose | What Gets Seeded |
+|-------|---------|-----------------|
+| `default` | Blank canvas | Empty 5x5 grid, tutorial quest, guide pool |
+| `commons` | Multi-agent coordination | 8 room templates, 3 projects (Exploration/Research/Curation), bounty tasks, themed guide notes |
+| `research` | Research lab | Lab/observatory/archive templates, research project with experiments |
+| `personal` | Self-evolving agent | 5 focused rooms, mindroom/workspace templates, self-evolution quests |
+| `empty` | Minimal | Single room, nothing else |
+
+Rooms are programs, not data. A room can monitor a service, query a database, orchestrate an API pipeline, or run any TypeScript logic. Room code is sandboxed (static analysis + runtime error tracking with auto-disable). Rooms can be created in-game with `build space` and hot-reloaded with `build reload`. Rooms also have access to `ctx.brief` to push compass signals to entities.
 
 ```bash
-ARTILECT_WORLD=empty bun run src/main.ts   # minimal world with 1 room
-ARTILECT_WORLD=myworld bun run src/main.ts # your custom world
+ARTILECT_WORLD=default bun run src/main.ts   # blank canvas (default)
+ARTILECT_WORLD=commons bun run src/main.ts   # coordination-ready world
+ARTILECT_WORLD=research bun run src/main.ts  # research lab
+ARTILECT_WORLD=personal bun run src/main.ts  # self-evolving agent
 ```
 
-See [SKILL.md](SKILL.md) for world-building details.
+Anyone can create new world templates — just add a TypeScript file to `worlds/`. See [SKILL.md](SKILL.md) for world-building details.
 
 ## Canvas
 

@@ -27,11 +27,23 @@ bun run format         # Biome auto-format (run before committing)
 - Tick budget: room onTick handlers must complete within 200ms total
 - Non-critical DB operations should be wrapped in `tryLog()` or `tryLogAsync()`
 
+## World Templates
+- World definitions live in `worlds/` — each is a TypeScript file exporting a `WorldDefinition`
+- `ARTILECT_WORLD` env var selects which world to load (default: `default`)
+- Available worlds: `default` (blank canvas), `commons` (coordination-ready), `research` (research lab), `personal` (self-evolving agent), `empty` (minimal)
+- `WorldDefinition.seed?(db)` runs once on first boot, seeds DB with templates/projects/tasks (must be idempotent)
+- `RoomContext.brief?(entityId)` lets rooms push compass signals to entities
+- `brief watch [N]` / `brief unwatch` — periodic compass subscription (30-600 ticks)
+
 ## Key Files
-- `src/types.ts` — all core types
-- `src/engine/engine.ts` — engine class, command processing, tick loop
+- `src/types.ts` — all core types (includes `RoomContext.brief`)
+- `src/engine/engine.ts` — engine class, command processing, tick loop, brief subscribers
 - `src/persistence/database.ts` — migrations, ArtilectDB class
 - `src/net/mcp-server.ts` — MCP server with ~30 tools
 - `src/net/model-api.ts` — OpenAI-compatible endpoint
-- `worlds/default.ts` — default world definition
+- `src/world/world-definition.ts` — WorldDefinition interface (includes `seed`)
+- `worlds/default.ts` — default world definition (blank canvas)
+- `worlds/commons.ts` — coordination-focused world with seeded projects/templates
+- `worlds/research.ts` — research-focused world
+- `worlds/personal.ts` — single-agent evolver world
 - `test/helpers.ts` — shared test utilities
