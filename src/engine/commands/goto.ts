@@ -88,7 +88,7 @@ function teleport(
   }
 
   // Broadcast departure
-  ctx.broadcastExcept(entityId, dim(`${name} vanishes.`));
+  ctx.broadcastExcept(entityId, dim(`${name} vanishes.`), "leave");
 
   // Move
   deps.moveEntity(entityId, targetRoomId);
@@ -97,7 +97,7 @@ function teleport(
   const target = deps.getRoomById(targetRoomId);
   const newCtx = deps.buildContext(targetRoomId);
   if (newCtx) {
-    newCtx.broadcastExcept(entityId, arrival(name));
+    newCtx.broadcastExcept(entityId, arrival(name), "arrive");
     if (target?.module.onEnter) {
       target.module.onEnter(newCtx, entityId);
     }

@@ -111,7 +111,7 @@ export function channelCommand(
           }
           const message = tokens.slice(2).join(" ");
           channels.send(ch.id, input.entity, entity.name, message);
-          ctx.send(input.entity, channelSelf(name, message));
+          ctx.send(input.entity, channelSelf(name, message), name);
           return;
         }
 

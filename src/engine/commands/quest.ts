@@ -191,6 +191,7 @@ export function questCommand(deps: {
           ctx.broadcastExcept(
             input.entity,
             `${entity.name} has completed the quest "${quest.name}"!`,
+            "action",
           );
           break;
         }

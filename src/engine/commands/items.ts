@@ -36,7 +36,7 @@ export function getCommand(deps: {
       obj.properties._owner = entity.id;
 
       ctx.send(input.entity, `You pick up ${obj.name}.`);
-      ctx.broadcastExcept(input.entity, `${entity.name} picks up ${obj.name}.`);
+      ctx.broadcastExcept(input.entity, `${entity.name} picks up ${obj.name}.`, "action");
     },
   };
 }
@@ -83,7 +83,7 @@ export function dropCommand(deps: {
       found.properties._owner = undefined;
 
       ctx.send(input.entity, `You drop ${found.name}.`);
-      ctx.broadcastExcept(input.entity, `${entity.name} drops ${found.name}.`);
+      ctx.broadcastExcept(input.entity, `${entity.name} drops ${found.name}.`, "action");
     },
   };
 }
@@ -146,8 +146,12 @@ export function giveCommand(deps: {
       found.properties._owner = target.id;
 
       ctx.send(input.entity, `You give ${found.name} to ${target.name}.`);
-      ctx.send(target.id, `${entity.name} gives you ${found.name}.`);
-      ctx.broadcastExcept(input.entity, `${entity.name} gives ${found.name} to ${target.name}.`);
+      ctx.send(target.id, `${entity.name} gives you ${found.name}.`, "action");
+      ctx.broadcastExcept(
+        input.entity,
+        `${entity.name} gives ${found.name} to ${target.name}.`,
+        "action",
+      );
     },
   };
 }

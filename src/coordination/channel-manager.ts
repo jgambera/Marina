@@ -45,7 +45,7 @@ export class ChannelManager {
 
   constructor(
     private db: ArtilectDB,
-    private sendToEntity: (target: EntityId, message: string) => void,
+    private sendToEntity: (target: EntityId, message: string, tag?: string) => void,
   ) {}
 
   /** Register a listener invoked on every send(). Returns an unsubscribe function. */
@@ -142,6 +142,7 @@ export class ChannelManager {
         this.sendToEntity(
           member.entity_id as EntityId,
           fmtChannel(channelName, senderName, content),
+          channelName,
         );
       }
     }

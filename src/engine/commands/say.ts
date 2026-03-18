@@ -15,8 +15,8 @@ export function sayCommand(getEntity: (id: EntityId) => Entity | undefined): Com
         return;
       }
 
-      ctx.send(input.entity, saySelf(input.args));
-      ctx.broadcastExcept(input.entity, say(entity.name, input.args));
+      ctx.send(input.entity, saySelf(input.args), "say");
+      ctx.broadcastExcept(input.entity, say(entity.name, input.args), "say");
     },
   };
 }

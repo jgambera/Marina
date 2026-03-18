@@ -79,7 +79,7 @@ export function moveCommand(deps: {
         const ctx = deps.buildContext(room.id);
         if (ctx) room.module.onLeave(ctx, input.entity);
       }
-      _ctx.broadcastExcept(input.entity, departure(name, direction));
+      _ctx.broadcastExcept(input.entity, departure(name, direction), "leave");
 
       // Move
       deps.moveEntity(input.entity, targetId);
@@ -87,7 +87,7 @@ export function moveCommand(deps: {
       // Enter new room
       const newCtx = deps.buildContext(targetId);
       if (newCtx) {
-        newCtx.broadcastExcept(input.entity, arrival(name));
+        newCtx.broadcastExcept(input.entity, arrival(name), "arrive");
         if (target.module.onEnter) {
           target.module.onEnter(newCtx, input.entity);
         }

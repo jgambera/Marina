@@ -4,7 +4,7 @@ import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 export function tellCommand(deps: {
   getEntity: (id: EntityId) => Entity | undefined;
   findEntityGlobal: (name: string) => { id: EntityId; name: string } | undefined;
-  sendGlobal: (target: EntityId, message: string, senderId: EntityId) => void;
+  sendGlobal: (target: EntityId, message: string, senderId: EntityId, tag?: string) => void;
 }): CommandDef {
   return {
     name: "tell",
@@ -33,8 +33,8 @@ export function tellCommand(deps: {
         return;
       }
 
-      deps.sendGlobal(target.id, tell(sender.name, message, "from"), input.entity);
-      ctx.send(input.entity, tell(target.name, message, "to"));
+      deps.sendGlobal(target.id, tell(sender.name, message, "from"), input.entity, "tell");
+      ctx.send(input.entity, tell(target.name, message, "to"), "tell");
     },
   };
 }

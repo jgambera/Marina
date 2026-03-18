@@ -16,8 +16,8 @@ export function emoteCommand(getEntity: (id: EntityId) => Entity | undefined): C
       }
 
       const msg = emote(entity.name, input.args);
-      ctx.send(input.entity, msg);
-      ctx.broadcastExcept(input.entity, msg);
+      ctx.send(input.entity, msg, "emote");
+      ctx.broadcastExcept(input.entity, msg, "emote");
     },
   };
 }

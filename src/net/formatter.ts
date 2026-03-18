@@ -40,8 +40,9 @@ function formatAnsi(p: Perception): string {
     return `${A.cyan}${text}${A.reset}`;
   }
   const text = (p.data?.text as string) ?? "";
-  if (text) return text;
-  return JSON.stringify(p.data);
+  const prefix = p.tag ? `${A.green}[${p.tag}]${A.reset} ` : "";
+  if (text) return `${prefix}${text}`;
+  return `${prefix}${JSON.stringify(p.data)}`;
 }
 
 function formatRoomAnsi(p: Perception): string {
@@ -91,8 +92,9 @@ function formatMarkdown(p: Perception): string {
     return `*${text}*`;
   }
   const text = (p.data?.text as string) ?? "";
-  if (text) return text;
-  return JSON.stringify(p.data);
+  const prefix = p.tag ? `**[${p.tag}]** ` : "";
+  if (text) return `${prefix}${text}`;
+  return `${prefix}${JSON.stringify(p.data)}`;
 }
 
 function formatRoomMarkdown(p: Perception): string {
@@ -134,8 +136,9 @@ function formatPlaintext(p: Perception): string {
     return formatRoomPlaintext(p);
   }
   const text = (p.data?.text as string) ?? "";
-  if (text) return text;
-  return JSON.stringify(p.data);
+  const prefix = p.tag ? `[${p.tag}] ` : "";
+  if (text) return `${prefix}${text}`;
+  return `${prefix}${JSON.stringify(p.data)}`;
 }
 
 function formatRoomPlaintext(p: Perception): string {
@@ -184,9 +187,10 @@ function formatHtml(p: Perception): string {
     const text = esc((p.data?.text as string) ?? "");
     return `<span class="system">${text}</span>`;
   }
+  const prefix = p.tag ? `<span class="tag">[${esc(p.tag)}]</span> ` : "";
   const text = esc((p.data?.text as string) ?? "");
-  if (text) return `<span>${text}</span>`;
-  return `<pre>${esc(JSON.stringify(p.data))}</pre>`;
+  if (text) return `<span>${prefix}${text}</span>`;
+  return `<pre>${prefix}${esc(JSON.stringify(p.data))}</pre>`;
 }
 
 function formatRoomHtml(p: Perception): string {

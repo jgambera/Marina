@@ -3,7 +3,7 @@ import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 
 export function shoutCommand(deps: {
   getEntity: (id: EntityId) => Entity | undefined;
-  broadcastAll: (senderId: EntityId, message: string) => void;
+  broadcastAll: (senderId: EntityId, message: string, tag?: string) => void;
 }): CommandDef {
   return {
     name: "shout",
@@ -18,8 +18,8 @@ export function shoutCommand(deps: {
         return;
       }
 
-      ctx.send(input.entity, shoutSelf(input.args));
-      deps.broadcastAll(input.entity, shout(entity.name, input.args));
+      ctx.send(input.entity, shoutSelf(input.args), "shout");
+      deps.broadcastAll(input.entity, shout(entity.name, input.args), "shout");
     },
   };
 }

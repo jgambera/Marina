@@ -97,6 +97,7 @@ describe("Engine", () => {
       conn.clear();
       engine.processCommand(entity.id, "say hello world");
       expect(stripAnsi(conn.lastText())).toContain("You say: hello world");
+      expect(conn.messages[conn.messages.length - 1]!.tag).toBe("say");
     });
 
     it("should broadcast to others in room", () => {
@@ -109,6 +110,7 @@ describe("Engine", () => {
       conn2.clear();
       engine.processCommand(entity1.id, "say hi there");
       expect(stripAnsi(conn2.lastText())).toContain("Agent1 says: hi there");
+      expect(conn2.messages[conn2.messages.length - 1]!.tag).toBe("say");
     });
   });
 
@@ -126,6 +128,8 @@ describe("Engine", () => {
       engine.processCommand(conn.entity!, "tell Agent2 secret message");
       expect(stripAnsi(conn.lastText())).toContain("You tell Agent2: secret message");
       expect(stripAnsi(conn2.lastText())).toContain("Agent1 tells you: secret message");
+      expect(conn.messages[conn.messages.length - 1]!.tag).toBe("tell");
+      expect(conn2.messages[conn2.messages.length - 1]!.tag).toBe("tell");
     });
   });
 

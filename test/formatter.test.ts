@@ -25,6 +25,15 @@ function messagePerception(): Perception {
   };
 }
 
+function taggedPerception(): Perception {
+  return {
+    kind: "message",
+    timestamp: Date.now(),
+    tag: "say",
+    data: { text: "Alice says: hello" },
+  };
+}
+
 function errorPerception(): Perception {
   return {
     kind: "error",
@@ -49,6 +58,12 @@ describe("formatPerception", () => {
       const parsed = JSON.parse(result);
       expect(parsed.kind).toBe("message");
       expect(parsed.data.text).toBe("Hello, world!");
+    });
+
+    it("should include tag field in JSON when present", () => {
+      const result = formatPerception(taggedPerception(), "json");
+      const parsed = JSON.parse(result);
+      expect(parsed.tag).toBe("say");
     });
   });
 
@@ -78,6 +93,19 @@ describe("formatPerception", () => {
       expect(result).toContain("Server restarting.");
       expect(result).toContain("\x1b[36m"); // cyan
     });
+
+    it("should prepend [tag] prefix with ANSI green when tag is present", () => {
+      const result = formatPerception(taggedPerception(), "ansi");
+      expect(result).toContain("[say]");
+      expect(result).toContain("Alice says: hello");
+      expect(result).toContain("\x1b[32m"); // green
+    });
+
+    it("should not add prefix when tag is absent", () => {
+      const result = formatPerception(messagePerception(), "ansi");
+      expect(result).not.toContain("[");
+      expect(result).toBe("Hello, world!");
+    });
   });
 
   describe("markdown medium", () => {
@@ -99,6 +127,12 @@ describe("formatPerception", () => {
       const result = formatPerception(systemPerception(), "markdown");
       expect(result).toContain("*Server restarting.*");
     });
+
+    it("should prepend bold [tag] prefix when tag is present", () => {
+      const result = formatPerception(taggedPerception(), "markdown");
+      expect(result).toContain("**[say]**");
+      expect(result).toContain("Alice says: hello");
+    });
   });
 
   describe("plaintext medium", () => {
@@ -109,6 +143,11 @@ describe("formatPerception", () => {
       expect(result).not.toContain("##");
       expect(result).not.toContain("**");
       expect(result).not.toContain("\x1b[");
+    });
+
+    it("should prepend [tag] prefix when tag is present", () => {
+      const result = formatPerception(taggedPerception(), "plaintext");
+      expect(result).toBe("[say] Alice says: hello");
     });
   });
 
@@ -134,6 +173,24 @@ describe("formatPerception", () => {
     it("should format errors with CSS class", () => {
       const result = formatPerception(errorPerception(), "html");
       expect(result).toContain('class="error"');
+    });
+
+    it("should prepend tag span when tag is present", () => {
+      const result = formatPerception(taggedPerception(), "html");
+      expect(result).toContain('<span class="tag">[say]</span>');
+      expect(result).toContain("Alice says: hello");
+    });
+
+    it("should escape tag in HTML", () => {
+      const p: Perception = {
+        kind: "message",
+        timestamp: Date.now(),
+        tag: "<script>",
+        data: { text: "test" },
+      };
+      const result = formatPerception(p, "html");
+      expect(result).toContain("[&lt;script&gt;]");
+      expect(result).not.toContain("<script>");
     });
   });
 });

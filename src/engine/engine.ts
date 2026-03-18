@@ -179,8 +179,8 @@ export class Engine {
 
     // Initialize coordination managers if db is available
     if (this.db) {
-      this.channelManager = new ChannelManager(this.db, (target, msg) =>
-        this.sendToEntity(target, msg),
+      this.channelManager = new ChannelManager(this.db, (target, msg, tag?) =>
+        this.sendToEntity(target, msg, tag),
       );
       // Ensure the default "model" channel exists so /v1/models always lists this instance
       if (!this.channelManager.getChannelByName("model")) {
@@ -242,7 +242,7 @@ export class Engine {
         // Broadcast departure
         const ctx = this.buildContext(entity.room);
         if (ctx) {
-          ctx.broadcastExcept(conn.entity, disconnects(entity.name));
+          ctx.broadcastExcept(conn.entity, disconnects(entity.name), "disconnect");
         }
         this.entities.remove(conn.entity);
       }
@@ -275,7 +275,7 @@ export class Engine {
     // Broadcast arrival
     const ctx = this.buildContext(entity.room);
     if (ctx) {
-      ctx.broadcastExcept(entity.id, connects(cleanName));
+      ctx.broadcastExcept(entity.id, connects(cleanName), "connect");
     }
 
     this.logEvent({
@@ -711,7 +711,7 @@ export class Engine {
 
   // ─── Messaging ──────────────────────────────────────────────────────────
 
-  sendToEntity(target: EntityId, message: string): void {
+  sendToEntity(target: EntityId, message: string, tag?: string): void {
     const connId = this.entityToConnection.get(target);
     if (!connId) return;
     const conn = this.connections.get(connId);
@@ -720,26 +720,27 @@ export class Engine {
     const perception: Perception = {
       kind: "message",
       timestamp: Date.now(),
+      ...(tag && { tag }),
       data: { text: message },
     };
     conn.send(perception);
   }
 
-  broadcastToRoom(room: RoomId, message: string): void {
+  broadcastToRoom(room: RoomId, message: string, tag?: string): void {
     const entities = this.entities.inRoom(room);
     for (const entity of entities) {
-      this.sendToEntity(entity.id, message);
+      this.sendToEntity(entity.id, message, tag);
     }
   }
 
-  broadcastToRoomExcept(room: RoomId, exclude: EntityId, message: string): void {
+  broadcastToRoomExcept(room: RoomId, exclude: EntityId, message: string, tag?: string): void {
     const sender = this.entities.get(exclude);
     const senderName = sender?.name;
     const entities = this.entities.inRoom(room);
     for (const entity of entities) {
       if (entity.id !== exclude) {
         if (senderName && isIgnoring(entity, senderName)) continue;
-        this.sendToEntity(entity.id, message);
+        this.sendToEntity(entity.id, message, tag);
       }
     }
   }
@@ -748,9 +749,10 @@ export class Engine {
 
   buildContext(roomId: RoomId): RoomContext | undefined {
     return this.rooms.buildContext(roomId, {
-      send: (target, msg) => this.sendToEntity(target, msg),
-      broadcast: (room, msg) => this.broadcastToRoom(room, msg),
-      broadcastExcept: (room, exclude, msg) => this.broadcastToRoomExcept(room, exclude, msg),
+      send: (target, msg, tag?) => this.sendToEntity(target, msg, tag),
+      broadcast: (room, msg, tag?) => this.broadcastToRoom(room, msg, tag),
+      broadcastExcept: (room, exclude, msg, tag?) =>
+        this.broadcastToRoomExcept(room, exclude, msg, tag),
       entitiesInRoom: (room) => this.entities.inRoom(room),
       findEntity: (name, room) => this.entities.findByName(name, room),
       spawnNpc: (room, opts) => this.spawnNpc(room, opts),
@@ -841,7 +843,7 @@ export class Engine {
       // No connection — broadcast departure and remove directly
       const ctx = this.buildContext(entity.room);
       if (ctx) {
-        ctx.broadcast(`${name} vanishes.`);
+        ctx.broadcast(`${name} vanishes.`, "leave");
       }
       this.entities.remove(entityId);
     }
@@ -1279,7 +1281,7 @@ export class Engine {
         if (connId) this.entityToConnection.delete(agent.id);
         const ctx = this.buildContext(agent.room);
         if (ctx) {
-          ctx.broadcastExcept(agent.id, `${agent.name} fades away.`);
+          ctx.broadcastExcept(agent.id, `${agent.name} fades away.`, "leave");
         }
         this.entities.remove(agent.id);
       }
@@ -1348,13 +1350,13 @@ export class Engine {
     this.commands.registerBuiltin(
       shoutCommand({
         getEntity: (id) => this.entities.get(id),
-        broadcastAll: (senderId, msg) => {
+        broadcastAll: (senderId, msg, tag?) => {
           const sender = this.entities.get(senderId);
           const senderName = sender?.name;
           for (const entity of this.entities.all()) {
             if (entity.kind === "agent" && entity.id !== senderId) {
               if (senderName && isIgnoring(entity, senderName)) continue;
-              this.sendToEntity(entity.id, msg);
+              this.sendToEntity(entity.id, msg, tag);
             }
           }
         },
@@ -1367,11 +1369,11 @@ export class Engine {
           const e = this.findEntityGlobal(name);
           return e ? { id: e.id, name: e.name } : undefined;
         },
-        sendGlobal: (target, msg, senderId) => {
+        sendGlobal: (target, msg, senderId, tag?) => {
           const targetEntity = this.entities.get(target);
           const sender = this.entities.get(senderId);
           if (targetEntity && sender && isIgnoring(targetEntity, sender.name)) return;
-          this.sendToEntity(target, msg);
+          this.sendToEntity(target, msg, tag);
         },
       }),
     );
@@ -1715,10 +1717,10 @@ export class Engine {
           findEntity: (name) => this.findEntityGlobal(name),
           getConnections: () => this.connections,
           removeConnection: (connId) => this.removeConnection(connId),
-          broadcastAll: (msg) => {
+          broadcastAll: (msg, tag?) => {
             for (const entity of this.entities.all()) {
               if (entity.kind === "agent") {
-                this.sendToEntity(entity.id, msg);
+                this.sendToEntity(entity.id, msg, tag);
               }
             }
           },

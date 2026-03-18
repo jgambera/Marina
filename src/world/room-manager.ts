@@ -36,9 +36,14 @@ export interface LoadedRoom {
   store: KeyValueStore;
 }
 
-export type SendFn = (target: EntityId, message: string) => void;
-export type BroadcastFn = (room: RoomId, message: string) => void;
-export type BroadcastExceptFn = (room: RoomId, exclude: EntityId, message: string) => void;
+export type SendFn = (target: EntityId, message: string, tag?: string) => void;
+export type BroadcastFn = (room: RoomId, message: string, tag?: string) => void;
+export type BroadcastExceptFn = (
+  room: RoomId,
+  exclude: EntityId,
+  message: string,
+  tag?: string,
+) => void;
 export type EntitiesInRoomFn = (room: RoomId) => Entity[];
 export type FindEntityFn = (name: string, room: RoomId) => Entity | undefined;
 export type SpawnNpcFn = (
@@ -118,9 +123,9 @@ export class RoomManager {
       roomId,
       entities: deps.entitiesInRoom(roomId),
       send: deps.send,
-      broadcast: (msg: string) => deps.broadcast(roomId, msg),
-      broadcastExcept: (exclude: EntityId, msg: string) =>
-        deps.broadcastExcept(roomId, exclude, msg),
+      broadcast: (msg: string, tag?: string) => deps.broadcast(roomId, msg, tag),
+      broadcastExcept: (exclude: EntityId, msg: string, tag?: string) =>
+        deps.broadcastExcept(roomId, exclude, msg, tag),
       getEntity: (id: EntityId) => deps.entitiesInRoom(roomId).find((e) => e.id === id),
       findEntity: (name: string) => deps.findEntity(name, roomId),
       store: room.store,

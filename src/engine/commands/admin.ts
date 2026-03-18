@@ -11,7 +11,7 @@ interface AdminDeps {
   findEntity: (name: string) => Entity | undefined;
   getConnections: () => Map<string, Connection>;
   removeConnection: (connId: string) => void;
-  broadcastAll: (message: string) => void;
+  broadcastAll: (message: string, tag?: string) => void;
   roomCount: () => number;
   entityCount: () => number;
   getUptime: () => number;

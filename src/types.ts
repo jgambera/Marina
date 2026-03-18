@@ -72,13 +72,13 @@ export interface RoomContext {
   entities: Entity[];
 
   /** Send a message to a specific entity */
-  send(target: EntityId, message: string): void;
+  send(target: EntityId, message: string, tag?: string): void;
 
   /** Broadcast a message to all entities in the room */
-  broadcast(message: string): void;
+  broadcast(message: string, tag?: string): void;
 
   /** Broadcast to all except one entity */
-  broadcastExcept(exclude: EntityId, message: string): void;
+  broadcastExcept(exclude: EntityId, message: string, tag?: string): void;
 
   /** Get an entity by ID (if in this room) */
   getEntity(id: EntityId): Entity | undefined;
@@ -246,6 +246,7 @@ export type PerceptionKind =
 export interface Perception {
   kind: PerceptionKind;
   timestamp: number;
+  tag?: string;
   data: Record<string, unknown>;
 }
 
