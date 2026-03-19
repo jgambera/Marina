@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { cleanupDb } from "./helpers";
 
 describe("FTS5 Board Search", () => {
-  let db: ArtilectDB;
-  const dbPath = `/tmp/artilect-fts5-test-${Date.now()}.db`;
+  let db: MarinaDB;
+  const dbPath = `/tmp/marina-fts5-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
 
     // Create a board
     db.createBoard({

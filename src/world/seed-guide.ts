@@ -1,14 +1,14 @@
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type { GuideNote } from "./world-definition";
 
 const POOL_NAME = "guide";
 const AUTHOR = "Guide";
 
 /**
- * Seed the `guide` memory pool with knowledge about Artilect systems.
+ * Seed the `guide` memory pool with knowledge about Marina systems.
  * Idempotent — skips if the pool already has notes.
  */
-export function seedGuidePool(db: ArtilectDB, notes: GuideNote[]): void {
+export function seedGuidePool(db: MarinaDB, notes: GuideNote[]): void {
   if (notes.length === 0) return;
 
   let pool = db.getMemoryPool(POOL_NAME);

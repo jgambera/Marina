@@ -1,8 +1,8 @@
-# Agent Organization Architectures in Artilect
+# Agent Organization Architectures in Marina
 
 ## Research Summary
 
-Evaluated multi-agent organizational patterns and mapped their concepts to Artilect's
+Evaluated multi-agent organizational patterns and mapped their concepts to Marina's
 primitive set. All 8 patterns are available as built-in orchestration templates via
 `project <name> orchestrate <pattern>`.
 
@@ -46,9 +46,9 @@ primitive set. All 8 patterns are available as built-in orchestration templates 
 - **Convergence**: When score variance drops below threshold, deliberation ends
 - **Audit trail**: Every proposal, evaluation, score, and reasoning persisted
 
-### Artilect Mapping
+### Marina Mapping
 
-| NSED Concept | Artilect Primitive |
+| NSED Concept | Marina Primitive |
 |---|---|
 | Deliberation session | Room (deliberation/chamber) with custom commands |
 | Proposal | Board post (persistent, searchable, threaded) |
@@ -87,9 +87,9 @@ status                                — Show round, proposals, score matrix
 - **Wrap-up protocol**: Time-bounded signals for graceful termination
 - **Knowledge files**: Persistent institutional memory with status tags
 
-### Artilect Mapping
+### Marina Mapping
 
-| Goosetown Concept | Artilect Primitive |
+| Goosetown Concept | Marina Primitive |
 |---|---|
 | Orchestrator | Admin-ranked agent in war-room |
 | Flock | Group (auto-creates channel + board) |
@@ -138,9 +138,9 @@ rooms/ops/
 - **Patrol**: Continuous health-check loop
 - **CV chain**: Accumulated capability record per agent
 
-### Artilect Mapping
+### Marina Mapping
 
-| Gastown Concept | Artilect Primitive |
+| Gastown Concept | Marina Primitive |
 |---|---|
 | Mayor | Admin agent in town/hall |
 | Witness | Architect agent in witness-post room (+ onTick patrol) |
@@ -188,9 +188,9 @@ rooms/town/
 - **Pool logging**: Each handoff is documented in the shared pool for traceability
 - **Emergent coordination**: No central scheduler; the swarm self-organizes through skill matching
 
-### Artilect Mapping
+### Marina Mapping
 
-| Swarm Concept | Artilect Primitive |
+| Swarm Concept | Marina Primitive |
 |---|---|
 | Expertise declaration | `memory set expertise <skills>` |
 | Skill discovery | `observe` + `recall expertise` |
@@ -217,9 +217,9 @@ rooms/town/
 - **Quality gates**: Each stage reviews the previous stage's output before processing
 - **Preparation**: Waiting agents add preparatory notes to the pool while upstream completes
 
-### Artilect Mapping
+### Marina Mapping
 
-| Pipeline Concept | Artilect Primitive |
+| Pipeline Concept | Marina Primitive |
 |---|---|
 | Stage definition | Child tasks in project bundle |
 | Stage output | Board post tagged `[stage-N-output]` |
@@ -247,9 +247,9 @@ rooms/town/
 - **Judging**: A designated agent reviews all positions and scores, posts a synthesis ruling
 - **Precedent**: Rulings are stored in the pool; future debates reference them via `recall`
 
-### Artilect Mapping
+### Marina Mapping
 
-| Debate Concept | Artilect Primitive |
+| Debate Concept | Marina Primitive |
 |---|---|
 | Position | Board post tagged `[position]` |
 | Argument | Board reply |
@@ -278,9 +278,9 @@ rooms/town/
 - **Reduction**: Reducer collects all chunk results via pool recall and synthesizes
 - **Tracking**: Project status monitors chunk completion; stalled chunks can be reassigned
 
-### Artilect Mapping
+### Marina Mapping
 
-| MapReduce Concept | Artilect Primitive |
+| MapReduce Concept | Marina Primitive |
 |---|---|
 | Coordinator | Project creator |
 | Chunk definition | Child task in project bundle |
@@ -309,9 +309,9 @@ rooms/town/
 - **Knowledge graph**: `note link` connects related contributions (supports, contradicts, part_of)
 - **Convergence**: Periodic `reflect` synthesizes blackboard contents; resolved questions become board posts and tasks
 
-### Artilect Mapping
+### Marina Mapping
 
-| Blackboard Concept | Artilect Primitive |
+| Blackboard Concept | Marina Primitive |
 |---|---|
 | Blackboard | Project memory pool |
 | Reading the board | `pool <name> recall <topic>` |
@@ -323,7 +323,7 @@ rooms/town/
 
 ---
 
-## Artilect's Unique Advantages
+## Marina's Unique Advantages
 
 ### 1. Spatial Reasoning About Organization
 Agents `look` to see who's present, `map` to see the org structure, `move` to change
@@ -370,7 +370,7 @@ All coordination primitives identified during research have been built:
 
 ## The Meta-Architecture
 
-Artilect is a **platform for organizational patterns** where:
+Marina is a **platform for organizational patterns** where:
 
 - **Rooms** = execution contexts
 - **Movement** = role transition

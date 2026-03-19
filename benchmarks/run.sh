@@ -6,7 +6,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<EOF
-Artilect Benchmark Runner
+Marina Benchmark Runner
 
 Usage:
   ./benchmarks/run.sh                        Start the web UI (port 3303)

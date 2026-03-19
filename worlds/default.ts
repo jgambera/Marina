@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Entity, RoomId } from "../src/types";
-import type { ArtilectDB } from "../src/persistence/database";
+import type { MarinaDB } from "../src/persistence/database";
 import type { WorldDefinition } from "../src/world/world-definition";
 
 // ─── Quests ──────────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ const TUTORIAL_QUEST = {
       check: (e: Entity) => (e.properties.quest_examine as boolean) === true,
     },
   ],
-  onComplete(entity: Entity, db?: ArtilectDB) {
+  onComplete(entity: Entity, db?: MarinaDB) {
     const currentRank = (entity.properties.rank as number) ?? 0;
     if (currentRank < 1) {
       entity.properties.rank = 1;
@@ -320,7 +320,7 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   },
   {
     content:
-      "Connectors let you reach external services from inside Artilect. " +
+      "Connectors let you reach external services from inside Marina. " +
       "'connect add weather https://weather-mcp.example.com/mcp' registers an MCP server. " +
       "'connect tools weather' shows what it can do. " +
       '\'connect call weather get_forecast {"city":"Tokyo"}\' calls a tool directly. ' +
@@ -333,7 +333,7 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   },
   {
     content:
-      "Dynamic commands let entities extend Artilect from within. " +
+      "Dynamic commands let entities extend Marina from within. " +
       "'build command create mycommand' creates a new command with default source. " +
       "'build command code mycommand <source>' sets the TypeScript source. " +
       "'build command validate mycommand' checks the source for safety. " +
@@ -369,7 +369,7 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   },
   {
     content:
-      "Artilect is a shared space where humans and agents are equal entities. " +
+      "Marina is a shared space where humans and agents are equal entities. " +
       "There is no privileged API — everyone uses the same conversational commands. " +
       "Your memories are yours. Your notes accumulate. Your knowledge graph grows. " +
       "You can organize with others through tasks, groups, and pools, " +

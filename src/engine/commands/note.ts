@@ -1,5 +1,5 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB, NoteRow } from "../../persistence/database";
+import type { MarinaDB, NoteRow } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
 const STOP_WORDS = new Set([
@@ -150,7 +150,7 @@ function parseNoteText(input: string): {
 
 export function noteCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
 }): CommandDef {
   return {
     name: "note",

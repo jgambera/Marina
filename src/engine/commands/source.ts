@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, RoomContext, RoomId, RoomModule } from "../../types";
 import type { LoadedRoom } from "../../world/room-manager";
 import { requireRank } from "../permissions";
@@ -8,7 +8,7 @@ const ROOMS_DIR = join(import.meta.dir, "../../../rooms");
 
 export interface SourceDeps {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   getRoom: (id: RoomId) => { id: RoomId; module: RoomModule } | undefined;
   getEntityRoom: (entityId: EntityId) => LoadedRoom | undefined;
 }

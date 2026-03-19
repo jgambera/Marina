@@ -709,16 +709,32 @@ CREATE TABLE entity_standing (
 );
 `,
   },
+  // Migration 25: Managed agents table (agent runtime)
+  {
+    version: 25,
+    sql: `
+CREATE TABLE managed_agents (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  model TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'general',
+  status TEXT NOT NULL DEFAULT 'stopped',
+  entity_id TEXT,
+  error TEXT,
+  started_at INTEGER NOT NULL
+);
+`,
+  },
 ];
 
 // ─── Database Class ──────────────────────────────────────────────────────────
 
 const DAY_MS = 86_400_000;
 
-export class ArtilectDB {
+export class MarinaDB {
   private db: Database;
 
-  constructor(path = "artilect.db") {
+  constructor(path = "marina.db") {
     this.db = new Database(path);
     this.db.exec("PRAGMA journal_mode=WAL");
     this.db.exec("PRAGMA synchronous=NORMAL");
@@ -3099,6 +3115,17 @@ export class ArtilectDB {
       count: number;
       last_seen: number;
     }[];
+  }
+
+  // ─── Low-level access ───────────────────────────────────────────────────
+
+  /** Execute a SQL statement with optional parameters (no return value) */
+  run(sql: string, params?: (string | number | bigint | null | undefined)[]): void {
+    if (params) {
+      this.db.run(sql, params as (string | number | bigint | null)[]);
+    } else {
+      this.db.run(sql);
+    }
   }
 
   // ─── Lifecycle ──────────────────────────────────────────────────────────

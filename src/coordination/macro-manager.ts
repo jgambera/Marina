@@ -1,4 +1,4 @@
-import type { ArtilectDB, MacroRow } from "../persistence/database";
+import type { MacroRow, MarinaDB } from "../persistence/database";
 import type { EntityId } from "../types";
 
 export interface Macro {
@@ -23,7 +23,7 @@ function rowToMacro(row: MacroRow): Macro {
 
 export class MacroManager {
   constructor(
-    private db: ArtilectDB,
+    private db: MarinaDB,
     private processCommand: (entityId: EntityId, raw: string) => void,
   ) {}
 

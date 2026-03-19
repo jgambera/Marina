@@ -1,21 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
 import { getRank, setRank } from "../src/engine/permissions";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
 const TEST_DB = "test_phase2_integration.db";
 
 describe("Phase 2 Integration", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
   let conn3: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(
       roomId("test/start"),
@@ -157,7 +157,7 @@ describe("Phase 2 Integration", () => {
   it("DB migration system works correctly", () => {
     // The DB already has migrations applied in beforeEach
     // Verify by creating a new DB pointing to same file — should not error
-    const db2 = new ArtilectDB(TEST_DB);
+    const db2 = new MarinaDB(TEST_DB);
     // Should be able to use all tables
     db2.createChannel({ id: "test:ch", type: "custom", name: "test" });
     const ch = db2.getChannel("test:ch");

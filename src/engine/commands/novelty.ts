@@ -1,5 +1,5 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
 /**
@@ -22,7 +22,7 @@ function entropy(counts: number[]): number {
 
 export function noveltyCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   getTotalRoomCount?: () => number;
 }): CommandDef {
   return {

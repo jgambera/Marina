@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import type { Adapter, Medium } from "../src/net/adapter";
 import { formatPerception } from "../src/net/formatter";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import type { Perception, RoomId } from "../src/types";
 import { cleanupDb } from "./helpers";
 
@@ -19,11 +19,11 @@ describe("Adapter Interface", () => {
 });
 
 describe("Adapter Link DB", () => {
-  let db: ArtilectDB;
-  const dbPath = `/tmp/artilect-adapter-db-test-${Date.now()}.db`;
+  let db: MarinaDB;
+  const dbPath = `/tmp/marina-adapter-db-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {

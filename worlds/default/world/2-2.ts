@@ -90,7 +90,7 @@ const room: RoomModule = {
       } else {
         ctx.send(
           entity,
-          '\x1b[1;35mThe Guide turns to you:\x1b[0m "Welcome to Artilect. ' +
+          '\x1b[1;35mThe Guide turns to you:\x1b[0m "Welcome to Marina. ' +
             "I am the Guide \u2014 here to help newcomers find their way. " +
             "Type 'talk Guide' to ask me about systems, or 'pool guide recall getting started' " +
             'for the knowledge base. The grid stretches in every direction \u2014 explore freely."',

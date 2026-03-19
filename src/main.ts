@@ -9,7 +9,7 @@ import { LogServer } from "./net/log-server";
 import { McpServerAdapter } from "./net/mcp-server";
 import { TelnetServer } from "./net/telnet-server";
 import { WebSocketServer } from "./net/websocket-server";
-import { ArtilectDB } from "./persistence/database";
+import { MarinaDB } from "./persistence/database";
 import { LocalStorageProvider } from "./storage/local-provider";
 import type { RoomId } from "./types";
 import { loadRooms } from "./world/room-loader";
@@ -21,18 +21,21 @@ const TELNET_PORT = Number(process.env.TELNET_PORT) || 4000;
 const MCP_PORT = Number(process.env.MCP_PORT) || 3301;
 const LOG_PORT = Number(process.env.LOG_PORT) || 3302;
 const TICK_MS = Number(process.env.TICK_MS) || 1000;
-const DB_PATH = process.env.DB_PATH || "artilect.db";
+const DB_PATH = process.env.DB_PATH || "marina.db";
 
 // ─── Load World Definition ───────────────────────────────────────────────────
 
-const WORLD_NAME = process.env.ARTILECT_WORLD ?? "default";
+const WORLD_NAME = process.env.MARINA_WORLD ?? process.env.ARTILECT_WORLD ?? "default";
+if (process.env.ARTILECT_WORLD && !process.env.MARINA_WORLD) {
+  console.warn("[warn] ARTILECT_WORLD is deprecated, use MARINA_WORLD");
+}
 const worldModule = await import(`../worlds/${WORLD_NAME}`);
 const world: WorldDefinition = worldModule.default;
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
 const logger = new Logger();
-const db = new ArtilectDB(DB_PATH);
+const db = new MarinaDB(DB_PATH);
 const rateLimiter = new RateLimiter();
 const assetsDir = process.env.ASSETS_DIR || "data/assets";
 const storage = new LocalStorageProvider(assetsDir);

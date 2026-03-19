@@ -1,4 +1,4 @@
-import type { ArtilectDB, TaskClaimRow, TaskRow } from "../persistence/database";
+import type { MarinaDB, TaskClaimRow, TaskRow } from "../persistence/database";
 
 export interface Task {
   id: number;
@@ -63,7 +63,7 @@ function rowToClaim(row: TaskClaimRow): TaskClaim {
 }
 
 export class TaskManager {
-  constructor(private db: ArtilectDB) {}
+  constructor(private db: MarinaDB) {}
 
   create(opts: {
     title: string;

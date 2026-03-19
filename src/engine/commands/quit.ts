@@ -6,7 +6,7 @@ export function quitCommand(deps: {
   return {
     name: "quit",
     aliases: ["exit", "logout", "disconnect"],
-    help: "Disconnect from Artilect and end your session.",
+    help: "Disconnect from Marina and end your session.",
     handler(ctx, input) {
       const conn = deps.getConnection(input.entity);
       if (!conn) {

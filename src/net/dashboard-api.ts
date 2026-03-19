@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Engine } from "../engine/engine";
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type { RoomId } from "../types";
 
 const ROOMS_DIR = join(import.meta.dir, "../../rooms");
@@ -19,7 +19,7 @@ export async function handleDashboardApi(
   url: URL,
   method: string,
   engine: Engine,
-  db?: ArtilectDB,
+  db?: MarinaDB,
 ): Promise<Response | undefined> {
   if (url.pathname === "/api/world") {
     return getWorld(engine);
@@ -142,7 +142,7 @@ function getWorld(engine: Engine): Response {
 
 async function getRoomDetail(
   engine: Engine,
-  db: ArtilectDB | undefined,
+  db: MarinaDB | undefined,
   roomIdStr: string,
 ): Promise<Response> {
   const room = engine.rooms.get(roomIdStr as RoomId);
@@ -202,7 +202,7 @@ function getEntities(engine: Engine): Response {
   return json(entities);
 }
 
-function getEntityDetail(engine: Engine, db: ArtilectDB | undefined, name: string): Response {
+function getEntityDetail(engine: Engine, db: MarinaDB | undefined, name: string): Response {
   const entity = engine.findEntityGlobal(name);
   if (!entity) return json({ error: "Entity not found" }, 404);
 
@@ -225,7 +225,7 @@ function getEntityDetail(engine: Engine, db: ArtilectDB | undefined, name: strin
   return json(result);
 }
 
-function getSystem(engine: Engine, db?: ArtilectDB): Response {
+function getSystem(engine: Engine, db?: MarinaDB): Response {
   const entities = engine.entities.all();
   const agents = entities.filter((e) => e.kind === "agent");
   const npcs = entities.filter((e) => e.kind === "npc");
@@ -277,15 +277,15 @@ function getEvents(engine: Engine, url: URL): Response {
   return json(events);
 }
 
-function getMemoryNotes(db: ArtilectDB, entityName: string): Response {
+function getMemoryNotes(db: MarinaDB, entityName: string): Response {
   return json(db.getNotesByEntity(entityName, 50));
 }
 
-function getMemoryCore(db: ArtilectDB, entityName: string): Response {
+function getMemoryCore(db: MarinaDB, entityName: string): Response {
   return json(db.listCoreMemory(entityName));
 }
 
-function getBoards(db: ArtilectDB): Response {
+function getBoards(db: MarinaDB): Response {
   const boards = db.getAllBoards().map((b) => {
     const posts = db.listBoardPosts(b.id, { limit: 1000 });
     return { ...b, postCount: posts.length };
@@ -293,7 +293,7 @@ function getBoards(db: ArtilectDB): Response {
   return json(boards);
 }
 
-function getChannels(db: ArtilectDB): Response {
+function getChannels(db: MarinaDB): Response {
   const channels = db.getAllChannels().map((c) => {
     const history = db.getChannelHistory(c.id, 1);
     return { ...c, messageCount: history.length > 0 ? "1+" : "0" };
@@ -301,7 +301,7 @@ function getChannels(db: ArtilectDB): Response {
   return json(channels);
 }
 
-function getGroups(db: ArtilectDB): Response {
+function getGroups(db: MarinaDB): Response {
   const groups = db.getAllGroups().map((g) => {
     const members = db.getGroupMembers(g.id);
     return { ...g, memberCount: members.length };
@@ -323,7 +323,7 @@ function deleteEntity(engine: Engine, name: string): Response {
 
 // --- New drill-down endpoints ---
 
-function getProjects(db: ArtilectDB): Response {
+function getProjects(db: MarinaDB): Response {
   const projects = db.listProjects().map((p) => {
     let bundleProgress: { total: number; done: number } | undefined;
     if (p.bundle_id) {
@@ -348,7 +348,7 @@ function getProjects(db: ArtilectDB): Response {
   return json(projects);
 }
 
-function getConnectors(db: ArtilectDB): Response {
+function getConnectors(db: MarinaDB): Response {
   const connectors = db.listConnectors().map((c) => ({
     id: c.id,
     name: c.name,
@@ -361,7 +361,7 @@ function getConnectors(db: ArtilectDB): Response {
   return json(connectors);
 }
 
-function getCommands(db: ArtilectDB): Response {
+function getCommands(db: MarinaDB): Response {
   const commands = db.listCommands().map((c) => ({
     id: c.id,
     name: c.name,
@@ -373,7 +373,7 @@ function getCommands(db: ArtilectDB): Response {
   return json(commands);
 }
 
-function getTaskDetail(db: ArtilectDB, taskId: number): Response {
+function getTaskDetail(db: MarinaDB, taskId: number): Response {
   const task = db.getTask(taskId);
   if (!task) return json({ error: "Task not found" }, 404);
 
@@ -397,7 +397,7 @@ function getTaskDetail(db: ArtilectDB, taskId: number): Response {
   });
 }
 
-function getBoardDetail(db: ArtilectDB, boardName: string): Response {
+function getBoardDetail(db: MarinaDB, boardName: string): Response {
   const boards = db.getAllBoards();
   const board = boards.find((b) => b.name === boardName);
   if (!board) return json({ error: "Board not found" }, 404);
@@ -421,7 +421,7 @@ function getBoardDetail(db: ArtilectDB, boardName: string): Response {
   });
 }
 
-function getGroupDetail(db: ArtilectDB, groupName: string): Response {
+function getGroupDetail(db: MarinaDB, groupName: string): Response {
   const groups = db.getAllGroups();
   const group = groups.find((g) => g.name === groupName);
   if (!group) return json({ error: "Group not found" }, 404);
@@ -442,7 +442,7 @@ function getGroupDetail(db: ArtilectDB, groupName: string): Response {
   });
 }
 
-function getChannelDetail(db: ArtilectDB, channelName: string): Response {
+function getChannelDetail(db: MarinaDB, channelName: string): Response {
   const channels = db.getAllChannels();
   const channel = channels.find((c) => c.name === channelName);
   if (!channel) return json({ error: "Channel not found" }, 404);

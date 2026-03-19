@@ -113,7 +113,7 @@ export function WebChat() {
       };
     }) => {
       if (p.data?.token) {
-        localStorage.setItem("artilect_chat_token", p.data.token);
+        localStorage.setItem("marina_chat_token", p.data.token);
       }
 
       if (p.data?.entityId && !loggedIn) {
@@ -150,7 +150,7 @@ export function WebChat() {
 
     ws.onopen = () => {
       setConnected(true);
-      const token = localStorage.getItem("artilect_chat_token");
+      const token = localStorage.getItem("marina_chat_token");
       if (token) {
         ws.send(JSON.stringify({ type: "auth", token }));
       }

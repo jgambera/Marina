@@ -11,7 +11,7 @@
  * Note: The agent must have Builder rank (2+) to use build commands.
  */
 
-import { ArtilectAgent } from "../client";
+import { MarinaAgent } from "../client";
 
 const WS_URL = process.env.WS_URL ?? "ws://localhost:3300";
 const AGENT_NAME = process.env.AGENT_NAME ?? "BuilderBot";
@@ -45,7 +45,7 @@ const ROOMS_TO_BUILD: RoomPlan[] = [
 ];
 
 async function main() {
-  const agent = new ArtilectAgent(WS_URL, { autoReconnect: false });
+  const agent = new MarinaAgent(WS_URL, { autoReconnect: false });
 
   console.log(`Connecting to ${WS_URL} as ${AGENT_NAME}...`);
   const session = await agent.connect(AGENT_NAME);

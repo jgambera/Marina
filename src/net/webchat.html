@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Artilect</title>
+<title>Marina</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -98,7 +98,7 @@
 <div id="header">A R T I L E C T</div>
 <div id="output"></div>
 <div id="login-area">
-  <div style="color: #0ff; font-size: 18px; margin-bottom: 8px;">Welcome to Artilect</div>
+  <div style="color: #0ff; font-size: 18px; margin-bottom: 8px;">Welcome to Marina</div>
   <input id="name-input" type="text" placeholder="Enter your name" maxlength="20" autofocus>
   <button id="login-btn">Connect</button>
 </div>
@@ -118,7 +118,7 @@
   const sendBtn = document.getElementById('send');
 
   let ws = null;
-  let token = localStorage.getItem('artilect_token');
+  let token = localStorage.getItem('marina_token');
   const history = [];
   let historyIdx = -1;
 
@@ -149,7 +149,7 @@
   function handlePerception(p) {
     if (p.data && p.data.token) {
       token = p.data.token;
-      localStorage.setItem('artilect_token', token);
+      localStorage.setItem('marina_token', token);
     }
 
     if (p.data && p.data.entityId && loginArea.style.display !== 'none') {

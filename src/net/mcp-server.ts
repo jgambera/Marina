@@ -134,7 +134,7 @@ export class McpServerAdapter {
           return transport.handleRequest(req);
         }
 
-        return new Response("Artilect MCP Server — connect via MCP protocol at /mcp", {
+        return new Response("Marina MCP Server — connect via MCP protocol at /mcp", {
           status: 200,
         });
       },
@@ -184,7 +184,7 @@ export class McpServerAdapter {
     const rateLimiter = this.rateLimiter;
 
     const mcp = new McpServer(
-      { name: "artilect", version: "0.1.0" },
+      { name: "marina", version: "0.1.0" },
       { capabilities: { tools: {} } },
     );
 
@@ -197,7 +197,7 @@ export class McpServerAdapter {
 
     mcp.tool(
       "login",
-      "Log into Artilect with a character name. Must be called before other commands.",
+      "Log into Marina with a character name. Must be called before other commands.",
       { name: z.string().describe("Character name (2-20 alphanumeric characters)") },
       async ({ name }, extra) => {
         const session = getSession(extra);
@@ -427,7 +427,7 @@ export class McpServerAdapter {
 
     // ── quit ───────────────────────────────────────────────────────────────
 
-    mcp.tool("quit", "Disconnect from Artilect and end your session.", {}, async (_args, extra) => {
+    mcp.tool("quit", "Disconnect from Marina and end your session.", {}, async (_args, extra) => {
       const session = getSession(extra);
       if (!session) {
         return { content: [{ type: "text" as const, text: "Error: no active MCP session." }] };

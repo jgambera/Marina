@@ -26,9 +26,9 @@ export interface ClientOptions {
 
 type PerceptionHandler = (p: Perception) => void;
 
-// ─── ArtilectClient ──────────────────────────────────────────────────────────
+// ─── MarinaClient ──────────────────────────────────────────────────────────
 
-export class ArtilectClient {
+export class MarinaClient {
   private ws: WebSocket | null = null;
   private url: string;
   private options: Required<ClientOptions>;
@@ -230,9 +230,9 @@ export class ArtilectClient {
   }
 }
 
-// ─── ArtilectAgent (typed command helpers) ───────────────────────────────────
+// ─── MarinaAgent (typed command helpers) ───────────────────────────────────
 
-export class ArtilectAgent extends ArtilectClient {
+export class MarinaAgent extends MarinaClient {
   /** Look at the current room or a specific target. */
   async look(target?: string): Promise<RoomView | Perception[]> {
     const cmd = target ? `look ${target}` : "look";

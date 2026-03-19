@@ -1,4 +1,4 @@
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import { getErrorMessage } from "./errors";
 
 /**
@@ -25,9 +25,9 @@ export class ConnectorRuntime {
   private runtime: any = null;
   private available = false;
   private fetchLastCall = new Map<string, number>();
-  private db?: ArtilectDB;
+  private db?: MarinaDB;
 
-  constructor(db?: ArtilectDB) {
+  constructor(db?: MarinaDB) {
     this.db = db;
   }
 

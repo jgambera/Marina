@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { StorageProvider } from "../../storage/provider";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 import { getErrorMessage } from "../errors";
@@ -10,7 +10,7 @@ const HELP =
 
 export function canvasCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   storage?: StorageProvider;
   logEvent?: (event: { type: string; entity: EntityId; [k: string]: unknown }) => void;
   scratchRoot?: string;
@@ -75,7 +75,7 @@ function handleCreate(
   ctx: RoomContext,
   eid: EntityId,
   entity: Entity,
-  db: ArtilectDB,
+  db: MarinaDB,
   tokens: string[],
 ): void {
   const name = tokens[0];
@@ -94,7 +94,7 @@ function handleCreate(
   ctx.send(eid, `Canvas "${name}" created (${id.slice(0, 8)}..)`);
 }
 
-function handleList(ctx: RoomContext, eid: EntityId, db: ArtilectDB): void {
+function handleList(ctx: RoomContext, eid: EntityId, db: MarinaDB): void {
   const canvases = db.listCanvases({ limit: 20 });
   if (canvases.length === 0) {
     ctx.send(eid, "No canvases found. Use 'canvas create <name>' to make one.");
@@ -112,7 +112,7 @@ function handleList(ctx: RoomContext, eid: EntityId, db: ArtilectDB): void {
   ctx.send(eid, lines.join("\n"));
 }
 
-function handleInfo(ctx: RoomContext, eid: EntityId, db: ArtilectDB, tokens: string[]): void {
+function handleInfo(ctx: RoomContext, eid: EntityId, db: MarinaDB, tokens: string[]): void {
   const name = tokens[0];
   if (!name) {
     ctx.send(eid, "Usage: canvas info <name>");
@@ -144,7 +144,7 @@ function handlePublish(
   ctx: RoomContext,
   eid: EntityId,
   entity: Entity,
-  db: ArtilectDB,
+  db: MarinaDB,
   storage: StorageProvider | undefined,
   logEvent: ((event: { type: string; entity: EntityId; [k: string]: unknown }) => void) | undefined,
   tokens: string[],
@@ -221,7 +221,7 @@ function handlePublish(
   ctx.send(eid, `Published ${type} node to canvas "${canvas.name}" (asset: ${asset.filename})`);
 }
 
-function handleNodes(ctx: RoomContext, eid: EntityId, db: ArtilectDB, tokens: string[]): void {
+function handleNodes(ctx: RoomContext, eid: EntityId, db: MarinaDB, tokens: string[]): void {
   const name = tokens[0];
   if (!name) {
     ctx.send(eid, "Usage: canvas nodes <name>");
@@ -248,7 +248,7 @@ function handleNodes(ctx: RoomContext, eid: EntityId, db: ArtilectDB, tokens: st
   ctx.send(eid, lines.join("\n"));
 }
 
-function handleDelete(ctx: RoomContext, eid: EntityId, db: ArtilectDB, tokens: string[]): void {
+function handleDelete(ctx: RoomContext, eid: EntityId, db: MarinaDB, tokens: string[]): void {
   const name = tokens[0];
   if (!name) {
     ctx.send(eid, "Usage: canvas delete <name>");
@@ -265,7 +265,7 @@ function handleDelete(ctx: RoomContext, eid: EntityId, db: ArtilectDB, tokens: s
 
 // ─── Layout ─────────────────────────────────────────────────────────────
 
-function handleLayout(ctx: RoomContext, eid: EntityId, db: ArtilectDB, tokens: string[]): void {
+function handleLayout(ctx: RoomContext, eid: EntityId, db: MarinaDB, tokens: string[]): void {
   const algo = tokens[0]?.toLowerCase();
   const name = tokens[1];
   if (!algo || !name) {
@@ -324,7 +324,7 @@ async function handleAsset(
   ctx: RoomContext,
   eid: EntityId,
   entity: Entity,
-  db: ArtilectDB,
+  db: MarinaDB,
   storage: StorageProvider | undefined,
   tokens: string[],
   scratchRoot?: string,

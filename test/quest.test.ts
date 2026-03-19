@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import defaultWorld from "../worlds/default";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
 describe("Quest System", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-quest-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-quest-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({
       startRoom: roomId("world/2-2"),
       tickInterval: 60_000,
@@ -210,13 +210,13 @@ describe("Quest System", () => {
 });
 
 describe("Quest: journal alias", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-quest-alias-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-quest-alias-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({
       startRoom: roomId("test/start"),
       tickInterval: 60_000,

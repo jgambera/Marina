@@ -1,11 +1,11 @@
-# Artilect Benchmark Harness
+# Marina Benchmark Harness
 
-Benchmarks for validating Artilect as an LLM endpoint and measuring its memory system's impact.
+Benchmarks for validating Marina as an LLM endpoint and measuring its memory system's impact.
 
 ## Quick Start
 
 ```bash
-# Start Artilect + provider agent
+# Start Marina + provider agent
 bun run start &
 bun run src/sdk/examples/provider.ts &
 
@@ -21,7 +21,7 @@ bun run benchmarks/harness.ts --results
 
 ## Phase A — Baseline Benchmarks
 
-Standard automated benchmarks proving Artilect works as a competent LLM endpoint.
+Standard automated benchmarks proving Marina works as a competent LLM endpoint.
 
 | Benchmark | Questions | Type | Metric |
 |-----------|-----------|------|--------|
@@ -39,7 +39,7 @@ bun run benchmarks/harness.ts --benchmark humaneval --mode passthrough  # requir
 
 ## Phase B — Memory Delta Experiments
 
-The core thesis test: does Artilect's memory system measurably improve outcomes?
+The core thesis test: does Marina's memory system measurably improve outcomes?
 
 | Benchmark | Questions | Type | Metric |
 |-----------|-----------|------|--------|
@@ -52,7 +52,7 @@ The core thesis test: does Artilect's memory system measurably improve outcomes?
 bun run benchmarks/harness.ts --benchmark narrativeqa --mode memory --compare passthrough --limit 50
 bun run benchmarks/harness.ts --benchmark retention --mode memory --compare passthrough
 
-# MT-Bench (uses Artilect-as-judge)
+# MT-Bench (uses Marina-as-judge)
 bun run benchmarks/harness.ts --benchmark mt-bench --limit 10
 ```
 
@@ -65,7 +65,7 @@ bun run benchmarks/harness.ts --benchmark mt-bench --limit 10
 | `-l, --limit` | Max questions | all |
 | `-e, --endpoint` | API endpoint URL | `http://localhost:3300` |
 | `-k, --api-key` | Bearer token | none |
-| `--model` | Model name | `artilect` |
+| `--model` | Model name | `marina` |
 | `-c, --concurrency` | Parallel requests | `5` |
 | `-s, --seed` | Deterministic subset | none |
 | `--compare` | Run comparison mode | none |
@@ -105,5 +105,5 @@ JSON results are written to `benchmarks/results/` (gitignored) with the format:
 ## Requirements
 
 - Bun 1.1+
-- Running Artilect instance with provider agent
+- Running Marina instance with provider agent
 - Python 3.10+ (for HumanEval only)

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { resolve } from "node:path";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import { loadRooms } from "../src/world/room-loader";
 import { seedGuidePool } from "../src/world/seed-guide";
@@ -144,13 +144,13 @@ describe("WorldDefinition: empty world engine", () => {
 });
 
 describe("WorldDefinition: onComplete callback", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-oncomplete-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-oncomplete-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({
       startRoom: roomId("world/2-2"),
       tickInterval: 60_000,
@@ -215,11 +215,11 @@ describe("WorldDefinition: onComplete callback", () => {
 });
 
 describe("seedGuidePool with custom notes", () => {
-  let db: ArtilectDB;
-  const dbPath = `/tmp/artilect-guide-test-${Date.now()}.db`;
+  let db: MarinaDB;
+  const dbPath = `/tmp/marina-guide-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {

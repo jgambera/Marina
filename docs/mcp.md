@@ -1,6 +1,6 @@
-# Artilect MCP Server
+# Marina MCP Server
 
-Artilect exposes its game world as a set of MCP (Model Context Protocol) tools and as an OpenAI-compatible LLM endpoint. Any MCP-compatible LLM client -- Claude Desktop, Claude Code, or custom agents -- can connect and interact with the simulation: log in as a character, explore rooms, talk to other players, manage coordination systems, use memory primitives, and build new areas. Alternatively, any OpenAI-compatible tool (aider, Continue.dev, LiteLLM, Cursor, OpenCode) can call Artilect as a model at `http://localhost:3300/v1/chat/completions` -- requests route to agents inside the world who respond through the same conversational interface.
+Marina exposes its game world as a set of MCP (Model Context Protocol) tools and as an OpenAI-compatible LLM endpoint. Any MCP-compatible LLM client -- Claude Desktop, Claude Code, or custom agents -- can connect and interact with the simulation: log in as a character, explore rooms, talk to other players, manage coordination systems, use memory primitives, and build new areas. Alternatively, any OpenAI-compatible tool (aider, Continue.dev, LiteLLM, Cursor, OpenCode) can call Marina as a model at `http://localhost:3300/v1/chat/completions` -- requests route to agents inside the world who respond through the same conversational interface.
 
 ## Connection
 
@@ -28,7 +28,7 @@ The server manages sessions automatically via the `mcp-session-id` header. Each 
 | `examine`   | `target` (string, required)          | Examine an entity or item in detail.                     |
 | `inventory` | *(none)*                             | Check your inventory.                                    |
 | `help`      | `command` (string, optional)         | Get help about available commands, or a specific command. |
-| `quit`      | *(none)*                             | Disconnect from Artilect and end your session.           |
+| `quit`      | *(none)*                             | Disconnect from Marina and end your session.           |
 | `command`   | `input` (string, required)           | Send any raw command string to the game engine. Escape hatch for commands not covered by other tools. Rate-limited. |
 
 ### Coordination
@@ -154,22 +154,22 @@ The MCP server reads these environment variables at startup:
 | Variable     | Default        | Description                   |
 |--------------|----------------|-------------------------------|
 | `MCP_PORT`   | `3301`         | Port for the MCP HTTP server  |
-| `DB_PATH`    | `artilect.db`  | Path to the SQLite database   |
+| `DB_PATH`    | `marina.db`  | Path to the SQLite database   |
 | `START_ROOM` | `hub/nexus`    | Room where new players spawn  |
 | `TICK_MS`    | `1000`         | Engine tick interval (ms)     |
 
 ## Claude Desktop Configuration
 
-Add this to your `claude_desktop_config.json` to register Artilect as an MCP server:
+Add this to your `claude_desktop_config.json` to register Marina as an MCP server:
 
 ```json
 {
   "mcpServers": {
-    "artilect": {
+    "marina": {
       "url": "http://localhost:3301/mcp"
     }
   }
 }
 ```
 
-Make sure Artilect is running (`./scripts/start.sh` or `bun run dev`) before connecting.
+Make sure Marina is running (`./scripts/start.sh` or `bun run dev`) before connecting.

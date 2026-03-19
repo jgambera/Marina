@@ -1,4 +1,4 @@
-import type { ArtilectDB, BoardPostRow, BoardRow } from "../persistence/database";
+import type { BoardPostRow, BoardRow, MarinaDB } from "../persistence/database";
 
 export interface Board {
   id: string;
@@ -57,7 +57,7 @@ function rowToPost(row: BoardPostRow): BoardPost {
 }
 
 export class BoardManager {
-  constructor(private db: ArtilectDB) {}
+  constructor(private db: MarinaDB) {}
 
   createBoard(opts: {
     name: string;

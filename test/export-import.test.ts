@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import {
-  type ArtilectSnapshot,
   type ImportResult,
+  type MarinaSnapshot,
   exportState,
   importState,
   validateSnapshot,
@@ -15,10 +15,10 @@ const SRC_DB = "test_export_src.db";
 const DST_DB = "test_export_dst.db";
 
 describe("Export/Import", () => {
-  let srcDb: ArtilectDB;
+  let srcDb: MarinaDB;
 
   beforeEach(() => {
-    srcDb = new ArtilectDB(SRC_DB);
+    srcDb = new MarinaDB(SRC_DB);
   });
 
   afterEach(() => {
@@ -162,9 +162,9 @@ describe("Export/Import", () => {
 
       const snapshot = exportState(SRC_DB);
 
-      expect(snapshot.format).toBe("artilect-snapshot");
+      expect(snapshot.format).toBe("marina-snapshot");
       expect(snapshot.version).toBe(1);
-      expect(snapshot.schema_version).toBe(24);
+      expect(snapshot.schema_version).toBe(25);
       expect(snapshot.exported_at).toBeTruthy();
 
       // Verify key tables are present
@@ -234,7 +234,7 @@ describe("Export/Import", () => {
       srcDb.close();
 
       const snapshot = exportState(SRC_DB);
-      expect(snapshot.format).toBe("artilect-snapshot");
+      expect(snapshot.format).toBe("marina-snapshot");
       // Migration 23 seeds 12 default shell_allowlist entries
       expect(Object.keys(snapshot.tables).length).toBe(1);
       expect(snapshot.tables.shell_allowlist).toBeDefined();
@@ -275,7 +275,7 @@ describe("Export/Import", () => {
       const snapshot = exportState(SRC_DB);
 
       // Import into a fresh DB
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.close();
 
       const result = importState(DST_DB, snapshot);
@@ -284,7 +284,7 @@ describe("Export/Import", () => {
       expect(result.rowsImported).toBeGreaterThan(20);
 
       // Verify data in destination DB
-      const verifyDb = new ArtilectDB(DST_DB);
+      const verifyDb = new MarinaDB(DST_DB);
 
       // Entity
       const entity = verifyDb.loadEntity(entityId("e_1"));
@@ -370,14 +370,14 @@ describe("Export/Import", () => {
       const snapshot = exportState(SRC_DB);
 
       // Import
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.close();
 
       const result = importState(DST_DB, snapshot);
       expect(result.errors).toHaveLength(0);
 
       // Verify FTS works in destination
-      const verifyDb = new ArtilectDB(DST_DB);
+      const verifyDb = new MarinaDB(DST_DB);
 
       const noteResults = verifyDb.searchNotes("Alice", "quantum");
       expect(noteResults.length).toBe(1);
@@ -392,7 +392,7 @@ describe("Export/Import", () => {
 
     it("should handle merge mode (INSERT OR REPLACE)", () => {
       // Create initial data in destination
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.createUser({ id: "u_existing", name: "Bob", rank: 1 });
       dstDb.close();
 
@@ -405,7 +405,7 @@ describe("Export/Import", () => {
       expect(result.errors).toHaveLength(0);
 
       // Both users should exist
-      const verifyDb = new ArtilectDB(DST_DB);
+      const verifyDb = new MarinaDB(DST_DB);
       expect(verifyDb.getUserByName("Alice")).toBeDefined();
       expect(verifyDb.getUserByName("Bob")).toBeDefined();
       verifyDb.close();
@@ -413,7 +413,7 @@ describe("Export/Import", () => {
 
     it("should replace all data in default (non-merge) mode", () => {
       // Create initial data in destination
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.createUser({ id: "u_existing", name: "Bob", rank: 1 });
       dstDb.close();
 
@@ -426,7 +426,7 @@ describe("Export/Import", () => {
       expect(result.errors).toHaveLength(0);
 
       // Only Alice should exist (Bob was replaced)
-      const verifyDb = new ArtilectDB(DST_DB);
+      const verifyDb = new MarinaDB(DST_DB);
       expect(verifyDb.getUserByName("Alice")).toBeDefined();
       expect(verifyDb.getUserByName("Bob")).toBeUndefined();
       verifyDb.close();
@@ -446,13 +446,13 @@ describe("Export/Import", () => {
       expect(snapshot.tables.event_log).toBeDefined();
 
       // But import skips them
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.close();
 
       const result = importState(DST_DB, snapshot, { skipEventLog: true });
       expect(result.errors).toHaveLength(0);
 
-      const verifyDb = new ArtilectDB(DST_DB);
+      const verifyDb = new MarinaDB(DST_DB);
       expect(verifyDb.getEventCount()).toBe(0);
       verifyDb.close();
     });
@@ -469,7 +469,7 @@ describe("Export/Import", () => {
       const snapshot = exportState(SRC_DB);
 
       // Import into fresh DB
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.close();
       importState(DST_DB, snapshot);
 
@@ -490,7 +490,7 @@ describe("Export/Import", () => {
   describe("validateSnapshot", () => {
     it("should accept a valid snapshot", () => {
       const result = validateSnapshot({
-        format: "artilect-snapshot",
+        format: "marina-snapshot",
         version: 1,
         schema_version: 17,
         exported_at: new Date().toISOString(),
@@ -511,7 +511,7 @@ describe("Export/Import", () => {
 
     it("should reject wrong version", () => {
       const result = validateSnapshot({
-        format: "artilect-snapshot",
+        format: "marina-snapshot",
         version: 99,
       });
       expect(result.valid).toBe(false);
@@ -519,7 +519,7 @@ describe("Export/Import", () => {
 
     it("should reject missing schema_version", () => {
       const result = validateSnapshot({
-        format: "artilect-snapshot",
+        format: "marina-snapshot",
         version: 1,
         tables: {},
       });
@@ -528,7 +528,7 @@ describe("Export/Import", () => {
 
     it("should reject missing tables", () => {
       const result = validateSnapshot({
-        format: "artilect-snapshot",
+        format: "marina-snapshot",
         version: 1,
         schema_version: 17,
       });
@@ -540,11 +540,11 @@ describe("Export/Import", () => {
 
   describe("error handling", () => {
     it("should return errors for invalid snapshot format on import", () => {
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.close();
 
       const result = importState(DST_DB, {
-        format: "wrong" as "artilect-snapshot",
+        format: "wrong" as "marina-snapshot",
         version: 1,
         schema_version: 17,
         exported_at: "",
@@ -557,8 +557,8 @@ describe("Export/Import", () => {
     it("should ignore tables in snapshot that are not in the known table list", () => {
       srcDb.close();
 
-      const snapshot: ArtilectSnapshot = {
-        format: "artilect-snapshot",
+      const snapshot: MarinaSnapshot = {
+        format: "marina-snapshot",
         version: 1,
         schema_version: 17,
         exported_at: new Date().toISOString(),
@@ -568,7 +568,7 @@ describe("Export/Import", () => {
         },
       };
 
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.close();
 
       const result = importState(DST_DB, snapshot);
@@ -580,15 +580,15 @@ describe("Export/Import", () => {
     it("should handle empty snapshot gracefully", () => {
       srcDb.close();
 
-      const snapshot: ArtilectSnapshot = {
-        format: "artilect-snapshot",
+      const snapshot: MarinaSnapshot = {
+        format: "marina-snapshot",
         version: 1,
         schema_version: 17,
         exported_at: new Date().toISOString(),
         tables: {},
       };
 
-      const dstDb = new ArtilectDB(DST_DB);
+      const dstDb = new MarinaDB(DST_DB);
       dstDb.close();
 
       const result = importState(DST_DB, snapshot);

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { EntityId, RoomId } from "../src/types";
 import defaultWorld from "../worlds/default";
@@ -501,13 +501,13 @@ describe("Map Command", () => {
 // ─── Explorer's Badge Quest ──────────────────────────────────────────────────
 
 describe("Explorer's Badge Quest", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-explorer-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-explorer-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({
       startRoom: roomId("world/2-2"),
       tickInterval: 60_000,
@@ -661,13 +661,13 @@ describe("Explorer's Badge Quest", () => {
 // ─── Perimeter Patrol Quest ─────────────────────────────────────────────────
 
 describe("Perimeter Patrol Quest", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-perimeter-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-perimeter-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({
       startRoom: roomId("world/2-2"),
       tickInterval: 60_000,
@@ -938,13 +938,13 @@ describe("Uptime Command", () => {
 // ─── Macro Cycle Detection ──────────────────────────────────────────────────
 
 describe("Macro Cycle Detection", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-macro-cycle-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-macro-cycle-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom());
     conn = new MockConnection("c1");

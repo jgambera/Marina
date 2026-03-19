@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { EntityId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
@@ -8,14 +8,14 @@ import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("Admin Commands", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let adminConn: MockConnection;
   let adminEntity: EntityId;
-  const dbPath = `/tmp/artilect-admin-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-admin-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 

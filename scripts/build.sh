@@ -1,6 +1,6 @@
 #!/bin/bash
-# Artilect Full Build Script
-# Builds all parts of the Artilect platform: server + dashboard
+# Marina Full Build Script
+# Builds all parts of the Marina platform: server + dashboard
 # Usage: ./scripts/build.sh [--skip-tests] [--skip-dashboard]
 
 set -euo pipefail

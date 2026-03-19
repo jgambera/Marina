@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
 import { setRank } from "../src/engine/permissions";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
@@ -10,14 +10,14 @@ const TEST_DB = "test_playground.db";
 // ─── Experiment Tests ───────────────────────────────────────────────────────
 
 describe("Experiments", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
   let conn3: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 
@@ -178,13 +178,13 @@ describe("Experiments", () => {
 // ─── Observe Tests ──────────────────────────────────────────────────────────
 
 describe("Observe", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(
       roomId("test/start"),
@@ -281,14 +281,14 @@ describe("Observe", () => {
 // ─── Decode Room Tests ──────────────────────────────────────────────────────
 
 describe("Decode Room", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
   let conn3: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 
@@ -463,13 +463,13 @@ describe("Decode Room", () => {
 // ─── Assembly Room Tests ────────────────────────────────────────────────────
 
 describe("Assembly Room", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 
@@ -636,13 +636,13 @@ interface RelayState {
 }
 
 describe("Relay Room", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 

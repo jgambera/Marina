@@ -1,5 +1,5 @@
 import { channel as fmtChannel } from "../net/ansi";
-import type { ArtilectDB, ChannelRow } from "../persistence/database";
+import type { ChannelRow, MarinaDB } from "../persistence/database";
 import type { EntityId } from "../types";
 
 export interface Channel {
@@ -44,7 +44,7 @@ export class ChannelManager {
   private messageListeners: ChannelMessageListener[] = [];
 
   constructor(
-    private db: ArtilectDB,
+    private db: MarinaDB,
     private sendToEntity: (target: EntityId, message: string, tag?: string) => void,
   ) {}
 

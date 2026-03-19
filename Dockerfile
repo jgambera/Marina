@@ -25,7 +25,7 @@ EXPOSE 3300 4000 3301
 VOLUME ["/app/data"]
 
 # Default environment
-ENV DB_PATH=/app/data/artilect.db
+ENV DB_PATH=/app/data/marina.db
 ENV LOG_FORMAT=json
 
 CMD ["bun", "run", "src/main.ts"]

@@ -1,6 +1,6 @@
-// ─── Artilect SDK ────────────────────────────────────────────────────────────
+// ─── Marina SDK ────────────────────────────────────────────────────────────
 
-export { ArtilectClient, ArtilectAgent } from "./client";
+export { MarinaClient, MarinaAgent } from "./client";
 export type { SessionInfo, RoomView, ClientOptions } from "./client";
 
 // Re-export core types

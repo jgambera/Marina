@@ -11,10 +11,10 @@
  *   AGENT_NAME   — Character name (default: Evolver)
  *   ADVISOR      — Name of agent to ask for advice (default: none, self-reflects)
  *   CYCLE_SECS   — Seconds between evolution cycles (default: 60)
- *   ARTILECT_ADMINS — Set to include AGENT_NAME for builder rank
+ *   MARINA_ADMINS — Set to include AGENT_NAME for builder rank
  */
 
-import { ArtilectAgent, type Perception, type RoomView } from "../client";
+import { MarinaAgent, type Perception, type RoomView } from "../client";
 
 const WS_URL = process.env.WS_URL ?? "ws://localhost:3300";
 const AGENT_NAME = process.env.AGENT_NAME ?? "Evolver";
@@ -35,11 +35,7 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /** Wait for a tell/message from a specific sender. */
-function waitForMessage(
-  agent: ArtilectAgent,
-  fromName: string,
-  timeoutMs = 30_000,
-): Promise<string> {
+function waitForMessage(agent: MarinaAgent, fromName: string, timeoutMs = 30_000): Promise<string> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       agent.offPerception(handler);
@@ -104,7 +100,7 @@ export default room;`;
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const agent = new ArtilectAgent(WS_URL, { autoReconnect: true });
+  const agent = new MarinaAgent(WS_URL, { autoReconnect: true });
 
   console.log(`[evolver] Connecting to ${WS_URL} as ${AGENT_NAME}...`);
   const session = await agent.connect(AGENT_NAME);
@@ -272,7 +268,7 @@ async function main() {
 
   // ─── Helper Actions ──────────────────────────────────────────────────────
 
-  async function exploreUnvisited(a: ArtilectAgent) {
+  async function exploreUnvisited(a: MarinaAgent) {
     console.log("[evolver] Action: exploring unvisited rooms");
     const directions = ["north", "south", "east", "west"];
     for (const dir of directions) {
@@ -288,14 +284,14 @@ async function main() {
     await a.command("goto world/2-2");
   }
 
-  async function organizeMemory(a: ArtilectAgent, gen: number) {
+  async function organizeMemory(a: MarinaAgent, gen: number) {
     console.log("[evolver] Action: organizing memory");
     await a.reflect("exploration");
     await a.reflect("evolution");
     await a.typedNote(`Gen ${gen}: consolidated notes via reflect`, 6, "skill");
   }
 
-  async function buildSomething(a: ArtilectAgent, gen: number) {
+  async function buildSomething(a: MarinaAgent, gen: number) {
     console.log("[evolver] Action: building");
     const buildRoomId = `mind/${AGENT_NAME.toLowerCase()}/gen-${gen}`;
     await a.command(`build space ${buildRoomId} Generation ${gen} Archive`);
@@ -306,7 +302,7 @@ async function main() {
 
   // ─── Self Benchmark ──────────────────────────────────────────────────────
 
-  async function selfBenchmark(a: ArtilectAgent): Promise<number> {
+  async function selfBenchmark(a: MarinaAgent): Promise<number> {
     let score = 0;
 
     // Memory check: can we recall our own notes?

@@ -1,4 +1,4 @@
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type { EntityId } from "../types";
 
 // ─── Session Types ──────────────────────────────────────────────────────────
@@ -25,10 +25,10 @@ const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 export class SessionManager {
   private sessions = new Map<string, Session>();
   private entityIndex = new Map<string, string>(); // entityId -> token
-  private db?: ArtilectDB;
+  private db?: MarinaDB;
   private sessionTtlMs: number;
 
-  constructor(db?: ArtilectDB, options?: SessionManagerOptions) {
+  constructor(db?: MarinaDB, options?: SessionManagerOptions) {
     this.db = db;
     this.sessionTtlMs = options?.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
 

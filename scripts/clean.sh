@@ -1,5 +1,5 @@
 #!/bin/bash
-# Artilect Clean Script
+# Marina Clean Script
 # Removes database and other persistent data for a fresh start.
 # Usage: ./scripts/clean.sh [--yes]
 
@@ -16,11 +16,11 @@ if [ -f "$PROJECT_DIR/.env" ]; then
   source "$PROJECT_DIR/.env"
   set +a
 fi
-DB_PATH="${DB_PATH:-artilect.db}"
+DB_PATH="${DB_PATH:-marina.db}"
 
 # Check if server is running
-if [ -f "$PROJECT_DIR/artilect.pid" ]; then
-  PID=$(cat "$PROJECT_DIR/artilect.pid")
+if [ -f "$PROJECT_DIR/marina.pid" ]; then
+  PID=$(cat "$PROJECT_DIR/marina.pid")
   if kill -0 "$PID" 2>/dev/null; then
     echo "Error: Server is running (PID $PID). Stop it first."
     exit 1
@@ -36,8 +36,8 @@ DIRS=()
 for f in "$DB_PATH" "${DB_PATH}-wal" "${DB_PATH}-shm" "${DB_PATH}-journal"; do
   [ -f "$f" ] && FILES+=("$f")
 done
-[ -f "artilect.log" ] && FILES+=("artilect.log")
-[ -f "artilect.pid" ] && FILES+=("artilect.pid")
+[ -f "marina.log" ] && FILES+=("marina.log")
+[ -f "marina.pid" ] && FILES+=("marina.pid")
 [ -d "$ASSETS_DIR" ] && DIRS+=("$ASSETS_DIR")
 
 if [ ${#FILES[@]} -eq 0 ] && [ ${#DIRS[@]} -eq 0 ]; then

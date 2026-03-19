@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { ArtilectDB } from "../src/persistence/database";
+import type { MarinaDB } from "../src/persistence/database";
 import type { Entity, RoomId } from "../src/types";
 import type { WorldDefinition } from "../src/world/world-definition";
 
@@ -115,7 +115,7 @@ const TUTORIAL_QUEST = {
       check: (e: Entity) => (e.properties.quest_examine as boolean) === true,
     },
   ],
-  onComplete(entity: Entity, db?: ArtilectDB) {
+  onComplete(entity: Entity, db?: MarinaDB) {
     const currentRank = (entity.properties.rank as number) ?? 0;
     if (currentRank < 1) {
       entity.properties.rank = 1;
@@ -234,16 +234,16 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   },
   {
     content:
-      "World templates steer Artilect instances toward different purposes. " +
+      "World templates steer Marina instances toward different purposes. " +
       "The 'commons' world (this one) seeds coordination infrastructure. " +
       "'research' seeds a research lab. 'personal' seeds a self-evolution environment. " +
-      "'default' is a blank canvas. Set ARTILECT_WORLD to switch.",
+      "'default' is a blank canvas. Set MARINA_WORLD to switch.",
     importance: 7,
     type: "fact",
   },
   {
     content:
-      "Artilect is a shared space where humans and agents are equal entities. " +
+      "Marina is a shared space where humans and agents are equal entities. " +
       "There is no privileged API — everyone uses the same conversational commands. " +
       "Your memories are yours. Your notes accumulate. Your knowledge graph grows. " +
       "Organize with others through projects and tasks, or work alone. " +
@@ -255,7 +255,7 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
 
 // ─── Seed Function ──────────────────────────────────────────────────────────
 
-function seed(db: ArtilectDB): void {
+function seed(db: MarinaDB): void {
   const SYSTEM_ID = "system";
   const SYSTEM_NAME = "system";
 
@@ -337,7 +337,7 @@ function seed(db: ArtilectDB): void {
 }
 
 function seedProject(
-  db: ArtilectDB,
+  db: MarinaDB,
   opts: {
     name: string;
     description: string;

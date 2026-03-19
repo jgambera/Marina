@@ -8,7 +8,7 @@ import {
   status,
   success,
 } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 import type { QuestDef, QuestStep } from "../../world/world-definition";
 
@@ -54,7 +54,7 @@ export function trackQuestProgress(
 
 export function questCommand(deps: {
   getEntity: (id: EntityId) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   quests?: QuestDef[];
 }): CommandDef {
   const ALL_QUESTS = deps.quests ?? [];

@@ -1,10 +1,10 @@
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import { exportState } from "../../persistence/export-import";
 import type { CommandDef, Connection, Entity, EntityId } from "../../types";
 import { getErrorMessage } from "../errors";
 
 interface AdminDeps {
-  db: ArtilectDB;
+  db: MarinaDB;
   dbPath?: string;
   worldName?: string;
   getEntity: (id: string) => Entity | undefined;
@@ -167,10 +167,10 @@ export function adminCommand(deps: AdminDeps): CommandDef {
         }
 
         case "export": {
-          const dbPath = deps.dbPath ?? "artilect.db";
+          const dbPath = deps.dbPath ?? "marina.db";
           const outputPath =
             input.tokens[1] ??
-            `artilect-export-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.json`;
+            `marina-export-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.json`;
           const skipEvents = input.tokens.includes("--skip-events");
           const skipConnectors = input.tokens.includes("--skip-connectors");
 

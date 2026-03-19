@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { EntityId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
@@ -8,13 +8,13 @@ import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 const TEST_DB = "test_organization.db";
 
 describe("Organization Primitives", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 

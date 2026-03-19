@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { RateLimiter } from "../src/auth/rate-limiter";
 import { Engine } from "../src/engine/engine";
 import { validateRoomSource } from "../src/engine/sandbox";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
@@ -124,13 +124,13 @@ describe("Security: Sandbox escape attempts", () => {
 });
 
 describe("Security: Input sanitization", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-security-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-security-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
     conn = new MockConnection("c1");
@@ -181,12 +181,12 @@ describe("Security: Rate limiting", () => {
 });
 
 describe("Security: Ban enforcement", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
-  const dbPath = `/tmp/artilect-ban-security-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-ban-security-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
   });

@@ -1,4 +1,4 @@
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type { StorageProvider } from "../storage/provider";
 import type { CanvasBroadcaster } from "./canvas-ws";
 
@@ -14,7 +14,7 @@ function json(data: unknown, status = 200): Response {
 
 function resolveNodeUrl(
   node: { asset_id: string | null; data: string },
-  db: ArtilectDB,
+  db: MarinaDB,
   storage?: StorageProvider,
 ): string | undefined {
   if (!node.asset_id || !storage) return undefined;
@@ -27,7 +27,7 @@ export async function handleCanvasApi(
   url: URL,
   method: string,
   req: Request,
-  db: ArtilectDB,
+  db: MarinaDB,
   storage?: StorageProvider,
   broadcaster?: CanvasBroadcaster,
 ): Promise<Response> {

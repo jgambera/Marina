@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Artilect State Export
+ * Marina State Export
  * Usage: bun scripts/state-export.ts [db_path] [output_path] [--skip-events] [--skip-connectors]
  */
 import { exportState } from "../src/persistence/export-import";
@@ -9,9 +9,9 @@ const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith("--"));
 const positional = args.filter((a) => !a.startsWith("--"));
 
-const dbPath = positional[0] ?? process.env.DB_PATH ?? "artilect.db";
+const dbPath = positional[0] ?? process.env.DB_PATH ?? "marina.db";
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-const outputPath = positional[1] ?? `artilect-export-${timestamp}.json`;
+const outputPath = positional[1] ?? `marina-export-${timestamp}.json`;
 
 const skipEventLog = flags.includes("--skip-events");
 const skipConnectors = flags.includes("--skip-connectors");

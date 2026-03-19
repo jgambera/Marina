@@ -1,22 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
 import { WebSocketServer } from "../src/net/websocket-server";
-import { ArtilectDB } from "../src/persistence/database";
-import { ArtilectAgent, ArtilectClient } from "../src/sdk/client";
+import { MarinaDB } from "../src/persistence/database";
+import { MarinaAgent, MarinaClient } from "../src/sdk/client";
 import { roomId } from "../src/types";
 import { cleanupDb, makeTestRoom } from "./helpers";
 
 const TEST_PORT = 13399;
 const TEST_URL = `ws://localhost:${TEST_PORT}`;
 
-describe("ArtilectClient SDK", () => {
-  let db: ArtilectDB;
+describe("MarinaClient SDK", () => {
+  let db: MarinaDB;
   let engine: Engine;
   let wsServer: WebSocketServer;
-  const dbPath = `/tmp/artilect-sdk-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-sdk-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(
       roomId("test/start"),
@@ -49,7 +49,7 @@ describe("ArtilectClient SDK", () => {
   });
 
   it("should connect and login", async () => {
-    const client = new ArtilectClient(TEST_URL, { autoReconnect: false });
+    const client = new MarinaClient(TEST_URL, { autoReconnect: false });
     const session = await client.connect("SDKUser");
     expect(session.entityId).toBeTruthy();
     expect(session.name).toBe("SDKUser");
@@ -58,7 +58,7 @@ describe("ArtilectClient SDK", () => {
   });
 
   it("should send commands and receive perceptions", async () => {
-    const client = new ArtilectClient(TEST_URL, { autoReconnect: false });
+    const client = new MarinaClient(TEST_URL, { autoReconnect: false });
     await client.connect("CmdUser");
 
     const perceptions = await client.command("look");
@@ -74,7 +74,7 @@ describe("ArtilectClient SDK", () => {
   });
 
   it("should receive perceptions via handler", async () => {
-    const client = new ArtilectClient(TEST_URL, { autoReconnect: false });
+    const client = new MarinaClient(TEST_URL, { autoReconnect: false });
     await client.connect("HandlerUser");
 
     const received: string[] = [];
@@ -90,7 +90,7 @@ describe("ArtilectClient SDK", () => {
   });
 
   it("should reject invalid login", async () => {
-    const client = new ArtilectClient(TEST_URL, { autoReconnect: false });
+    const client = new MarinaClient(TEST_URL, { autoReconnect: false });
     try {
       await client.connect("a"); // too short
       expect(true).toBe(false); // should not reach here
@@ -101,14 +101,14 @@ describe("ArtilectClient SDK", () => {
   });
 });
 
-describe("ArtilectAgent SDK", () => {
-  let db: ArtilectDB;
+describe("MarinaAgent SDK", () => {
+  let db: MarinaDB;
   let engine: Engine;
   let wsServer: WebSocketServer;
-  const dbPath = `/tmp/artilect-agent-sdk-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-agent-sdk-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(
       roomId("test/start"),
@@ -139,7 +139,7 @@ describe("ArtilectAgent SDK", () => {
   });
 
   it("should look and get room view", async () => {
-    const agent = new ArtilectAgent(TEST_URL, { autoReconnect: false });
+    const agent = new MarinaAgent(TEST_URL, { autoReconnect: false });
     await agent.connect("LookAgent");
 
     const view = await agent.look();
@@ -151,7 +151,7 @@ describe("ArtilectAgent SDK", () => {
   });
 
   it("should move between rooms", async () => {
-    const agent = new ArtilectAgent(TEST_URL, { autoReconnect: false });
+    const agent = new MarinaAgent(TEST_URL, { autoReconnect: false });
     await agent.connect("MoveAgent");
 
     await agent.move("north");
@@ -164,7 +164,7 @@ describe("ArtilectAgent SDK", () => {
   });
 
   it("should say and get confirmation", async () => {
-    const agent = new ArtilectAgent(TEST_URL, { autoReconnect: false });
+    const agent = new MarinaAgent(TEST_URL, { autoReconnect: false });
     await agent.connect("SayAgent");
 
     const received: string[] = [];

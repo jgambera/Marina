@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
 import { getRank, setRank } from "../src/engine/permissions";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { EntityRank } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
@@ -9,12 +9,12 @@ import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 const TEST_DB = "test_permissions.db";
 
 describe("Command Permissions", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 
@@ -198,10 +198,10 @@ describe("Command Permissions", () => {
 
   // ─── Admin Bootstrap ──────────────────────────────────────────────────────
 
-  describe("Admin Bootstrap (ARTILECT_ADMINS)", () => {
-    it("should auto-promote on login when name is in ARTILECT_ADMINS", () => {
-      const originalEnv = process.env.ARTILECT_ADMINS;
-      process.env.ARTILECT_ADMINS = "Charlie,Dave";
+  describe("Admin Bootstrap (MARINA_ADMINS)", () => {
+    it("should auto-promote on login when name is in MARINA_ADMINS", () => {
+      const originalEnv = process.env.MARINA_ADMINS;
+      process.env.MARINA_ADMINS = "Charlie,Dave";
 
       try {
         const conn3 = new MockConnection("c3");
@@ -215,16 +215,16 @@ describe("Command Permissions", () => {
         }
       } finally {
         if (originalEnv === undefined) {
-          process.env.ARTILECT_ADMINS = undefined;
+          process.env.MARINA_ADMINS = undefined;
         } else {
-          process.env.ARTILECT_ADMINS = originalEnv;
+          process.env.MARINA_ADMINS = originalEnv;
         }
       }
     });
 
-    it("should not promote when name is not in ARTILECT_ADMINS", () => {
-      const originalEnv = process.env.ARTILECT_ADMINS;
-      process.env.ARTILECT_ADMINS = "Charlie,Dave";
+    it("should not promote when name is not in MARINA_ADMINS", () => {
+      const originalEnv = process.env.MARINA_ADMINS;
+      process.env.MARINA_ADMINS = "Charlie,Dave";
 
       try {
         const conn3 = new MockConnection("c3");
@@ -238,16 +238,16 @@ describe("Command Permissions", () => {
         }
       } finally {
         if (originalEnv === undefined) {
-          process.env.ARTILECT_ADMINS = undefined;
+          process.env.MARINA_ADMINS = undefined;
         } else {
-          process.env.ARTILECT_ADMINS = originalEnv;
+          process.env.MARINA_ADMINS = originalEnv;
         }
       }
     });
 
-    it("should auto-promote on reconnect when name is in ARTILECT_ADMINS", () => {
-      const originalEnv = process.env.ARTILECT_ADMINS;
-      process.env.ARTILECT_ADMINS = "ReconAdmin";
+    it("should auto-promote on reconnect when name is in MARINA_ADMINS", () => {
+      const originalEnv = process.env.MARINA_ADMINS;
+      process.env.MARINA_ADMINS = "ReconAdmin";
 
       try {
         // First login to create session
@@ -273,9 +273,9 @@ describe("Command Permissions", () => {
         }
       } finally {
         if (originalEnv === undefined) {
-          process.env.ARTILECT_ADMINS = undefined;
+          process.env.MARINA_ADMINS = undefined;
         } else {
-          process.env.ARTILECT_ADMINS = originalEnv;
+          process.env.MARINA_ADMINS = originalEnv;
         }
       }
     });

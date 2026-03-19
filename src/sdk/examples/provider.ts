@@ -2,7 +2,7 @@
  * Provider Agent — an agent that joins a model channel and forwards
  * requests to an external OpenAI-compatible LLM provider.
  *
- * This makes Artilect itself an LLM endpoint: callers hit /v1/chat/completions,
+ * This makes Marina itself an LLM endpoint: callers hit /v1/chat/completions,
  * the request routes to this agent via the model channel, and this agent
  * forwards it to the configured provider (OpenAI, Anthropic, Ollama, etc.).
  *
@@ -14,7 +14,7 @@
  *   bun run src/sdk/examples/provider.ts
  *
  * Environment:
- *   WS_URL           — Artilect WebSocket URL (default: ws://localhost:3300)
+ *   WS_URL           — Marina WebSocket URL (default: ws://localhost:3300)
  *   AGENT_NAME       — Character name (default: Provider)
  *   MODEL_CHANNEL    — Channel to join (default: model)
  *   PROVIDER_URL     — External LLM base URL (default: http://localhost:11434/v1)
@@ -23,7 +23,7 @@
  *   SYSTEM_PROMPT    — Optional system prompt prepended to every request
  */
 
-import { ArtilectAgent, type Perception } from "../client";
+import { MarinaAgent, type Perception } from "../client";
 
 const WS_URL = process.env.WS_URL ?? "ws://localhost:3300";
 const AGENT_NAME = process.env.AGENT_NAME ?? "Provider";
@@ -97,7 +97,7 @@ async function callProvider(
 
 /** Stream from provider, emitting model_response_chunk messages on the channel. */
 async function streamProviderResponse(
-  agent: ArtilectAgent,
+  agent: MarinaAgent,
   channel: string,
   requestId: string,
   messages: Message[],
@@ -154,7 +154,7 @@ async function streamProviderResponse(
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const agent = new ArtilectAgent(WS_URL, { autoReconnect: true });
+  const agent = new MarinaAgent(WS_URL, { autoReconnect: true });
 
   console.log(`[provider] Connecting to ${WS_URL} as ${AGENT_NAME}...`);
   const session = await agent.connect(AGENT_NAME);

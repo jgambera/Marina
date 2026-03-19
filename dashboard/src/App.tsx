@@ -28,7 +28,7 @@ import { SystemGauges } from "./components/back-faces/SystemGauges";
 import { TaskPipeline } from "./components/back-faces/TaskPipeline";
 import { WorldMapHeatmap } from "./components/back-faces/WorldMapHeatmap";
 
-const LAYOUT_KEY = "artilect-dashboard-layouts";
+const LAYOUT_KEY = "marina-dashboard-layouts";
 
 type Bp = "lg" | "md";
 

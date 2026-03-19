@@ -7,7 +7,7 @@ import {
   roundRobinCounters,
   selectAgent,
 } from "../src/net/model-api";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
@@ -106,13 +106,13 @@ function setupPhase1Agent(
 }
 
 describe("Model API", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let cm: ChannelManager;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 
@@ -133,15 +133,15 @@ describe("Model API", () => {
     cleanupDb(TEST_DB);
   });
 
-  it("GET /v1/models always lists the default artilect model", async () => {
+  it("GET /v1/models always lists the default marina model", async () => {
     const [url, method, req] = makeRequest("/v1/models", "GET");
     const resp = await handleModelApi(url, method, req, engine);
     expect(resp).toBeDefined();
     const data = await resp!.json();
     expect(data.object).toBe("list");
     expect(data.data).toHaveLength(1);
-    expect(data.data[0].id).toBe("artilect");
-    expect(data.data[0].owned_by).toBe("artilect");
+    expect(data.data[0].id).toBe("marina");
+    expect(data.data[0].owned_by).toBe("marina");
   });
 
   it("GET /v1/models lists channels matching model* pattern", async () => {
@@ -150,8 +150,8 @@ describe("Model API", () => {
     const resp = await handleModelApi(url, method, req, engine);
     const data = await resp!.json();
     expect(data.data.length).toBeGreaterThanOrEqual(1);
-    expect(data.data[0].id).toBe("artilect");
-    expect(data.data[0].owned_by).toBe("artilect");
+    expect(data.data[0].id).toBe("marina");
+    expect(data.data[0].owned_by).toBe("marina");
   });
 
   it("GET /api/tags returns Ollama format model list", async () => {
@@ -160,12 +160,12 @@ describe("Model API", () => {
     const resp = await handleModelApi(url, method, req, engine);
     const data = await resp!.json();
     expect(data.models).toBeDefined();
-    expect(data.models[0].name).toBe("artilect");
+    expect(data.models[0].name).toBe("marina");
   });
 
   it("POST /v1/chat/completions returns 404 for unknown model variant", async () => {
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect:nonexistent",
+      model: "marina:nonexistent",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -178,7 +178,7 @@ describe("Model API", () => {
     engine.removeConnection("c1");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -187,17 +187,17 @@ describe("Model API", () => {
 
   it("POST /v1/chat/completions routes through channel and gets JSON response", async () => {
     engine.processCommand(conn1.entity!, "channel join model");
-    setupPhase1Agent(cm, conn1.entity!, "Agent1", "Hello from Artilect!");
+    setupPhase1Agent(cm, conn1.entity!, "Agent1", "Hello from Marina!");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
     expect(resp!.status).toBe(200);
     const data = await resp!.json();
-    expect(data.choices[0].message.content).toBe("Hello from Artilect!");
-    expect(data.model).toBe("artilect");
+    expect(data.choices[0].message.content).toBe("Hello from Marina!");
+    expect(data.model).toBe("marina");
   });
 
   it("POST /v1/chat/completions accepts plaintext bracket response", async () => {
@@ -216,7 +216,7 @@ describe("Model API", () => {
     });
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -230,7 +230,7 @@ describe("Model API", () => {
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Ollama response");
 
     const [url, method, req] = makeRequest("/api/chat", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
       stream: false,
     });
@@ -246,7 +246,7 @@ describe("Model API", () => {
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Generated text");
 
     const [url, method, req] = makeRequest("/api/generate", "POST", {
-      model: "artilect",
+      model: "marina",
       prompt: "Tell me a story",
       stream: false,
     });
@@ -257,12 +257,12 @@ describe("Model API", () => {
     expect(data.done).toBe(true);
   });
 
-  it("model ID artilect:scholar maps to channel model-scholar", async () => {
+  it("model ID marina:scholar maps to channel model-scholar", async () => {
     engine.processCommand(conn1.entity!, "channel create model-scholar");
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Scholar response");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect:scholar",
+      model: "marina:scholar",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -296,7 +296,7 @@ describe("Model API", () => {
 
   it("error responses use OpenAI nested format", async () => {
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect:nonexistent",
+      model: "marina:nonexistent",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -323,7 +323,7 @@ describe("Model API", () => {
     setupStreamingAgent(cm, conn1.entity!, "Agent1", ["Hello", " world", "!"]);
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
       stream: true,
     });
@@ -364,7 +364,7 @@ describe("Model API", () => {
     setupStreamingAgent(cm, conn1.entity!, "Agent1", ["Hello", " world"]);
 
     const [url, method, req] = makeRequest("/api/chat", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
     });
     const resp = await handleModelApi(url, method, req, engine);
@@ -392,7 +392,7 @@ describe("Model API", () => {
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Complete response");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
       stream: true,
     });
@@ -424,7 +424,7 @@ describe("Model API", () => {
     setupPhase1Agent(cm, conn1.entity!, "Agent1", "Response 1");
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
       conversation_id: "test-conv-1",
     });
@@ -465,7 +465,7 @@ describe("Model API", () => {
     });
 
     const [url1, method1, req1] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "Who are you?" }],
       conversation_id: "conv-history",
     });
@@ -495,7 +495,7 @@ describe("Model API", () => {
     });
 
     const [url2, method2, req2] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "Tell me again" }],
       conversation_id: "conv-history",
     });
@@ -520,7 +520,7 @@ describe("Model API", () => {
       "/v1/chat/completions",
       "POST",
       {
-        model: "artilect",
+        model: "marina",
         messages: [{ role: "user", content: "hello" }],
       },
       { "X-Conversation-Id": "header-conv-1" },
@@ -569,7 +569,7 @@ describe("Model API", () => {
 
     for (let i = 0; i < 4; i++) {
       const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-        model: "artilect",
+        model: "marina",
         messages: [{ role: "user", content: `msg ${i}` }],
       });
       await handleModelApi(url, method, req, engine);
@@ -607,9 +607,9 @@ describe("Model API", () => {
     const [url, method, req] = makeRequest("/v1/models", "GET");
     const resp = await handleModelApi(url, method, req, engine);
     const data = await resp!.json();
-    // Should only list "artilect", not the conversation channel
+    // Should only list "marina", not the conversation channel
     expect(data.data.length).toBe(1);
-    expect(data.data[0].id).toBe("artilect");
+    expect(data.data[0].id).toBe("marina");
   });
 
   it("request payload includes target field for load balancing", async () => {
@@ -638,7 +638,7 @@ describe("Model API", () => {
     });
 
     const [url, method, req] = makeRequest("/v1/chat/completions", "POST", {
-      model: "artilect",
+      model: "marina",
       messages: [{ role: "user", content: "hello" }],
     });
     await handleModelApi(url, method, req, engine);

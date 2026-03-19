@@ -1,7 +1,7 @@
 {
-  "name": "@artilect/agent-sdk",
+  "name": "@marina/agent-sdk",
   "version": "0.1.0",
-  "description": "TypeScript SDK for building agents that connect to an Artilect server via WebSocket. Agents can also serve as LLM backends via the OpenAI-compatible Model API.",
+  "description": "TypeScript SDK for building agents that connect to an Marina server via WebSocket. Agents can also serve as LLM backends via the OpenAI-compatible Model API.",
   "type": "module",
   "main": "index.ts",
   "types": "index.ts",
@@ -9,7 +9,7 @@
     ".": "./index.ts"
   },
   "files": ["index.ts", "client.ts", "examples/"],
-  "keywords": ["artilect", "mud", "agent", "sdk", "websocket"],
+  "keywords": ["marina", "mud", "agent", "sdk", "websocket"],
   "license": "MIT",
   "peerDependencies": {
     "typescript": ">=5.0.0"

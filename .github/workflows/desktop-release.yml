@@ -42,7 +42,7 @@ jobs:
         run: cd dashboard && bun install
 
       - name: Install desktop dependencies
-        run: cd artilect-desktop && bun install
+        run: cd marina-desktop && bun install
 
       - name: Run tests (verify no regressions)
         run: bun test
@@ -55,13 +55,13 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         run: |
           ENV="${{ github.event.inputs.env || 'stable' }}"
-          bash artilect-desktop/scripts/build.sh "$ENV"
+          bash marina-desktop/scripts/build.sh "$ENV"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artilect-macos-${{ matrix.arch }}
-          path: artilect-desktop/build/*.dmg
+          name: marina-macos-${{ matrix.arch }}
+          path: marina-desktop/build/*.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -76,16 +76,16 @@ jobs:
         run: |
           bun install
           cd dashboard && bun install
-          cd ../artilect-desktop && bun install
+          cd ../marina-desktop && bun install
 
       - name: Build desktop app
-        run: bash artilect-desktop/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
+        run: bash marina-desktop/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artilect-windows-x64
-          path: artilect-desktop/build/*.exe
+          name: marina-windows-x64
+          path: marina-desktop/build/*.exe
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -105,16 +105,16 @@ jobs:
         run: |
           bun install
           cd dashboard && bun install
-          cd ../artilect-desktop && bun install
+          cd ../marina-desktop && bun install
 
       - name: Build desktop app
-        run: bash artilect-desktop/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
+        run: bash marina-desktop/scripts/build.sh ${{ github.event.inputs.env || 'stable' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artilect-linux-x64
-          path: artilect-desktop/build/*.deb
+          name: marina-linux-x64
+          path: marina-desktop/build/*.deb
 
   release:
     needs: [build-macos, build-windows, build-linux]

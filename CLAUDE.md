@@ -1,4 +1,4 @@
-# Artilect — Claude Code Conventions
+# Marina — Claude Code Conventions
 
 ## Build & Test
 ```bash
@@ -29,16 +29,29 @@ bun run format         # Biome auto-format (run before committing)
 
 ## World Templates
 - World definitions live in `worlds/` — each is a TypeScript file exporting a `WorldDefinition`
-- `ARTILECT_WORLD` env var selects which world to load (default: `default`)
+- `MARINA_WORLD` env var selects which world to load (default: `default`)
 - Available worlds: `default` (blank canvas), `commons` (coordination-ready), `research` (research lab), `personal` (self-evolving agent), `empty` (minimal)
 - `WorldDefinition.seed?(db)` runs once on first boot, seeds DB with templates/projects/tasks (must be idempotent)
 - `RoomContext.brief?(entityId)` lets rooms push compass signals to entities
 - `brief watch [N]` / `brief unwatch` — periodic compass subscription (30-600 ticks)
 
+## Agent Runtime
+- `src/engine/agent-runtime.ts` — AgentRuntime class: spawn/stop/list managed agents
+- `src/engine/providers.ts` — Model resolution wrapper (pi-ai integration)
+- `src/engine/commands/agent.ts` — `agent spawn|stop|list|status` command (minRank: architect)
+- `src/agents/` — Agent intelligence layer (from artilect-agent)
+  - `lean/` — Lean agent (delegates memory/state to platform)
+  - `full/` — Full agent (local memory, curiosity, goals, learning)
+  - `external/` — External bridge (Claude Code, Codex CLI, Goose adapters)
+  - `tools/` — 17 marina_* tools for agent-server interaction
+  - `net/` — MarinaClient WebSocket client, MCP client
+  - `agent/` — Roles, model registry, social awareness, context management
+  - `credentials/` — API key and custom endpoint management (~/.marina/)
+
 ## Key Files
 - `src/types.ts` — all core types (includes `RoomContext.brief`)
 - `src/engine/engine.ts` — engine class, command processing, tick loop, brief subscribers
-- `src/persistence/database.ts` — migrations, ArtilectDB class
+- `src/persistence/database.ts` — migrations (25), MarinaDB class
 - `src/net/mcp-server.ts` — MCP server with ~30 tools
 - `src/net/model-api.ts` — OpenAI-compatible endpoint
 - `src/world/world-definition.ts` — WorldDefinition interface (includes `seed`)

@@ -1,7 +1,7 @@
 import type { GroupManager } from "../../coordination/group-manager";
 import type { TaskManager } from "../../coordination/task-manager";
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, EntityRank, RoomContext } from "../../types";
 
 import {
@@ -82,7 +82,7 @@ function getMemoryTemplate(name: string): TemplateNote[] | undefined {
 }
 
 function seedPoolWithNotes(
-  db: ArtilectDB,
+  db: MarinaDB,
   poolId: string,
   author: string,
   notes: TemplateNote[],
@@ -94,7 +94,7 @@ function seedPoolWithNotes(
 
 export function projectCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   taskManager?: TaskManager;
   groupManager?: GroupManager;
   promote?: (entityId: EntityId, rank: EntityRank) => void;

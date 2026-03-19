@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { EntityId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
 describe("RoomContext: NPC spawning", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-roomctx-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-roomctx-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
 
@@ -160,13 +160,13 @@ describe("RoomContext: NPC spawning", () => {
 });
 
 describe("RoomContext: Board API", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-roomctx-board-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-roomctx-board-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
 
     // Room with board interaction
@@ -232,14 +232,14 @@ describe("RoomContext: Board API", () => {
 });
 
 describe("RoomContext: Channel API", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn1: MockConnection;
   let conn2: MockConnection;
-  const dbPath = `/tmp/artilect-roomctx-chan-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-roomctx-chan-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
 
     engine.registerRoom(

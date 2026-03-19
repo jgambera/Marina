@@ -105,7 +105,7 @@ function parseCliArgs() {
       limit: { type: "string", short: "l" },
       endpoint: { type: "string", short: "e", default: "http://localhost:3300" },
       "api-key": { type: "string", short: "k" },
-      model: { type: "string", default: "artilect" },
+      model: { type: "string", default: "marina" },
       concurrency: { type: "string", short: "c", default: "5" },
       seed: { type: "string", short: "s" },
       compare: { type: "string" },
@@ -376,7 +376,7 @@ async function main(): Promise<void> {
 
   if (args.help) {
     console.log(`
-Artilect Benchmark Harness
+Marina Benchmark Harness
 
 Usage:
   bun run benchmarks/harness.ts --benchmark <name> [options]
@@ -393,7 +393,7 @@ Options:
   -l, --limit <n>           Limit number of questions
   -e, --endpoint <url>      API endpoint (default: http://localhost:3300)
   -k, --api-key <key>       API key for authentication
-      --model <name>        Model name (default: artilect)
+      --model <name>        Model name (default: marina)
   -c, --concurrency <n>     Parallel requests (default: 5)
   -s, --seed <n>            Random seed for subset selection
       --compare <mode>      Run comparison (e.g., --compare passthrough)
@@ -442,14 +442,14 @@ Options:
     adapter: benchDef.adapter,
     scoring: benchDef.scoring,
     mode,
-    model: args.model ?? "artilect",
+    model: args.model ?? "marina",
     endpoint: args.endpoint ?? "http://localhost:3300",
     apiKey: args["api-key"],
     concurrency: Number.parseInt(args.concurrency ?? "5", 10),
     limit: args.limit ? Number.parseInt(args.limit, 10) : undefined,
     seed: args.seed ? Number.parseInt(args.seed, 10) : undefined,
     judge: {
-      model: args.model ?? "artilect",
+      model: args.model ?? "marina",
       endpoint: args.endpoint ?? "http://localhost:3300",
     },
   };

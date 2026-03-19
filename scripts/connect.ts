@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Artilect Connect — single-command agent bridge
+ * Marina Connect — single-command agent bridge
  *
  * Usage:
  *   bun run scripts/connect.ts <name>                            # interactive REPL
@@ -8,14 +8,14 @@
  *   echo "look\nsay hello" | bun run scripts/connect.ts <name>   # pipe mode
  *
  * Environment:
- *   ARTILECT_URL — WebSocket server URL (default: ws://localhost:3300)
+ *   MARINA_URL — WebSocket server URL (default: ws://localhost:3300)
  */
 
 import { createInterface } from "node:readline";
-import { ArtilectAgent } from "../src/sdk/client";
+import { MarinaAgent } from "../src/sdk/client";
 import { formatPerception } from "../src/net/formatter";
 
-const URL = process.env.ARTILECT_URL ?? "ws://localhost:3300";
+const URL = process.env.MARINA_URL ?? "ws://localhost:3300";
 
 const args = process.argv.slice(2);
 const dashC = args.indexOf("-c");
@@ -35,7 +35,7 @@ if (!name) {
   process.exit(1);
 }
 
-const agent = new ArtilectAgent(URL, { autoReconnect: false });
+const agent = new MarinaAgent(URL, { autoReconnect: false });
 
 // Print async perceptions (broadcasts, arrivals, messages)
 agent.onPerception((p) => {

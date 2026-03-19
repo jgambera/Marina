@@ -1,11 +1,11 @@
 import type { GroupManager } from "../../coordination/group-manager";
 import type { TaskManager } from "../../coordination/task-manager";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 
 interface BriefDeps {
   getEntity: (id: EntityId) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   taskManager?: TaskManager;
   getOnlineAgents: () => Entity[];
   groupManager?: GroupManager;
@@ -308,7 +308,7 @@ function sendFullBrief(ctx: RoomContext, eid: EntityId, entity: Entity, deps: Br
 
 /** Count active projects where open tasks > group members */
 function countUnderstaffedProjects(
-  db: ArtilectDB,
+  db: MarinaDB,
   taskManager: TaskManager,
   groupManager: GroupManager,
 ): number {
@@ -325,7 +325,7 @@ function countUnderstaffedProjects(
 
 /** Get staffing info for active projects */
 function getStaffingInfo(
-  db: ArtilectDB,
+  db: MarinaDB,
   taskManager: TaskManager,
   groupManager: GroupManager,
 ): { name: string; orchestration: string; openTasks: number; members: number }[] {

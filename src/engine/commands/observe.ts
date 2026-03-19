@@ -1,12 +1,12 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, RoomContext, RoomId } from "../../types";
 import { getRank, requireRank } from "../permissions";
 
 export function observeCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
   findEntity: (name: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   getOnlineAgents: () => Entity[];
   getRoomShort: (id: RoomId) => string | undefined;
   getEventLog: () => { type: string; entity?: EntityId; input?: string; timestamp: number }[];

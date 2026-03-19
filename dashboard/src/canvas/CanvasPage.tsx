@@ -261,7 +261,7 @@ function CanvasInner() {
     <div className="w-screen h-screen bg-gray-950 flex flex-col">
       {/* Top bar */}
       <div className="flex items-center gap-3 px-4 py-2 bg-gray-900 border-b border-gray-800">
-        <h1 className="text-cyan-400 font-bold text-sm tracking-wider">ARTILECT CANVAS</h1>
+        <h1 className="text-cyan-400 font-bold text-sm tracking-wider">MARINA CANVAS</h1>
         <div className="w-px h-5 bg-gray-700" />
         <select
           className="bg-gray-800 text-gray-300 text-sm rounded px-2 py-1 border border-gray-700 focus:outline-none focus:border-cyan-600"

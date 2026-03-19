@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import { getErrorMessage } from "./errors";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -32,12 +32,12 @@ const CURATED_ENV: Record<string, string> = {
 // ─── Shell Runtime ──────────────────────────────────────────────────────────
 
 export class ShellRuntime {
-  private db?: ArtilectDB;
+  private db?: MarinaDB;
   private scratchRoot: string;
   private lastCall = new Map<string, number>();
   private lastExec = new Map<string, ExecResult>();
 
-  constructor(db?: ArtilectDB, scratchRoot = "data/scratch") {
+  constructor(db?: MarinaDB, scratchRoot = "data/scratch") {
     this.db = db;
     this.scratchRoot = scratchRoot;
   }

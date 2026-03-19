@@ -11,7 +11,7 @@ interface HeaderProps {
   onResetLayout?: () => void;
 }
 
-const TITLE_LETTERS = "ARTILECT".split("");
+const TITLE_LETTERS = "MARINA".split("");
 
 export function Header({ connected, uptime, onResetLayout }: HeaderProps) {
   const entities = useWorldState((s) => s.entities);

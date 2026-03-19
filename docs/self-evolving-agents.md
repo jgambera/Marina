@@ -1,10 +1,10 @@
-# Self-Evolving Agents in Artilect
+# Self-Evolving Agents in Marina
 
 ---
 
 ## The Thesis
 
-Artilect already supports self-evolving agents. No new systems are needed. Evolution is a **pattern** that agents follow using existing primitives — rooms, commands, quests, memory, conversation, and the build system. The only work is making this pattern legible: example agents, benchmark quests, and guide notes.
+Marina already supports self-evolving agents. No new systems are needed. Evolution is a **pattern** that agents follow using existing primitives — rooms, commands, quests, memory, conversation, and the build system. The only work is making this pattern legible: example agents, benchmark quests, and guide notes.
 
 The key properties that make this true:
 
@@ -108,7 +108,7 @@ Here is how an agent evolves using only existing primitives. No new code require
 ### The agent (SDK, backed by any LLM)
 
 ```typescript
-const agent = new ArtilectAgent("ws://localhost:3300");
+const agent = new MarinaAgent("ws://localhost:3300");
 await agent.connect("Electro");
 
 // Create a mind-room on first run
@@ -320,7 +320,7 @@ These are small extensions to existing commands, not new systems.
 
 ## Summary
 
-Self-evolution in Artilect is not a feature to be added. It's a pattern to be demonstrated. The primitives are:
+Self-evolution in Marina is not a feature to be added. It's a pattern to be demonstrated. The primitives are:
 
 - **Rooms** are behavior (onTick, commands, items)
 - **Build** is mutation (code, validate, reload, revert, audit)

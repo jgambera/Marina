@@ -1,8 +1,8 @@
 #!/bin/bash
-# Artilect State Import
+# Marina State Import
 # Usage: ./scripts/import.sh <snapshot.json> [db_path] [--merge] [--skip-events]
 #
-# Imports an Artilect state snapshot into a database.
+# Imports an Marina state snapshot into a database.
 # Without --merge, all existing data is replaced.
 # Stop the server before importing.
 

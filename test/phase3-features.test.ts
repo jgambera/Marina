@@ -3,7 +3,7 @@ import { RateLimiter } from "../src/auth/rate-limiter";
 import { verifyLinkCode } from "../src/engine/commands/link";
 import { Engine } from "../src/engine/engine";
 import { RoomSandbox } from "../src/engine/room-sandbox";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { CommandInput, EntityId, RoomContext, RoomId, RoomModule } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
@@ -213,11 +213,11 @@ describe("Link Command", () => {
   let engine: Engine;
   let conn: MockConnection;
   let entityId: EntityId;
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const dbPath = `/tmp/test-link-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom());
     conn = new MockConnection("c1");
@@ -278,11 +278,11 @@ describe("Admin Commands", () => {
   let adminId: EntityId;
   let userConn: MockConnection;
   let userId: EntityId;
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const dbPath = `/tmp/test-admin-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom());
 
@@ -410,11 +410,11 @@ describe("Admin Commands", () => {
 
 describe("Session Auth", () => {
   let engine: Engine;
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const dbPath = `/tmp/test-session-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom());
   });
@@ -549,11 +549,11 @@ describe("Sandbox Engine Integration", () => {
 // ─── DB Adapter Links ────────────────────────────────────────────────────────
 
 describe("DB Adapter Links", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const dbPath = `/tmp/test-adapter-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {
@@ -589,11 +589,11 @@ describe("DB Adapter Links", () => {
 // ─── DB Users ────────────────────────────────────────────────────────────────
 
 describe("DB Users", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const dbPath = `/tmp/test-users-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {
@@ -632,11 +632,11 @@ describe("DB Users", () => {
 // ─── DB Bans ─────────────────────────────────────────────────────────────────
 
 describe("DB Bans", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const dbPath = `/tmp/test-bans-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {

@@ -1,4 +1,4 @@
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type { Entity, RoomId, RoomModule } from "../types";
 
 export interface QuestStep {
@@ -14,7 +14,7 @@ export interface QuestDef {
   description: string;
   reward: string;
   steps: QuestStep[];
-  onComplete?: (entity: Entity, db?: ArtilectDB) => void;
+  onComplete?: (entity: Entity, db?: MarinaDB) => void;
 }
 
 export interface GuideNote {
@@ -34,5 +34,5 @@ export interface WorldDefinition {
   canvas?: { name: string; description: string; scope?: string };
   // Runs once on first boot (or world change), seeds DB with
   // room templates, projects, pools, tasks, etc. Must be idempotent.
-  seed?: (db: ArtilectDB) => void;
+  seed?: (db: MarinaDB) => void;
 }

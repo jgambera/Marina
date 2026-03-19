@@ -1,5 +1,5 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 import type { ConnectorRuntime } from "../connector-runtime";
 import { getErrorMessage } from "../errors";
@@ -7,7 +7,7 @@ import { getRank } from "../permissions";
 
 export function connectCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   connectorRuntime?: ConnectorRuntime;
 }): CommandDef {
   return {

@@ -15,7 +15,7 @@ export function buildConnectManifest(req: Request, engine: Engine): Response {
   const bare = host.replace(/:\d+$/, "");
 
   const manifest = {
-    name: "Artilect",
+    name: "Marina",
     description:
       "A shared space where humans and agents coexist as equal entities — and an OpenAI-compatible LLM endpoint",
     protocols: {
@@ -24,7 +24,7 @@ export function buildConnectManifest(req: Request, engine: Engine): Response {
         description: "Native tool-calling for Claude and MCP-compatible agents",
         config: {
           mcpServers: {
-            artilect: { url: `http://${bare}:3301/mcp` },
+            marina: { url: `http://${bare}:3301/mcp` },
           },
         },
       },
@@ -50,7 +50,7 @@ export function buildConnectManifest(req: Request, engine: Engine): Response {
     health: "/health",
     dashboard: "/dashboard",
     world: {
-      name: engine.world?.name ?? "Artilect",
+      name: engine.world?.name ?? "Marina",
       rooms: engine.rooms.size,
       entities: engine.entities.size,
       agents: engine.getOnlineAgents().length,

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
 import { setRank } from "../src/engine/permissions";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { RoomModule } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
@@ -11,12 +11,12 @@ const TEST_DB = "test_knowledge.db";
 // ─── Notes Tests ────────────────────────────────────────────────────────────
 
 describe("Notes", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
     engine.registerRoom(
@@ -103,12 +103,12 @@ describe("Notes", () => {
 // ─── Search Tests ───────────────────────────────────────────────────────────
 
 describe("Search", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(
       roomId("test/start"),
@@ -175,12 +175,12 @@ describe("Search", () => {
 // ─── Export Tests ────────────────────────────────────────────────────────────
 
 describe("Export", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
     conn = new MockConnection("c1");
@@ -236,12 +236,12 @@ describe("Export", () => {
 // ─── Bookmark Tests ─────────────────────────────────────────────────────────
 
 describe("Bookmarks", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(
       roomId("test/start"),
@@ -321,12 +321,12 @@ describe("Bookmarks", () => {
 // ─── Knowledge Room Tests ───────────────────────────────────────────────────
 
 describe("Knowledge Rooms", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
   });
@@ -524,10 +524,10 @@ describe("Knowledge Rooms", () => {
 // ─── Database Methods Tests ─────────────────────────────────────────────────
 
 describe("Database Notes Methods", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
   });
 
   afterEach(() => {
@@ -575,10 +575,10 @@ describe("Database Notes Methods", () => {
 });
 
 describe("Database Experiment Methods", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
   });
 
   afterEach(() => {
@@ -649,10 +649,10 @@ describe("Database Experiment Methods", () => {
 });
 
 describe("Global Search", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
   });
 
   afterEach(() => {

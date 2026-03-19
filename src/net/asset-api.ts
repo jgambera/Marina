@@ -1,4 +1,4 @@
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type { StorageProvider } from "../storage/provider";
 
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -18,7 +18,7 @@ export async function handleAssetApi(
   url: URL,
   method: string,
   req: Request,
-  db: ArtilectDB,
+  db: MarinaDB,
   storage: StorageProvider,
 ): Promise<Response> {
   // DELETE /api/assets/:id
@@ -68,7 +68,7 @@ export async function handleAssetApi(
 
 async function handleUpload(
   req: Request,
-  db: ArtilectDB,
+  db: MarinaDB,
   storage: StorageProvider,
 ): Promise<Response> {
   const contentType = req.headers.get("content-type") ?? "";

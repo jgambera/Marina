@@ -1,7 +1,7 @@
 {
-  "name": "artilect",
+  "name": "marina",
   "version": "0.1.0",
-  "description": "Multi-agent simulation platform and OpenAI-compatible LLM endpoint where AI agents and humans coexist in persistent, text-based environments",
+  "description": "A living runtime where humans and agents coexist — seed it, connect to it, and it grows.",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -39,11 +39,15 @@
     "typescript": "^5.7.0",
     "@types/bun": "^1.1.0"
   },
-  "trustedDependencies": ["@biomejs/biome"],
+  "trustedDependencies": [
+    "@biomejs/biome"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "discord.js": "^14.25.1",
     "grammy": "^1.40.0",
-    "mcporter": "^0.7.3"
+    "mcporter": "^0.7.3",
+    "@mariozechner/pi-agent-core": "^0.44.0",
+    "@mariozechner/pi-ai": "^0.59.0"
   }
 }

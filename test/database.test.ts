@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { entityId, roomId } from "../src/types";
 import type { EngineEvent, Entity } from "../src/types";
 import { cleanupDb } from "./helpers";
 
-const TEST_DB = "test_artilect.db";
+const TEST_DB = "test_marina.db";
 
-describe("ArtilectDB", () => {
-  let db: ArtilectDB;
+describe("MarinaDB", () => {
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
   });
 
   afterEach(() => {

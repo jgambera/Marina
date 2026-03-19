@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Artilect State Import
+ * Marina State Import
  * Usage: bun scripts/state-import.ts <snapshot_path> [db_path] [--merge] [--skip-events]
  */
 import { importState, validateSnapshot } from "../src/persistence/export-import";
@@ -21,7 +21,7 @@ if (positional.length < 1) {
 }
 
 const snapshotPath = positional[0]!;
-const dbPath = positional[1] ?? process.env.DB_PATH ?? "artilect.db";
+const dbPath = positional[1] ?? process.env.DB_PATH ?? "marina.db";
 const merge = flags.includes("--merge");
 const skipEventLog = flags.includes("--skip-events");
 
@@ -68,4 +68,4 @@ if (result.errors.length > 0) {
   }
 }
 
-console.log("\nRestart the Artilect server to use the imported data.");
+console.log("\nRestart the Marina server to use the imported data.");

@@ -15,13 +15,13 @@
  *   AGENT_NAME — Character name (default: Researcher)
  */
 
-import { ArtilectAgent, type RoomView } from "../client";
+import { MarinaAgent, type RoomView } from "../client";
 
 const WS_URL = process.env.WS_URL ?? "ws://localhost:3300";
 const AGENT_NAME = process.env.AGENT_NAME ?? "Researcher";
 
 async function main() {
-  const agent = new ArtilectAgent(WS_URL, { autoReconnect: true });
+  const agent = new MarinaAgent(WS_URL, { autoReconnect: true });
 
   console.log(`Connecting to ${WS_URL} as ${AGENT_NAME}...`);
   const session = await agent.connect(AGENT_NAME);

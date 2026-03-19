@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
 import { McpServerAdapter } from "../src/net/mcp-server";
 import { WebSocketServer } from "../src/net/websocket-server";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import { cleanupDb, makeTestRoom } from "./helpers";
 
@@ -14,10 +14,10 @@ describe("Connect API", () => {
   let engine: Engine;
   let wsServer: WebSocketServer;
   let mcpServer: McpServerAdapter;
-  let db: ArtilectDB;
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({
       startRoom: roomId("test/start"),
       tickInterval: 60_000,
@@ -55,10 +55,10 @@ describe("Connect API", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe("*");
 
     const body = await res.json();
-    expect(body.name).toBe("Artilect");
+    expect(body.name).toBe("Marina");
     expect(body.description).toContain("shared space");
     expect(body.protocols.mcp.url).toContain("/mcp");
-    expect(body.protocols.mcp.config.mcpServers.artilect.url).toContain("/mcp");
+    expect(body.protocols.mcp.config.mcpServers.marina.url).toContain("/mcp");
     expect(body.protocols.websocket.url).toContain("/ws");
     expect(body.protocols.telnet.port).toBe(4000);
     expect(body.skill).toBe("/api/skill");
@@ -74,7 +74,7 @@ describe("Connect API", () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.name).toBe("Artilect");
+    expect(body.name).toBe("Marina");
     expect(body.protocols.mcp).toBeDefined();
     expect(body.protocols.websocket).toBeDefined();
     expect(body.protocols.telnet).toBeDefined();
@@ -89,12 +89,12 @@ describe("Connect API", () => {
 
   it("manifest host derives from request Host header", async () => {
     const res = await fetch(`http://localhost:${WS_PORT}/api/connect`, {
-      headers: { Host: "artilect.ai:3300" },
+      headers: { Host: "marina.ai:3300" },
     });
     const body = await res.json();
-    expect(body.protocols.mcp.url).toContain("artilect.ai");
-    expect(body.protocols.websocket.url).toContain("artilect.ai");
-    expect(body.protocols.telnet.host).toBe("artilect.ai");
+    expect(body.protocols.mcp.url).toContain("marina.ai");
+    expect(body.protocols.websocket.url).toContain("marina.ai");
+    expect(body.protocols.telnet.host).toBe("marina.ai");
   });
 
   // ── /api/skill ────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ describe("Connect API", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe("*");
 
     const text = await res.text();
-    expect(text).toContain("# Artilect");
+    expect(text).toContain("# Marina");
     expect(text).toContain("## Entering");
   });
 
@@ -115,7 +115,7 @@ describe("Connect API", () => {
     expect(res.status).toBe(200);
 
     const text = await res.text();
-    expect(text).toContain("# Artilect");
+    expect(text).toContain("# Marina");
   });
 
   // ── Welcome message enrichment ────────────────────────────────────────────

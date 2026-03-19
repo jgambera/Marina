@@ -9,14 +9,14 @@ interface MemoryModeOptions {
   agentName?: string;
 }
 
-let ArtilectAgent: typeof import("../../src/sdk/client").ArtilectAgent | null = null;
+let MarinaAgent: typeof import("../../src/sdk/client").MarinaAgent | null = null;
 
 async function getAgentClass() {
-  if (!ArtilectAgent) {
+  if (!MarinaAgent) {
     const sdk = await import("../../src/sdk/client");
-    ArtilectAgent = sdk.ArtilectAgent;
+    MarinaAgent = sdk.MarinaAgent;
   }
-  return ArtilectAgent;
+  return MarinaAgent;
 }
 
 export async function queryWithMemory(

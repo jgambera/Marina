@@ -1,4 +1,4 @@
-# Agent Memory Architectures in Artilect
+# Agent Memory Architectures in Marina
 
 ## Research Summary
 
@@ -26,7 +26,7 @@ All four architectures draw from the same cognitive science taxonomy:
 
 ---
 
-## What Already Exists in Artilect
+## What Already Exists in Marina
 
 Before adding new primitives, map what's already available:
 
@@ -55,11 +55,11 @@ Before adding new primitives, map what's already available:
 - Recall is the full conversation log with text search
 - Paging: old conversations evicted from context, summarized, searchable via recall
 
-### Artilect Mapping
+### Marina Mapping
 
 The key insight is that MemGPT's tiers map directly to three existing + one new primitive:
 
-| MemGPT Tier | Artilect Primitive | Status |
+| MemGPT Tier | Marina Primitive | Status |
 |---|---|---|
 | Core Memory (editable persona/facts) | **`memory` command** (NEW: entity-scoped key-value with edit history) | New |
 | Archival Memory (append, semantic search) | **Notes** (already exists, needs importance scores) | Extend |
@@ -105,11 +105,11 @@ memory set hypothesis "The relay room requires 3 agents"
   - Reflections are themselves memories (can be reflected upon recursively)
 - **Plans**: Hierarchical daily→hourly→5-minute decomposition
 
-### Artilect Mapping
+### Marina Mapping
 
 The memory stream IS the notes system, but needs three additions:
 
-| GA Concept | Artilect Primitive | Status |
+| GA Concept | Marina Primitive | Status |
 |---|---|---|
 | Memory stream | Notes (already timestamped, FTS-searchable) | Exists |
 | Importance scoring | **Note importance** (NEW: 1-10 score on creation) | New field |
@@ -164,11 +164,11 @@ All three are computable in pure SQLite. No embedding model needed.
 - Confidence decay: `c(t) = c₀ · e^(-λΔt)`, reset on access
 - Graph traversal queries enable reasoning chain reconstruction
 
-### Artilect Mapping
+### Marina Mapping
 
 This is the most ambitious architecture. The core insight: notes can be linked to form a graph.
 
-| AgenticMemory Concept | Artilect Primitive | Status |
+| AgenticMemory Concept | Marina Primitive | Status |
 |---|---|---|
 | Events (Fact/Decision/Inference/etc.) | Notes with a `type` field | Extend notes |
 | Relationships (CausedBy/Supports/etc.) | **`link` command on notes** (NEW: typed edges between notes) | New table |
@@ -200,14 +200,14 @@ note graph                                — Show overview of your knowledge gr
 
 ### Motivation
 
-All three architectures above are per-agent. But Artilect is multi-agent. What happens when agents need shared memory?
+All three architectures above are per-agent. But Marina is multi-agent. What happens when agents need shared memory?
 
 ### Research References
 - Generative Agents: agents observe each other's actions (public memory stream)
 - Goosetown: orchestrator maintains shared context across delegate agents
 - NSED: deliberation boards are shared memory with cross-evaluation
 
-### Artilect Mapping
+### Marina Mapping
 
 Boards already serve as shared memory. The extension is **scoped memory pools**:
 

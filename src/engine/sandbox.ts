@@ -84,7 +84,7 @@ export async function compileRoomModule(source: string): Promise<RoomModule> {
   }
 
   // Write to temp file and import with timeout
-  const tempDir = await mkdtemp(join(tmpdir(), "artilect-room-"));
+  const tempDir = await mkdtemp(join(tmpdir(), "marina-room-"));
   const tempFile = join(tempDir, `room_${Date.now()}.ts`);
 
   try {
@@ -192,7 +192,7 @@ export async function compileCommandModule(source: string): Promise<CommandDef> 
     throw new SandboxError(`Validation failed:\n${validation.errors.join("\n")}`);
   }
 
-  const tempDir = await mkdtemp(join(tmpdir(), "artilect-cmd-"));
+  const tempDir = await mkdtemp(join(tmpdir(), "marina-cmd-"));
   const tempFile = join(tempDir, `cmd_${Date.now()}.ts`);
 
   try {

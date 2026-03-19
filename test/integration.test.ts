@@ -3,7 +3,7 @@ import { Engine } from "../src/engine/engine";
 import { McpServerAdapter } from "../src/net/mcp-server";
 import { TelnetServer } from "../src/net/telnet-server";
 import { WebSocketServer } from "../src/net/websocket-server";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import type { EntityId } from "../src/types";
 import { cleanupDb, makeTestRoom } from "./helpers";
@@ -17,11 +17,11 @@ const TEST_DB = "test_integration.db";
 describe("WebSocket Integration", () => {
   let engine: Engine;
   let wsServer: WebSocketServer;
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const WS_PORT = 13300;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({
       startRoom: roomId("test/start"),
       tickInterval: 60_000,
@@ -198,11 +198,11 @@ describe("WebSocket Integration", () => {
 describe("Telnet Integration", () => {
   let engine: Engine;
   let telnetServer: TelnetServer;
-  let db: ArtilectDB;
+  let db: MarinaDB;
   const TELNET_PORT = 14000;
 
   beforeEach(() => {
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     engine = new Engine({
       startRoom: roomId("test/start"),
       tickInterval: 60_000,
@@ -316,7 +316,7 @@ describe("Persistence Integration", () => {
 
   it("should save and restore world state across engine restarts", () => {
     // Create first engine instance, spawn entity, save
-    const db1 = new ArtilectDB(TEST_DB);
+    const db1 = new MarinaDB(TEST_DB);
     const engine1 = new Engine({
       startRoom: roomId("test/start"),
       tickInterval: 60_000,
@@ -360,7 +360,7 @@ describe("Persistence Integration", () => {
     db1.close();
 
     // Create second engine instance and verify state persisted
-    const db2 = new ArtilectDB(TEST_DB);
+    const db2 = new MarinaDB(TEST_DB);
     const engine2 = new Engine({
       startRoom: roomId("test/start"),
       tickInterval: 60_000,
@@ -384,7 +384,7 @@ describe("Persistence Integration", () => {
   });
 
   it("should persist events to database", () => {
-    const db = new ArtilectDB(TEST_DB);
+    const db = new MarinaDB(TEST_DB);
     const engine = new Engine({
       startRoom: roomId("test/start"),
       tickInterval: 60_000,
@@ -458,7 +458,7 @@ describe("Session Manager", () => {
   });
 
   it("should persist sessions to database", () => {
-    const db = new ArtilectDB(TEST_DB);
+    const db = new MarinaDB(TEST_DB);
     const mgr = new SessionManager(db);
     const session = mgr.create("e_1" as EntityId, "TestAgent");
 

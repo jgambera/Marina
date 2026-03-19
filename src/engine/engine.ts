@@ -3,7 +3,7 @@ import type { RateLimiter } from "../auth/rate-limiter";
 import { SessionManager } from "../auth/session-manager";
 import { connects, disconnects } from "../net/ansi";
 import { cleanupStaleConversationChannels } from "../net/model-api";
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type {
   CommandContext,
   CommandDef,
@@ -22,6 +22,7 @@ import type {
 } from "../types";
 import { EntityManager } from "../world/entity-manager";
 import { type LoadedRoom, RoomManager } from "../world/room-manager";
+import { AgentRuntime } from "./agent-runtime";
 import { CommandRouter } from "./command-router";
 import { ConnectorRuntime } from "./connector-runtime";
 import { getErrorMessage, tryLog } from "./errors";
@@ -37,6 +38,7 @@ import { TaskManager } from "../coordination/task-manager";
 import type { StorageProvider } from "../storage/provider";
 import type { WorldDefinition } from "../world/world-definition";
 import { adminCommand } from "./commands/admin";
+import { agentCommand } from "./commands/agent";
 import { batchCommand } from "./commands/batch";
 import { boardCommand } from "./commands/board";
 import { bookmarkCommand } from "./commands/bookmark";
@@ -99,7 +101,7 @@ export interface NpcBehavior {
 export interface EngineConfig {
   tickInterval: number; // ms between ticks (default 1000)
   startRoom: RoomId; // where new entities spawn
-  db?: ArtilectDB; // optional persistence layer
+  db?: MarinaDB; // optional persistence layer
   dbPath?: string; // path to the DB file (for export)
   rateLimiter?: RateLimiter; // optional rate limiter
   storage?: StorageProvider; // optional asset storage
@@ -131,7 +133,8 @@ export class Engine {
   readonly connectorRuntime?: ConnectorRuntime;
   readonly shellRuntime: ShellRuntime;
   readonly storage?: StorageProvider;
-  private db?: ArtilectDB;
+  readonly agentRuntime: AgentRuntime;
+  private db?: MarinaDB;
   private startedAt = Date.now();
   private fetchLastCall = new Map<string, number>(); // roomId -> timestamp
   private briefSubscribers = new Map<EntityId, number>(); // entityId -> tick interval
@@ -176,6 +179,9 @@ export class Engine {
     // Initialize shell runtime
     this.shellRuntime = new ShellRuntime(this.db);
     this.shellRuntime.init();
+
+    // Initialize agent runtime
+    this.agentRuntime = new AgentRuntime({ db: this.db, logger: this.logger });
 
     // Initialize coordination managers if db is available
     if (this.db) {
@@ -567,7 +573,7 @@ export class Engine {
     if (this.running) return;
     this.running = true;
     console.log(
-      `Artilect engine started (tick: ${this.config.tickInterval}ms, rooms: ${this.rooms.size})`,
+      `Marina engine started (tick: ${this.config.tickInterval}ms, rooms: ${this.rooms.size})`,
     );
 
     this.tickTimer = setInterval(() => this.tick(), this.config.tickInterval);
@@ -580,7 +586,7 @@ export class Engine {
       clearInterval(this.tickTimer);
       this.tickTimer = null;
     }
-    console.log("Artilect engine stopped.");
+    console.log("Marina engine stopped.");
   }
 
   private tick(): void {
@@ -857,10 +863,14 @@ export class Engine {
     return { ok: true, name };
   }
 
-  /** Promote entity to admin if listed in ARTILECT_ADMINS env var */
+  /** Promote entity to admin if listed in MARINA_ADMINS env var */
   private applyAdminBootstrap(entity: Entity): void {
+    const raw = process.env.MARINA_ADMINS ?? process.env.ARTILECT_ADMINS ?? "";
+    if (process.env.ARTILECT_ADMINS && !process.env.MARINA_ADMINS) {
+      this.logger.warn("config", "ARTILECT_ADMINS is deprecated, use MARINA_ADMINS");
+    }
     const adminNames = new Set(
-      (process.env.ARTILECT_ADMINS ?? "")
+      raw
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
@@ -1292,6 +1302,8 @@ export class Engine {
   shutdown(): void {
     this.saveWorldState();
     this.stop();
+    // Stop managed agents (fire and forget)
+    this.agentRuntime.shutdown().catch(() => {});
     // Close connector runtime (fire and forget)
     this.connectorRuntime?.close().catch(() => {});
   }
@@ -1703,6 +1715,14 @@ export class Engine {
         db: this.db,
         shellRuntime: this.shellRuntime,
         storage: this.storage,
+      }),
+    );
+
+    // Agent runtime command
+    this.commands.registerBuiltin(
+      agentCommand({
+        agentRuntime: this.agentRuntime,
+        wsPort: Number(process.env.WS_PORT) || 3300,
       }),
     );
 

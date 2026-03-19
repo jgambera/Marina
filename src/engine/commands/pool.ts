@@ -1,5 +1,5 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB, NoteRow } from "../../persistence/database";
+import type { MarinaDB, NoteRow } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
 const DAY_MS = 86_400_000;
@@ -81,7 +81,7 @@ function extractPoolTopics(notes: NoteRow[]): string[] {
 
 export function poolCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
 }): CommandDef {
   return {
     name: "pool",

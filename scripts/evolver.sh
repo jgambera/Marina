@@ -14,7 +14,7 @@
 #
 # Environment:
 #   WS_URL       — Server URL (default: ws://localhost:3300)
-#   ARTILECT_ADMINS — Comma-separated admin names (include evolver name for instant rank)
+#   MARINA_ADMINS — Comma-separated admin names (include evolver name for instant rank)
 
 set -euo pipefail
 

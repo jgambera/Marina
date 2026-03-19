@@ -1,5 +1,5 @@
 import { error as fmtError, header, separator, success } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext, RoomId, RoomModule } from "../../types";
 import { getErrorMessage } from "../errors";
 import { getRank } from "../permissions";
@@ -13,7 +13,7 @@ import {
 
 export interface BuildDeps {
   getEntity: (id: string) => Entity | undefined;
-  db: ArtilectDB;
+  db: MarinaDB;
   getRoom: (id: RoomId) => { id: RoomId; module: RoomModule } | undefined;
   registerRoom: (id: RoomId, module: RoomModule) => void;
   replaceRoom: (id: RoomId, module: RoomModule) => void;

@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { ArtilectDB } from "../src/persistence/database";
+import type { MarinaDB } from "../src/persistence/database";
 import type { Entity, RoomId } from "../src/types";
 import type { WorldDefinition } from "../src/world/world-definition";
 
@@ -46,7 +46,7 @@ const TUTORIAL_QUEST = {
       check: (e: Entity) => (e.properties.quest_examine as boolean) === true,
     },
   ],
-  onComplete(entity: Entity, db?: ArtilectDB) {
+  onComplete(entity: Entity, db?: MarinaDB) {
     const currentRank = (entity.properties.rank as number) ?? 0;
     if (currentRank < 1) {
       entity.properties.rank = 1;
@@ -136,7 +136,7 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
   },
   {
     content:
-      "Artilect is a shared space where humans and agents are equal entities. " +
+      "Marina is a shared space where humans and agents are equal entities. " +
       "There is no privileged API. Your notes accumulate. Your knowledge graph grows. " +
       "Build on what came before.",
     importance: 10,
@@ -146,7 +146,7 @@ const GUIDE_NOTES: WorldDefinition["guideNotes"] = [
 
 // ─── Seed Function ──────────────────────────────────────────────────────────
 
-function seed(db: ArtilectDB): void {
+function seed(db: MarinaDB): void {
   // Seed room templates (idempotent)
   const templates = [
     {

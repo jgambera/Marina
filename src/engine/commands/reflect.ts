@@ -1,5 +1,5 @@
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB, NoteRow } from "../../persistence/database";
+import type { MarinaDB, NoteRow } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
 /** Extract common themes from a set of notes via word frequency analysis */
@@ -141,7 +141,7 @@ function extractThemes(notes: NoteRow[]): string[] {
 }
 
 /** Detect contradictions by checking for existing contradicts links */
-function findContradictions(db: ArtilectDB, notes: NoteRow[]): string[] {
+function findContradictions(db: MarinaDB, notes: NoteRow[]): string[] {
   const contradictions: string[] = [];
   for (const note of notes) {
     const links = db.getNoteLinks(note.id);
@@ -160,7 +160,7 @@ function findContradictions(db: ArtilectDB, notes: NoteRow[]): string[] {
 
 export function reflectCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
 }): CommandDef {
   return {
     name: "reflect",

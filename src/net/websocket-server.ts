@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { Server, ServerWebSocket } from "bun";
 import type { RateLimiter } from "../auth/rate-limiter";
 import type { Engine } from "../engine/engine";
-import type { ArtilectDB } from "../persistence/database";
+import type { MarinaDB } from "../persistence/database";
 import type { StorageProvider } from "../storage/provider";
 import type { Connection, EntityId, Perception } from "../types";
 import { handleAssetApi, handleAssetServing } from "./asset-api";
@@ -31,7 +31,7 @@ export class WebSocketServer {
   private sockets = new Map<string, ServerWebSocket<WSData>>();
   private broadcaster: DashboardBroadcaster | null = null;
   readonly canvasBroadcaster = new CanvasBroadcaster();
-  private db?: ArtilectDB;
+  private db?: MarinaDB;
   private storage?: StorageProvider;
 
   constructor(
@@ -44,7 +44,7 @@ export class WebSocketServer {
     this.broadcaster = broadcaster;
   }
 
-  setDb(db: ArtilectDB): void {
+  setDb(db: MarinaDB): void {
     this.db = db;
   }
 
@@ -213,7 +213,7 @@ export class WebSocketServer {
           });
         }
 
-        return new Response("Artilect — connect via WebSocket at /ws", {
+        return new Response("Marina — connect via WebSocket at /ws", {
           status: 200,
         });
       },
@@ -262,7 +262,7 @@ export class WebSocketServer {
               kind: "system",
               timestamp: Date.now(),
               data: {
-                text: 'Welcome to Artilect. Send {"type":"login","name":"YourName"} to begin.',
+                text: 'Welcome to Marina. Send {"type":"login","name":"YourName"} to begin.',
                 skill: "/api/skill",
                 connect: "/api/connect",
               },

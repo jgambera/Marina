@@ -1,17 +1,17 @@
 services:
-  artilect:
+  marina:
     build: .
     ports:
       - "3300:3300"   # WebSocket + Web Chat + Dashboard
       - "4000:4000"   # Telnet
       - "3301:3301"   # MCP
     volumes:
-      - artilect-data:/app/data
+      - marina-data:/app/data
     environment:
-      - DB_PATH=/app/data/artilect.db
+      - DB_PATH=/app/data/marina.db
       - LOG_FORMAT=json
       # Admin bootstrap: comma-separated entity names for auto-admin on login
-      # - ARTILECT_ADMINS=YourName
+      # - MARINA_ADMINS=YourName
       # Optional: Telegram/Discord tokens
       # - TELEGRAM_TOKEN=your_token
       # - DISCORD_TOKEN=your_token
@@ -19,4 +19,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  artilect-data:
+  marina-data:

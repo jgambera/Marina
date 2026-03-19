@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { LocalStorageProvider } from "../src/storage/local-provider";
 import type { EntityId, RoomId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom, stripAnsi } from "./helpers";
@@ -9,7 +9,7 @@ const TEST_DB = "test_canvas.db";
 const TEST_ASSETS = "test_canvas_assets";
 
 describe("Canvas — Phase 1: Asset Store", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let storage: LocalStorageProvider;
   let engine: Engine;
   let conn: MockConnection;
@@ -17,7 +17,7 @@ describe("Canvas — Phase 1: Asset Store", () => {
 
   beforeEach(async () => {
     cleanupDb(TEST_DB);
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     storage = new LocalStorageProvider(TEST_ASSETS);
     await storage.init();
     engine = new Engine({ db, storage, startRoom: "test/start" as RoomId });
@@ -276,7 +276,7 @@ describe("Canvas — Phase 1: Asset Store", () => {
       expect(snapshot.tables.assets).toBeDefined();
       expect(snapshot.tables.assets).toHaveLength(1);
       // Reopen for afterEach cleanup — engine is already shut down
-      db = new ArtilectDB(TEST_DB);
+      db = new MarinaDB(TEST_DB);
     });
   });
 });
@@ -284,7 +284,7 @@ describe("Canvas — Phase 1: Asset Store", () => {
 // ─── Phase 2: Canvas Data Model ──────────────────────────────────────────
 
 describe("Canvas — Phase 2: Canvas Data Model", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let storage: LocalStorageProvider;
   let engine: Engine;
   let conn: MockConnection;
@@ -292,7 +292,7 @@ describe("Canvas — Phase 2: Canvas Data Model", () => {
 
   beforeEach(async () => {
     cleanupDb(TEST_DB);
-    db = new ArtilectDB(TEST_DB);
+    db = new MarinaDB(TEST_DB);
     storage = new LocalStorageProvider(TEST_ASSETS);
     await storage.init();
     engine = new Engine({ db, storage, startRoom: "test/start" as RoomId });

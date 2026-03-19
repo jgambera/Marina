@@ -1,5 +1,5 @@
 import { dim, error as fmtError, header, separator, success } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { StorageProvider } from "../../storage/provider";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 import { getRank } from "../permissions";
@@ -16,7 +16,7 @@ Usage: shell list | shell allow <binary> | shell deny <binary>
 
 export interface ShellDeps {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   shellRuntime: ShellRuntime;
   storage?: StorageProvider;
 }
@@ -124,7 +124,7 @@ function handleList(ctx: RoomContext, eid: EntityId, runtime: ShellRuntime): voi
 function handleHistory(
   ctx: RoomContext,
   eid: EntityId,
-  db: ArtilectDB | undefined,
+  db: MarinaDB | undefined,
   tokens: string[],
 ): void {
   if (!db) {
@@ -152,7 +152,7 @@ function handleHistory(
 function handleLog(
   ctx: RoomContext,
   eid: EntityId,
-  db: ArtilectDB | undefined,
+  db: MarinaDB | undefined,
   tokens: string[],
 ): void {
   if (!db) {

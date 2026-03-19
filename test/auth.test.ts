@@ -1,17 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import { roomId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
 describe("Auth & Session Integration", () => {
-  let db: ArtilectDB;
+  let db: MarinaDB;
   let engine: Engine;
   let conn: MockConnection;
-  const dbPath = `/tmp/artilect-auth-test-${Date.now()}.db`;
+  const dbPath = `/tmp/marina-auth-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
     engine = new Engine({ startRoom: roomId("test/start"), tickInterval: 60_000, db });
     engine.registerRoom(roomId("test/start"), makeTestRoom({ short: "Start" }));
     conn = new MockConnection("c1");
@@ -154,11 +154,11 @@ describe("Auth & Session Integration", () => {
 });
 
 describe("User DB operations", () => {
-  let db: ArtilectDB;
-  const dbPath = `/tmp/artilect-user-db-test-${Date.now()}.db`;
+  let db: MarinaDB;
+  const dbPath = `/tmp/marina-user-db-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {
@@ -195,11 +195,11 @@ describe("User DB operations", () => {
 });
 
 describe("Ban DB operations", () => {
-  let db: ArtilectDB;
-  const dbPath = `/tmp/artilect-ban-db-test-${Date.now()}.db`;
+  let db: MarinaDB;
+  const dbPath = `/tmp/marina-ban-db-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {
@@ -237,11 +237,11 @@ describe("Ban DB operations", () => {
 });
 
 describe("Adapter Link DB operations", () => {
-  let db: ArtilectDB;
-  const dbPath = `/tmp/artilect-links-db-test-${Date.now()}.db`;
+  let db: MarinaDB;
+  const dbPath = `/tmp/marina-links-db-test-${Date.now()}.db`;
 
   beforeEach(() => {
-    db = new ArtilectDB(dbPath);
+    db = new MarinaDB(dbPath);
   });
 
   afterEach(() => {

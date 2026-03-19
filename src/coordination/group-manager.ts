@@ -1,4 +1,4 @@
-import type { ArtilectDB, GroupRow } from "../persistence/database";
+import type { GroupRow, MarinaDB } from "../persistence/database";
 import type { BoardManager } from "./board-manager";
 import type { ChannelManager } from "./channel-manager";
 
@@ -33,7 +33,7 @@ function rowToGroup(row: GroupRow): Group {
 
 export class GroupManager {
   constructor(
-    private db: ArtilectDB,
+    private db: MarinaDB,
     private channels: ChannelManager,
     private boards: BoardManager,
   ) {}

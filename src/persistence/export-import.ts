@@ -3,8 +3,8 @@ import { getErrorMessage } from "../engine/errors";
 
 // ─── Export Format ──────────────────────────────────────────────────────────
 
-export interface ArtilectSnapshot {
-  format: "artilect-snapshot";
+export interface MarinaSnapshot {
+  format: "marina-snapshot" | "artilect-snapshot";
   version: 1;
   schema_version: number;
   exported_at: string;
@@ -68,7 +68,7 @@ export interface ExportOptions {
   worldName?: string;
 }
 
-export function exportState(dbPath: string, opts?: ExportOptions): ArtilectSnapshot {
+export function exportState(dbPath: string, opts?: ExportOptions): MarinaSnapshot {
   const db = new Database(dbPath, { readonly: true });
   db.exec("PRAGMA journal_mode=WAL");
 
@@ -91,7 +91,7 @@ export function exportState(dbPath: string, opts?: ExportOptions): ArtilectSnaps
   db.close();
 
   return {
-    format: "artilect-snapshot",
+    format: "marina-snapshot",
     version: 1,
     schema_version: schemaVersion,
     exported_at: new Date().toISOString(),
@@ -118,16 +118,19 @@ export interface ImportResult {
 
 export function importState(
   dbPath: string,
-  snapshot: ArtilectSnapshot,
+  snapshot: MarinaSnapshot,
   opts?: ImportOptions,
 ): ImportResult {
-  // Validate snapshot format
-  if (snapshot.format !== "artilect-snapshot" || snapshot.version !== 1) {
+  // Validate snapshot format (accept both marina-snapshot and artilect-snapshot for backward compat)
+  if (
+    (snapshot.format !== "marina-snapshot" && snapshot.format !== "artilect-snapshot") ||
+    snapshot.version !== 1
+  ) {
     return {
       tablesImported: 0,
       rowsImported: 0,
       tablesSkipped: [],
-      errors: ["Invalid snapshot format. Expected artilect-snapshot v1."],
+      errors: ["Invalid snapshot format. Expected marina-snapshot v1."],
     };
   }
 
@@ -218,14 +221,14 @@ export function importState(
 
 export function validateSnapshot(
   data: unknown,
-): { valid: true; snapshot: ArtilectSnapshot } | { valid: false; error: string } {
+): { valid: true; snapshot: MarinaSnapshot } | { valid: false; error: string } {
   if (!data || typeof data !== "object") {
     return { valid: false, error: "Snapshot must be a JSON object." };
   }
 
   const obj = data as Record<string, unknown>;
 
-  if (obj.format !== "artilect-snapshot") {
+  if (obj.format !== "marina-snapshot" && obj.format !== "artilect-snapshot") {
     return { valid: false, error: "Missing or invalid format field." };
   }
 
@@ -241,7 +244,7 @@ export function validateSnapshot(
     return { valid: false, error: "Missing tables object." };
   }
 
-  return { valid: true, snapshot: data as ArtilectSnapshot };
+  return { valid: true, snapshot: data as MarinaSnapshot };
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

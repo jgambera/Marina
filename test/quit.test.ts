@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { Engine } from "../src/engine/engine";
-import { ArtilectDB } from "../src/persistence/database";
+import { MarinaDB } from "../src/persistence/database";
 import type { EntityId, RoomId } from "../src/types";
 import { MockConnection, cleanupDb, makeTestRoom } from "./helpers";
 
@@ -8,10 +8,10 @@ const DB_PATH = "test-quit.db";
 
 describe("Quit / Exit command", () => {
   let engine: Engine;
-  let db: ArtilectDB;
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(DB_PATH);
+    db = new MarinaDB(DB_PATH);
     engine = new Engine({
       startRoom: "test/start" as RoomId,
       db,
@@ -109,10 +109,10 @@ describe("Quit / Exit command", () => {
 
 describe("getOnlineAgents filtering", () => {
   let engine: Engine;
-  let db: ArtilectDB;
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(DB_PATH);
+    db = new MarinaDB(DB_PATH);
     engine = new Engine({
       startRoom: "test/start" as RoomId,
       db,
@@ -168,10 +168,10 @@ describe("getOnlineAgents filtering", () => {
 
 describe("Orphaned agent cleanup", () => {
   let engine: Engine;
-  let db: ArtilectDB;
+  let db: MarinaDB;
 
   beforeEach(() => {
-    db = new ArtilectDB(DB_PATH);
+    db = new MarinaDB(DB_PATH);
     engine = new Engine({
       startRoom: "test/start" as RoomId,
       db,

@@ -1,6 +1,6 @@
 import type { TaskManager } from "../../coordination/task-manager";
 import { header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext } from "../../types";
 
 const DAY_MS = 86_400_000;
@@ -16,7 +16,7 @@ function relativeTime(ts: number, now: number): string {
 
 export function orientCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   taskManager?: TaskManager;
   getTotalRoomCount?: () => number;
 }): CommandDef {

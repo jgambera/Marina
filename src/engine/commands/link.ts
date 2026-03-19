@@ -1,4 +1,4 @@
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityId, RoomContext } from "../../types";
 
 /**
@@ -44,7 +44,7 @@ export function verifyLinkCode(code: string): { userId: string; entityName: stri
 
 export function linkCommand(deps: {
   getEntity: (id: EntityId) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
 }): CommandDef {
   return {
     name: "link",
@@ -89,7 +89,7 @@ export function linkCommand(deps: {
           "",
           `  Your code: \x1b[1;33m${code}\x1b[0m`,
           "",
-          "  Send this code to the Artilect bot on Telegram or Discord",
+          "  Send this code to the Marina bot on Telegram or Discord",
           "  to link your external account to your game identity.",
           "",
           "  The code expires in 5 minutes.",

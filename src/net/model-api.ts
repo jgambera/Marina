@@ -65,18 +65,20 @@ function errorJson(status: number, message: string): Response {
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
-/** Map model ID to channel name. "artilect" → "model", "artilect:scholar" → "model-scholar" */
+/** Map model ID to channel name. "marina" → "model", "marina:scholar" → "model-scholar" */
 function modelToChannelName(model: string): string {
-  const parts = model.split(":");
+  // Accept "artilect" as alias for "marina"
+  const normalized = model.replace(/^artilect(:|$)/, "marina$1");
+  const parts = normalized.split(":");
   if (parts.length > 1) return `model-${parts.slice(1).join("-")}`;
   return "model";
 }
 
-/** Map channel name back to model ID. "model" → "artilect", "model-scholar" → "artilect:scholar" */
+/** Map channel name back to model ID. "model" → "marina", "model-scholar" → "marina:scholar" */
 function channelNameToModel(name: string): string {
-  if (name === "model") return "artilect";
+  if (name === "model") return "marina";
   const suffix = name.replace(/^model-/, "");
-  return `artilect:${suffix}`;
+  return `marina:${suffix}`;
 }
 
 interface ModelInfo {
@@ -118,7 +120,7 @@ function openaiModelList(models: ModelInfo[]): unknown {
       id: m.id,
       object: "model",
       created: Math.floor(Date.now() / 1000),
-      owned_by: "artilect",
+      owned_by: "marina",
     })),
   };
 }
@@ -643,7 +645,7 @@ export async function handleModelApi(
 async function handleOpenaiChat(req: Request, engine: Engine): Promise<Response> {
   try {
     const body = await req.json();
-    const model = body.model ?? "artilect";
+    const model = body.model ?? "marina";
     const messages = body.messages ?? [];
 
     // Extract last user message
@@ -695,7 +697,7 @@ async function handleOpenaiChat(req: Request, engine: Engine): Promise<Response>
 async function handleOllamaChat(req: Request, engine: Engine): Promise<Response> {
   try {
     const body = await req.json();
-    const model = body.model ?? "artilect";
+    const model = body.model ?? "marina";
     const messages = body.messages ?? [];
 
     const userMsg = [...messages].reverse().find((m: { role: string }) => m.role === "user");
@@ -743,7 +745,7 @@ async function handleOllamaChat(req: Request, engine: Engine): Promise<Response>
 async function handleOllamaGenerate(req: Request, engine: Engine): Promise<Response> {
   try {
     const body = await req.json();
-    const model = body.model ?? "artilect";
+    const model = body.model ?? "marina";
     const prompt = body.prompt;
     if (!prompt) return errorJson(400, "No prompt provided");
 

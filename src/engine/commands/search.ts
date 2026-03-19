@@ -1,10 +1,10 @@
 import { category, header, separator } from "../../net/ansi";
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, RoomContext, RoomId } from "../../types";
 
 export function searchCommand(deps: {
   getEntity: (id: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
   getAllRooms: () => { id: RoomId; short: string; long: string }[];
 }): CommandDef {
   return {

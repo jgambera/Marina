@@ -441,7 +441,7 @@ setInterval(() => {
   }
 }, 60000);
 
-console.log("\n  Artilect Benchmark UI");
+console.log("\n  Marina Benchmark UI");
 console.log(`  ${"─".repeat(40)}`);
 console.log(`  Server: http://localhost:${PORT}`);
 console.log(`  Results: ${RESULTS_DIR}`);

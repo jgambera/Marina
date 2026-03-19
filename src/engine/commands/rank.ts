@@ -1,10 +1,10 @@
-import type { ArtilectDB } from "../../persistence/database";
+import type { MarinaDB } from "../../persistence/database";
 import type { CommandDef, Entity, EntityRank, RoomContext } from "../../types";
 import { getRank, rankName, setRank } from "../permissions";
 
 interface RankDeps {
   findEntity: (name: string) => Entity | undefined;
-  db?: ArtilectDB;
+  db?: MarinaDB;
 }
 
 export function rankCommand(deps: RankDeps): CommandDef {
