@@ -25,10 +25,7 @@ const DB_PATH = process.env.DB_PATH || "marina.db";
 
 // ─── Load World Definition ───────────────────────────────────────────────────
 
-const WORLD_NAME = process.env.MARINA_WORLD ?? process.env.ARTILECT_WORLD ?? "default";
-if (process.env.ARTILECT_WORLD && !process.env.MARINA_WORLD) {
-  console.warn("[warn] ARTILECT_WORLD is deprecated, use MARINA_WORLD");
-}
+const WORLD_NAME = process.env.MARINA_WORLD ?? "default";
 const worldModule = await import(`../worlds/${WORLD_NAME}`);
 const world: WorldDefinition = worldModule.default;
 

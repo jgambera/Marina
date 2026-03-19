@@ -865,12 +865,8 @@ export class Engine {
 
   /** Promote entity to admin if listed in MARINA_ADMINS env var */
   private applyAdminBootstrap(entity: Entity): void {
-    const raw = process.env.MARINA_ADMINS ?? process.env.ARTILECT_ADMINS ?? "";
-    if (process.env.ARTILECT_ADMINS && !process.env.MARINA_ADMINS) {
-      this.logger.warn("config", "ARTILECT_ADMINS is deprecated, use MARINA_ADMINS");
-    }
     const adminNames = new Set(
-      raw
+      (process.env.MARINA_ADMINS ?? "")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),

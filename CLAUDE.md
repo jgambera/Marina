@@ -39,7 +39,7 @@ bun run format         # Biome auto-format (run before committing)
 - `src/engine/agent-runtime.ts` — AgentRuntime class: spawn/stop/list managed agents
 - `src/engine/providers.ts` — Model resolution wrapper (pi-ai integration)
 - `src/engine/commands/agent.ts` — `agent spawn|stop|list|status` command (minRank: architect)
-- `src/agents/` — Agent intelligence layer (from artilect-agent)
+- `src/agents/` — Agent intelligence layer (lean/full agents, tools, bridges)
   - `lean/` — Lean agent (delegates memory/state to platform)
   - `full/` — Full agent (local memory, curiosity, goals, learning)
   - `external/` — External bridge (Claude Code, Codex CLI, Goose adapters)

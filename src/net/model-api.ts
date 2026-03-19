@@ -67,9 +67,7 @@ const REQUEST_TIMEOUT_MS = 30_000;
 
 /** Map model ID to channel name. "marina" → "model", "marina:scholar" → "model-scholar" */
 function modelToChannelName(model: string): string {
-  // Accept "artilect" as alias for "marina"
-  const normalized = model.replace(/^artilect(:|$)/, "marina$1");
-  const parts = normalized.split(":");
+  const parts = model.split(":");
   if (parts.length > 1) return `model-${parts.slice(1).join("-")}`;
   return "model";
 }

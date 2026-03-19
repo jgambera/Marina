@@ -4,7 +4,7 @@ import { getErrorMessage } from "../engine/errors";
 // ─── Export Format ──────────────────────────────────────────────────────────
 
 export interface MarinaSnapshot {
-  format: "marina-snapshot" | "artilect-snapshot";
+  format: "marina-snapshot";
   version: 1;
   schema_version: number;
   exported_at: string;
@@ -121,11 +121,8 @@ export function importState(
   snapshot: MarinaSnapshot,
   opts?: ImportOptions,
 ): ImportResult {
-  // Validate snapshot format (accept both marina-snapshot and artilect-snapshot for backward compat)
-  if (
-    (snapshot.format !== "marina-snapshot" && snapshot.format !== "artilect-snapshot") ||
-    snapshot.version !== 1
-  ) {
+  // Validate snapshot format
+  if (snapshot.format !== "marina-snapshot" || snapshot.version !== 1) {
     return {
       tablesImported: 0,
       rowsImported: 0,
@@ -228,7 +225,7 @@ export function validateSnapshot(
 
   const obj = data as Record<string, unknown>;
 
-  if (obj.format !== "marina-snapshot" && obj.format !== "artilect-snapshot") {
+  if (obj.format !== "marina-snapshot") {
     return { valid: false, error: "Missing or invalid format field." };
   }
 

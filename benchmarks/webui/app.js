@@ -1,4 +1,4 @@
-// === Artilect Benchmark Web UI ===
+// === Marina Benchmark Web UI ===
 
 const API = window.location.origin;
 let allResults = [];
