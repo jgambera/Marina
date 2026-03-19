@@ -162,7 +162,7 @@ export class WebSocketServer {
 
         // API routes
         if (url.pathname.startsWith("/api/")) {
-          return handleDashboardApi(url, req.method, engine, self.db);
+          return handleDashboardApi(url, req, engine, self.db);
         }
 
         // Health check

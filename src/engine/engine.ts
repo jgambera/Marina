@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import type { RateLimiter } from "../auth/rate-limiter";
 import { SessionManager } from "../auth/session-manager";
-import { connects, disconnects } from "../net/ansi";
+import { connects, disconnects, npcSays } from "../net/ansi";
 import { cleanupStaleConversationChannels } from "../net/model-api";
 import type { MarinaDB } from "../persistence/database";
 import type {
@@ -27,6 +27,7 @@ import { CommandRouter } from "./command-router";
 import { ConnectorRuntime } from "./connector-runtime";
 import { getErrorMessage, tryLog } from "./errors";
 import { Logger } from "./logger";
+import { GUIDE_NPC_PROPS, MarinaGuide } from "./marina-guide";
 import { getRank, rankName, setRank } from "./permissions";
 import { RoomSandbox } from "./room-sandbox";
 
@@ -134,6 +135,7 @@ export class Engine {
   readonly shellRuntime: ShellRuntime;
   readonly storage?: StorageProvider;
   readonly agentRuntime: AgentRuntime;
+  readonly guide?: MarinaGuide;
   private db?: MarinaDB;
   private startedAt = Date.now();
   private fetchLastCall = new Map<string, number>(); // roomId -> timestamp
@@ -201,6 +203,12 @@ export class Engine {
     }
 
     this.registerBuiltinCommands();
+
+    // Initialize LLM-backed guide (gracefully degrades without API keys)
+    this.guide = new MarinaGuide({
+      commands: this.commands.allBuiltins(),
+      logger: this.logger,
+    });
   }
 
   // ─── Room Registration ──────────────────────────────────────────────────
@@ -473,7 +481,7 @@ export class Engine {
     const handler = this.commands.resolve(input.verb, room?.module.commands);
 
     if (!handler) {
-      this.sendToEntity(entityId, `Unknown command: ${input.verb}. Type "help" for commands.`);
+      this.handleUnknownCommand(entityId, entity, input);
       return;
     }
 
@@ -527,6 +535,39 @@ export class Engine {
     this.logEvent({ type: "command", entity: entityId, input: raw, timestamp: Date.now() });
   }
 
+  /** Handle unrecognized input: try LLM interpretation, fall back to static error */
+  private handleUnknownCommand(entityId: EntityId, entity: Entity, input: CommandInput): void {
+    if (!this.guide?.isAvailable) {
+      this.sendToEntity(entityId, `Unknown command: ${input.verb}. Type "help" for commands.`);
+      return;
+    }
+
+    const room = this.rooms.get(entity.room);
+    this.guide
+      .interpret(input.raw, {
+        entityName: entity.name,
+        roomId: entity.room,
+        roomShort: room?.module.short ?? entity.room,
+      })
+      .then((result) => {
+        if (!result) {
+          this.sendToEntity(entityId, `Unknown command: ${input.verb}. Type "help" for commands.`);
+          return;
+        }
+
+        // Send the guide's message
+        this.sendToEntity(entityId, npcSays("Marina", result.message));
+
+        // If the guide identified a command, execute it
+        if (result.command) {
+          this.processCommand(entityId, result.command);
+        }
+      })
+      .catch(() => {
+        this.sendToEntity(entityId, `Unknown command: ${input.verb}. Type "help" for commands.`);
+      });
+  }
+
   private trackQuest(entityId: EntityId, verb: string): void {
     const entity = this.entities.get(entityId);
     if (!entity || !entity.properties.active_quest) return;
@@ -572,11 +613,35 @@ export class Engine {
   start(): void {
     if (this.running) return;
     this.running = true;
+
+    // Spawn the Marina guide NPC in the start room
+    this.spawnGuideNpc();
+
     console.log(
       `Marina engine started (tick: ${this.config.tickInterval}ms, rooms: ${this.rooms.size})`,
     );
 
     this.tickTimer = setInterval(() => this.tick(), this.config.tickInterval);
+  }
+
+  /** Spawn the Marina guide NPC in the start room (idempotent) */
+  private spawnGuideNpc(): void {
+    // Don't spawn duplicates
+    const existing = this.entities
+      .all()
+      .find((e) => e.kind === "npc" && e.properties.guide === true);
+    if (existing) return;
+
+    this.spawnNpc(this.config.startRoom, {
+      name: "Marina",
+      short: GUIDE_NPC_PROPS.short,
+      long: "A shimmering presence that embodies the living intelligence of this world.",
+      properties: {
+        guide: true,
+        dialogue: GUIDE_NPC_PROPS.dialogue,
+        behavior: { type: "stationary" as const },
+      },
+    });
   }
 
   stop(): void {
@@ -1403,7 +1468,7 @@ export class Engine {
         findEntityGlobal: (name) => this.findEntityGlobal(name),
       }),
     );
-    this.commands.registerBuiltin(talkCommand());
+    this.commands.registerBuiltin(talkCommand({ guide: this.guide }));
     this.commands.registerBuiltin(
       briefCommand({
         getEntity: (id) => this.entities.get(id),
