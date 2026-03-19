@@ -15,6 +15,7 @@ import { useDashboardWebSocket } from "./hooks/use-websocket";
 
 import { ActivityFeed } from "./components/ActivityFeed";
 import { AgentPanel } from "./components/AgentPanel";
+import { ConnectorPanel } from "./components/ConnectorPanel";
 import { CoordinationCard } from "./components/CoordinationCard";
 import { EntityRoster } from "./components/EntityRoster";
 import { Header } from "./components/Header";
@@ -43,6 +44,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts<Bp> = {
     { i: "coordination", x: 0, y: 7, w: 5, h: 3, minW: 2, minH: 2 },
     { i: "system", x: 5, y: 7, w: 2, h: 3, minW: 2, minH: 2 },
     { i: "agents", x: 7, y: 6, w: 5, h: 3, minW: 2, minH: 2 },
+    { i: "connectors", x: 0, y: 10, w: 4, h: 3, minW: 2, minH: 2 },
   ],
   md: [
     { i: "worldmap", x: 0, y: 0, w: 5, h: 4, minW: 2, minH: 2 },
@@ -53,6 +55,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts<Bp> = {
     { i: "coordination", x: 0, y: 12, w: 6, h: 3, minW: 2, minH: 2 },
     { i: "system", x: 6, y: 12, w: 4, h: 3, minW: 2, minH: 2 },
     { i: "agents", x: 0, y: 15, w: 10, h: 3, minW: 2, minH: 2 },
+    { i: "connectors", x: 0, y: 18, w: 10, h: 3, minW: 2, minH: 2 },
   ],
 };
 
@@ -75,6 +78,7 @@ const FOCUS_SLOTS_LG: { focused: Slot; rest: Slot[] } = {
     { x: 6, y: 6, w: 3, h: 3 },
     { x: 9, y: 6, w: 3, h: 3 },
     { x: 0, y: 9, w: 4, h: 3 },
+    { x: 4, y: 9, w: 4, h: 3 },
   ],
 };
 
@@ -88,6 +92,7 @@ const FOCUS_SLOTS_MD: { focused: Slot; rest: Slot[] } = {
     { x: 0, y: 11, w: 5, h: 3 },
     { x: 5, y: 11, w: 5, h: 3 },
     { x: 0, y: 14, w: 10, h: 3 },
+    { x: 0, y: 17, w: 10, h: 3 },
   ],
 };
 
@@ -203,7 +208,7 @@ export default function App() {
   // Panel refs for keyboard focus
   const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const PANEL_KEYS = useMemo(
-    () => ["worldmap", "entities", "webchat", "room", "activity", "coordination", "system", "agents"],
+    () => ["worldmap", "entities", "webchat", "room", "activity", "coordination", "system", "agents", "connectors"],
     [],
   );
   const [activePanelIdx, setActivePanelIdx] = useState<number | null>(null);
@@ -236,9 +241,9 @@ export default function App() {
         return;
       }
 
-      // Number keys 1-8 for panel focus
+      // Number keys 1-9 for panel focus
       const num = Number.parseInt(e.key, 10);
-      if (num >= 1 && num <= 8) {
+      if (num >= 1 && num <= 9) {
         e.preventDefault();
         focusPanelByIndex(num - 1);
         return;
@@ -386,6 +391,16 @@ export default function App() {
               className={panelClass("agents")}
             >
               <AgentPanel />
+            </div>
+            <div
+              key="connectors"
+              ref={(el) => {
+                panelRefs.current.connectors = el;
+              }}
+              onDoubleClick={onHeaderDblClick("connectors")}
+              className={panelClass("connectors")}
+            >
+              <ConnectorPanel />
             </div>
           </ResponsiveGridLayout>
         )}

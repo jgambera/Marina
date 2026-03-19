@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { getConfiguredProviderNames, getModelsByProvider } from "../agents/agent/model-registry";
+import { type AdapterType, maskToken } from "../engine/adapter-registry";
 import type { ManagedAgent } from "../engine/agent-runtime";
 import type { Engine } from "../engine/engine";
 import type { MarinaDB } from "../persistence/database";
@@ -151,6 +152,75 @@ export async function handleDashboardApi(
     const agentName = decodeURIComponent(agentStopMatch[1]!);
     const stopped = await engine.agentRuntime.stop(agentName);
     if (!stopped) return json({ error: "Agent not found" }, 404);
+    return json({ ok: true });
+  }
+
+  // ─── Adapter management endpoints ───────────────────────────────────────
+
+  if (url.pathname === "/api/adapters" && method === "GET") {
+    const adapters = engine.adapterRegistry.list().map((m) => {
+      const row = db?.getPlatformAdapter(m.id);
+      return {
+        id: m.id,
+        type: m.type,
+        status: m.status,
+        error: m.error,
+        autoStart: m.autoStart,
+        startedAt: m.startedAt,
+        token: row ? maskToken(row.token) : "····",
+        settings: row ? JSON.parse(row.settings) : {},
+      };
+    });
+    return json(adapters);
+  }
+
+  if (url.pathname === "/api/adapters" && method === "POST") {
+    try {
+      const body = (await req.json()) as {
+        type?: string;
+        token?: string;
+        settings?: Record<string, unknown>;
+        autoStart?: boolean;
+      };
+      if (!body.type || !body.token) {
+        return json({ error: "type and token are required" }, 400);
+      }
+      const managed = engine.adapterRegistry.create({
+        type: body.type as AdapterType,
+        token: body.token,
+        settings: body.settings,
+        autoStart: body.autoStart,
+      });
+      return json({ id: managed.id, type: managed.type, status: managed.status });
+    } catch (err) {
+      return json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  }
+
+  const adapterStartMatch = url.pathname.match(/^\/api\/adapters\/(.+)\/start$/);
+  if (adapterStartMatch && method === "POST") {
+    const adapterId = decodeURIComponent(adapterStartMatch[1]!);
+    try {
+      await engine.adapterRegistry.start(adapterId);
+      return json({ ok: true });
+    } catch (err) {
+      return json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  }
+
+  const adapterStopMatch = url.pathname.match(/^\/api\/adapters\/(.+)\/stop$/);
+  if (adapterStopMatch && method === "POST") {
+    const adapterId = decodeURIComponent(adapterStopMatch[1]!);
+    const stopped = await engine.adapterRegistry.stop(adapterId);
+    if (!stopped) return json({ error: "Adapter not found" }, 404);
+    return json({ ok: true });
+  }
+
+  const adapterDeleteMatch = url.pathname.match(/^\/api\/adapters\/(.+)$/);
+  if (adapterDeleteMatch && method === "DELETE") {
+    const adapterId = decodeURIComponent(adapterDeleteMatch[1]!);
+    const removed = await engine.adapterRegistry.remove(adapterId);
+    if (!removed) return json({ error: "Adapter not found" }, 404);
     return json({ ok: true });
   }
 

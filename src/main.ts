@@ -2,9 +2,7 @@ import { resolve } from "node:path";
 import { RateLimiter } from "./auth/rate-limiter";
 import { Engine } from "./engine/engine";
 import { Logger } from "./engine/logger";
-import type { Adapter } from "./net/adapter";
 import { DashboardBroadcaster } from "./net/dashboard-ws";
-import { formatPerception } from "./net/formatter";
 import { LogServer } from "./net/log-server";
 import { McpServerAdapter } from "./net/mcp-server";
 import { TelnetServer } from "./net/telnet-server";
@@ -137,29 +135,45 @@ wsServer.setStorage(storage);
 
 const telnetServer = new TelnetServer(engine, TELNET_PORT, rateLimiter);
 const mcpServer = new McpServerAdapter(engine, MCP_PORT, rateLimiter);
-const adapters: Adapter[] = [];
-
 wsServer.start();
 telnetServer.start();
 mcpServer.start();
 
-// Optional: Telegram adapter
+// Load DB-managed adapters and auto-start those with autoStart=true
+await engine.adapterRegistry.loadFromDB();
+
+// Backward compat: if env vars set and no matching adapter in DB, auto-create and start
 if (process.env.TELEGRAM_TOKEN) {
-  const { TelegramAdapter } = await import("./net/telegram-adapter");
-  const ctx = { engine, rateLimiter, formatPerception };
-  const telegram = new TelegramAdapter(ctx, process.env.TELEGRAM_TOKEN);
-  adapters.push(telegram);
-  telegram.start().catch((err) => logger.error("adapter", "Telegram start failed", { err }));
+  const existing = engine.adapterRegistry.findByTypeAndToken(
+    "telegram",
+    process.env.TELEGRAM_TOKEN,
+  );
+  if (!existing) {
+    const managed = engine.adapterRegistry.create({
+      type: "telegram",
+      token: process.env.TELEGRAM_TOKEN,
+      autoStart: true,
+    });
+    engine.adapterRegistry.start(managed.id).catch((err) => {
+      logger.error("adapter", "Telegram start failed", { err });
+    });
+  }
 }
 
-// Optional: Discord adapter
 if (process.env.DISCORD_TOKEN) {
-  const { DiscordAdapter } = await import("./net/discord-adapter");
-  const channelIds = process.env.DISCORD_CHANNEL_IDS?.split(",").filter(Boolean);
-  const ctx = { engine, rateLimiter, formatPerception };
-  const discord = new DiscordAdapter(ctx, process.env.DISCORD_TOKEN, channelIds);
-  adapters.push(discord);
-  discord.start().catch((err) => logger.error("adapter", "Discord start failed", { err }));
+  const existing = engine.adapterRegistry.findByTypeAndToken("discord", process.env.DISCORD_TOKEN);
+  if (!existing) {
+    const channelIds = process.env.DISCORD_CHANNEL_IDS?.split(",").filter(Boolean);
+    const managed = engine.adapterRegistry.create({
+      type: "discord",
+      token: process.env.DISCORD_TOKEN,
+      settings: channelIds ? { channelIds } : undefined,
+      autoStart: true,
+    });
+    engine.adapterRegistry.start(managed.id).catch((err) => {
+      logger.error("adapter", "Discord start failed", { err });
+    });
+  }
 }
 
 engine.start();
@@ -170,14 +184,8 @@ async function shutdown() {
   logger.info("engine", "Shutting down...");
   clearInterval(stateInterval);
 
-  // Stop external adapters first
-  for (const adapter of adapters) {
-    try {
-      await adapter.stop();
-    } catch (err) {
-      logger.error("adapter", `Failed to stop ${adapter.name}`, { err });
-    }
-  }
+  // Stop managed adapters
+  await engine.adapterRegistry.shutdown();
 
   engine.shutdown(); // saves state + stops tick loop
   logServer.stop();

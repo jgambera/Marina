@@ -167,6 +167,12 @@ async function routeApiRequest(
 ): Promise<unknown> {
   // ── DELETE routes ──
   if (method === "DELETE") {
+    const adapterDeleteMatch = pathname.match(/^\/api\/adapters\/(.+)$/);
+    if (adapterDeleteMatch) {
+      return rpc.request.deleteAdapter(
+        decodeURIComponent(adapterDeleteMatch[1]!),
+      );
+    }
     const entityDeleteMatch = pathname.match(/^\/api\/entities\/(.+)$/);
     if (entityDeleteMatch) {
       return rpc.request.deleteEntity(
@@ -187,10 +193,24 @@ async function routeApiRequest(
     if (agentStopMatch) {
       return rpc.request.stopAgent(decodeURIComponent(agentStopMatch[1]!));
     }
+    if (pathname === "/api/adapters") {
+      return rpc.request.createAdapter(
+        body as { type: string; token: string; settings?: Record<string, unknown>; autoStart?: boolean },
+      );
+    }
+    const adapterStartMatch = pathname.match(/^\/api\/adapters\/(.+)\/start$/);
+    if (adapterStartMatch) {
+      return rpc.request.startAdapter(decodeURIComponent(adapterStartMatch[1]!));
+    }
+    const adapterStopMatch = pathname.match(/^\/api\/adapters\/(.+)\/stop$/);
+    if (adapterStopMatch) {
+      return rpc.request.stopAdapter(decodeURIComponent(adapterStopMatch[1]!));
+    }
     throw new Error(`Unknown POST route: ${pathname}`);
   }
 
   // ── GET: Exact matches ──
+  if (pathname === "/api/adapters") return rpc.request.getAdapters();
   if (pathname === "/api/agents") return rpc.request.getAgents();
   if (pathname === "/api/agents/models") return rpc.request.getAgentModels();
   if (pathname === "/api/world") return rpc.request.getWorld();

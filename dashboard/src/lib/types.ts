@@ -253,3 +253,19 @@ export interface AgentModelsResponse {
   providers: Record<string, ProviderModelInfo[]>;
   configured: string[];
 }
+
+// ─── Platform adapter types ─────────────────────────────────────────────────
+
+export type AdapterType = "discord" | "telegram" | "signal";
+export type AdapterStatus = "running" | "starting" | "stopping" | "stopped" | "error";
+
+export interface PlatformAdapterEntry {
+  id: string;
+  type: AdapterType;
+  status: AdapterStatus;
+  error?: string;
+  autoStart: boolean;
+  startedAt?: number;
+  token: string; // masked
+  settings: Record<string, unknown>;
+}

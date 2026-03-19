@@ -3,6 +3,7 @@ import { fetchApi } from "../lib/api";
 import type {
   AgentModelsResponse,
   AgentsResponse,
+  PlatformAdapterEntry,
   BoardDetail,
   BoardEntry,
   ChannelDetail,
@@ -147,6 +148,14 @@ export function useChannelDetail(name: string | null) {
     queryFn: () =>
       fetchApi<ChannelDetail>(`/api/coordination/channels/${encodeURIComponent(name!)}`),
     enabled: !!name,
+  });
+}
+
+export function useAdapters() {
+  return useQuery({
+    queryKey: ["adapters"],
+    queryFn: () => fetchApi<PlatformAdapterEntry[]>("/api/adapters"),
+    refetchInterval: 5_000,
   });
 }
 

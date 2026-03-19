@@ -508,6 +508,62 @@ export function createRpcHandlers(
       return { ok: true };
     },
 
+    // ── Adapter management handlers ──
+
+    getAdapters(): unknown[] {
+      const { engine, db } = requireEngine();
+      const { maskToken } = require("../../../src/engine/adapter-registry");
+      return engine.adapterRegistry.list().map((m) => {
+        const row = db?.getPlatformAdapter(m.id);
+        return {
+          id: m.id,
+          type: m.type,
+          status: m.status,
+          error: m.error,
+          autoStart: m.autoStart,
+          startedAt: m.startedAt,
+          token: row ? maskToken(row.token) : "····",
+          settings: row ? JSON.parse(row.settings) : {},
+        };
+      });
+    },
+
+    async createAdapter(params: {
+      type: string;
+      token: string;
+      settings?: Record<string, unknown>;
+      autoStart?: boolean;
+    }): Promise<unknown> {
+      const { engine } = requireEngine();
+      const managed = engine.adapterRegistry.create({
+        type: params.type as any,
+        token: params.token,
+        settings: params.settings,
+        autoStart: params.autoStart,
+      });
+      return { id: managed.id, type: managed.type, status: managed.status };
+    },
+
+    async deleteAdapter(id: string): Promise<{ ok: boolean }> {
+      const { engine } = requireEngine();
+      const removed = await engine.adapterRegistry.remove(id);
+      if (!removed) throw new Error("Adapter not found");
+      return { ok: true };
+    },
+
+    async startAdapter(id: string): Promise<{ ok: boolean }> {
+      const { engine } = requireEngine();
+      await engine.adapterRegistry.start(id);
+      return { ok: true };
+    },
+
+    async stopAdapter(id: string): Promise<{ ok: boolean }> {
+      const { engine } = requireEngine();
+      const stopped = await engine.adapterRegistry.stop(id);
+      if (!stopped) throw new Error("Adapter not found");
+      return { ok: true };
+    },
+
     // ── Game chat handlers ──
 
     gameConnect(): { connId: string } {

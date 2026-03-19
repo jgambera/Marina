@@ -22,6 +22,7 @@ import type {
 } from "../types";
 import { EntityManager } from "../world/entity-manager";
 import { type LoadedRoom, RoomManager } from "../world/room-manager";
+import { AdapterRegistry } from "./adapter-registry";
 import { AgentRuntime } from "./agent-runtime";
 import { CommandRouter } from "./command-router";
 import { ConnectorRuntime } from "./connector-runtime";
@@ -135,6 +136,7 @@ export class Engine {
   readonly shellRuntime: ShellRuntime;
   readonly storage?: StorageProvider;
   readonly agentRuntime: AgentRuntime;
+  readonly adapterRegistry: AdapterRegistry;
   readonly guide?: MarinaGuide;
   private db?: MarinaDB;
   private startedAt = Date.now();
@@ -184,6 +186,14 @@ export class Engine {
 
     // Initialize agent runtime
     this.agentRuntime = new AgentRuntime({ db: this.db, logger: this.logger });
+
+    // Initialize adapter registry
+    this.adapterRegistry = new AdapterRegistry({
+      db: this.db,
+      logger: this.logger,
+      rateLimiter: this.rateLimiter,
+    });
+    this.adapterRegistry.setEngine(this);
 
     // Initialize coordination managers if db is available
     if (this.db) {
@@ -1365,6 +1375,8 @@ export class Engine {
     this.stop();
     // Stop managed agents (fire and forget)
     this.agentRuntime.shutdown().catch(() => {});
+    // Stop managed adapters (fire and forget)
+    this.adapterRegistry.shutdown().catch(() => {});
     // Close connector runtime (fire and forget)
     this.connectorRuntime?.close().catch(() => {});
   }

@@ -725,6 +725,22 @@ CREATE TABLE managed_agents (
 );
 `,
   },
+  // Migration 26: Platform adapters (managed from dashboard)
+  {
+    version: 26,
+    sql: `
+CREATE TABLE platform_adapters (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  token TEXT NOT NULL,
+  settings TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'stopped',
+  error TEXT,
+  auto_start INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+`,
+  },
 ];
 
 // ─── Database Class ──────────────────────────────────────────────────────────
@@ -3130,6 +3146,56 @@ export class MarinaDB {
 
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
+  // ─── Platform Adapters ──────────────────────────────────────────────────
+
+  createPlatformAdapter(adapter: {
+    id: string;
+    type: string;
+    token: string;
+    settings?: Record<string, unknown>;
+    autoStart?: boolean;
+  }): void {
+    this.db.run(
+      `INSERT INTO platform_adapters (id, type, token, settings, auto_start, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        adapter.id,
+        adapter.type,
+        adapter.token,
+        JSON.stringify(adapter.settings ?? {}),
+        adapter.autoStart ? 1 : 0,
+        Date.now(),
+      ],
+    );
+  }
+
+  listPlatformAdapters(): PlatformAdapterRow[] {
+    return this.db
+      .query("SELECT * FROM platform_adapters ORDER BY created_at")
+      .all() as PlatformAdapterRow[];
+  }
+
+  getPlatformAdapter(id: string): PlatformAdapterRow | undefined {
+    return (
+      (this.db
+        .query("SELECT * FROM platform_adapters WHERE id = ?")
+        .get(id) as PlatformAdapterRow) ?? undefined
+    );
+  }
+
+  updatePlatformAdapterStatus(id: string, status: string, error?: string): void {
+    this.db.run("UPDATE platform_adapters SET status = ?, error = ? WHERE id = ?", [
+      status,
+      error ?? null,
+      id,
+    ]);
+  }
+
+  deletePlatformAdapter(id: string): boolean {
+    const result = this.db.run("DELETE FROM platform_adapters WHERE id = ?", [id]);
+    return result.changes > 0;
+  }
+
   close(): void {
     this.db.close();
   }
@@ -3520,4 +3586,15 @@ interface GlobalSearchResult {
   id: string;
   title: string;
   context: string;
+}
+
+export interface PlatformAdapterRow {
+  id: string;
+  type: string;
+  token: string;
+  settings: string; // JSON
+  status: string;
+  error: string | null;
+  auto_start: number; // 0 or 1
+  created_at: number;
 }

@@ -123,6 +123,19 @@ export interface DashboardRPCSchema extends ElectrobunRPCSchema {
       };
       /** Stop a managed agent by name */
       stopAgent: { params: string; response: { ok: boolean } };
+      /** List platform adapters (tokens masked) */
+      getAdapters: { params: undefined; response: unknown[] };
+      /** Create a new platform adapter */
+      createAdapter: {
+        params: { type: string; token: string; settings?: Record<string, unknown>; autoStart?: boolean };
+        response: unknown;
+      };
+      /** Delete a platform adapter */
+      deleteAdapter: { params: string; response: { ok: boolean } };
+      /** Start a platform adapter */
+      startAdapter: { params: string; response: { ok: boolean } };
+      /** Stop a platform adapter */
+      stopAdapter: { params: string; response: { ok: boolean } };
       /** Create a game connection (virtual WebSocket) for the web chat */
       gameConnect: { params: undefined; response: { connId: string } };
       /** Send a raw JSON message on the game connection (login/auth/command) */
