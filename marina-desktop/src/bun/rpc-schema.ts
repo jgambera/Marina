@@ -106,6 +106,23 @@ export interface DashboardRPCSchema extends ElectrobunRPCSchema {
         response: { ok: boolean; error?: string };
       };
       switchToLocal: { params: undefined; response: { ok: boolean } };
+      /** List managed agents + configured providers */
+      getAgents: {
+        params: undefined;
+        response: { agents: unknown[]; configuredProviders: string[] };
+      };
+      /** Get available models grouped by provider */
+      getAgentModels: {
+        params: undefined;
+        response: { providers: Record<string, unknown[]>; configured: string[] };
+      };
+      /** Spawn a new managed agent */
+      spawnAgent: {
+        params: { name: string; model: string; role?: string };
+        response: unknown;
+      };
+      /** Stop a managed agent by name */
+      stopAgent: { params: string; response: { ok: boolean } };
       /** Create a game connection (virtual WebSocket) for the web chat */
       gameConnect: { params: undefined; response: { connId: string } };
       /** Send a raw JSON message on the game connection (login/auth/command) */

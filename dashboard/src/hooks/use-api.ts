@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchApi } from "../lib/api";
 import type {
+  AgentModelsResponse,
+  AgentsResponse,
   BoardDetail,
   BoardEntry,
   ChannelDetail,
@@ -145,5 +147,21 @@ export function useChannelDetail(name: string | null) {
     queryFn: () =>
       fetchApi<ChannelDetail>(`/api/coordination/channels/${encodeURIComponent(name!)}`),
     enabled: !!name,
+  });
+}
+
+export function useAgents() {
+  return useQuery({
+    queryKey: ["agents"],
+    queryFn: () => fetchApi<AgentsResponse>("/api/agents"),
+    refetchInterval: 5_000,
+  });
+}
+
+export function useAgentModels() {
+  return useQuery({
+    queryKey: ["agentModels"],
+    queryFn: () => fetchApi<AgentModelsResponse>("/api/agents/models"),
+    staleTime: 300_000,
   });
 }

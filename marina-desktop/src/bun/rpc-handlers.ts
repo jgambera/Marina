@@ -453,6 +453,61 @@ export function createRpcHandlers(
       return { ok: true };
     },
 
+    // ── Agent management handlers ──
+
+    getAgents(): { agents: unknown[]; configuredProviders: string[] } {
+      const { engine } = requireEngine();
+      const agents = engine.agentRuntime.list().map((m) => {
+        const { agent: _agent, ...rest } = m;
+        return { ...rest, uptimeMs: Date.now() - m.startedAt };
+      });
+      // Dynamic import to get configured providers (sync fallback)
+      let configuredProviders: string[] = [];
+      try {
+        const registry = require("../../../src/agents/agent/model-registry");
+        configuredProviders = registry.getConfiguredProviderNames();
+      } catch {
+        // model registry not available
+      }
+      return { agents, configuredProviders };
+    },
+
+    async getAgentModels(): Promise<{
+      providers: Record<string, unknown[]>;
+      configured: string[];
+    }> {
+      try {
+        const registry = require("../../../src/agents/agent/model-registry");
+        const providers = await registry.getModelsByProvider();
+        const configured = registry.getConfiguredProviderNames();
+        return { providers, configured };
+      } catch {
+        return { providers: {}, configured: [] };
+      }
+    },
+
+    async spawnAgent(params: {
+      name: string;
+      model: string;
+      role?: string;
+    }): Promise<unknown> {
+      const { engine } = requireEngine();
+      const managed = await engine.agentRuntime.spawn({
+        name: params.name,
+        model: params.model,
+        role: params.role as any,
+      });
+      const { agent: _agent, ...rest } = managed;
+      return { ...rest, uptimeMs: Date.now() - managed.startedAt };
+    },
+
+    async stopAgent(name: string): Promise<{ ok: boolean }> {
+      const { engine } = requireEngine();
+      const stopped = await engine.agentRuntime.stop(name);
+      if (!stopped) throw new Error("Agent not found");
+      return { ok: true };
+    },
+
     // ── Game chat handlers ──
 
     gameConnect(): { connId: string } {

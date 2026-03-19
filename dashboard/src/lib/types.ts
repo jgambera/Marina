@@ -222,3 +222,34 @@ export type WSMessage =
   | { type: "snapshot"; data: WorldSnapshot }
   | { type: "state"; data: WorldSnapshot }
   | { type: "event"; data: DashboardEvent };
+
+// ─── Agent management types ─────────────────────────────────────────────────
+
+export interface ManagedAgentInfo {
+  id: string;
+  name: string;
+  model: string;
+  role: string;
+  entityId?: string;
+  status: "starting" | "running" | "stopping" | "stopped" | "error";
+  startedAt: number;
+  uptimeMs: number;
+  error?: string;
+}
+
+export interface AgentsResponse {
+  agents: ManagedAgentInfo[];
+  configuredProviders: string[];
+}
+
+export interface ProviderModelInfo {
+  id: string;
+  name: string;
+  contextWindow?: number;
+  reasoning?: boolean;
+}
+
+export interface AgentModelsResponse {
+  providers: Record<string, ProviderModelInfo[]>;
+  configured: string[];
+}

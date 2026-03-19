@@ -14,6 +14,7 @@ import { useSystem, useWorld } from "./hooks/use-api";
 import { useDashboardWebSocket } from "./hooks/use-websocket";
 
 import { ActivityFeed } from "./components/ActivityFeed";
+import { AgentPanel } from "./components/AgentPanel";
 import { CoordinationCard } from "./components/CoordinationCard";
 import { EntityRoster } from "./components/EntityRoster";
 import { Header } from "./components/Header";
@@ -41,6 +42,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts<Bp> = {
     { i: "activity", x: 4, y: 4, w: 3, h: 3, minW: 2, minH: 2 },
     { i: "coordination", x: 0, y: 7, w: 5, h: 3, minW: 2, minH: 2 },
     { i: "system", x: 5, y: 7, w: 2, h: 3, minW: 2, minH: 2 },
+    { i: "agents", x: 7, y: 6, w: 5, h: 3, minW: 2, minH: 2 },
   ],
   md: [
     { i: "worldmap", x: 0, y: 0, w: 5, h: 4, minW: 2, minH: 2 },
@@ -50,6 +52,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts<Bp> = {
     { i: "activity", x: 5, y: 9, w: 5, h: 3, minW: 2, minH: 2 },
     { i: "coordination", x: 0, y: 12, w: 6, h: 3, minW: 2, minH: 2 },
     { i: "system", x: 6, y: 12, w: 4, h: 3, minW: 2, minH: 2 },
+    { i: "agents", x: 0, y: 15, w: 10, h: 3, minW: 2, minH: 2 },
   ],
 };
 
@@ -71,6 +74,7 @@ const FOCUS_SLOTS_LG: { focused: Slot; rest: Slot[] } = {
     { x: 3, y: 6, w: 3, h: 3 },
     { x: 6, y: 6, w: 3, h: 3 },
     { x: 9, y: 6, w: 3, h: 3 },
+    { x: 0, y: 9, w: 4, h: 3 },
   ],
 };
 
@@ -83,6 +87,7 @@ const FOCUS_SLOTS_MD: { focused: Slot; rest: Slot[] } = {
     { x: 5, y: 8, w: 5, h: 3 },
     { x: 0, y: 11, w: 5, h: 3 },
     { x: 5, y: 11, w: 5, h: 3 },
+    { x: 0, y: 14, w: 10, h: 3 },
   ],
 };
 
@@ -198,7 +203,7 @@ export default function App() {
   // Panel refs for keyboard focus
   const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const PANEL_KEYS = useMemo(
-    () => ["worldmap", "entities", "webchat", "room", "activity", "coordination", "system"],
+    () => ["worldmap", "entities", "webchat", "room", "activity", "coordination", "system", "agents"],
     [],
   );
   const [activePanelIdx, setActivePanelIdx] = useState<number | null>(null);
@@ -231,9 +236,9 @@ export default function App() {
         return;
       }
 
-      // Number keys 1-7 for panel focus
+      // Number keys 1-8 for panel focus
       const num = Number.parseInt(e.key, 10);
-      if (num >= 1 && num <= 7) {
+      if (num >= 1 && num <= 8) {
         e.preventDefault();
         focusPanelByIndex(num - 1);
         return;
@@ -371,6 +376,16 @@ export default function App() {
               className={panelClass("system")}
             >
               <SystemMetrics uptime={uptime} backContent={<SystemGauges />} />
+            </div>
+            <div
+              key="agents"
+              ref={(el) => {
+                panelRefs.current.agents = el;
+              }}
+              onDoubleClick={onHeaderDblClick("agents")}
+              className={panelClass("agents")}
+            >
+              <AgentPanel />
             </div>
           </ResponsiveGridLayout>
         )}

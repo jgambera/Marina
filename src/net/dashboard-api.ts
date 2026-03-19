@@ -1,4 +1,6 @@
 import { join } from "node:path";
+import { getConfiguredProviderNames, getModelsByProvider } from "../agents/agent/model-registry";
+import type { ManagedAgent } from "../engine/agent-runtime";
 import type { Engine } from "../engine/engine";
 import type { MarinaDB } from "../persistence/database";
 import type { RoomId } from "../types";
@@ -7,7 +9,7 @@ const ROOMS_DIR = join(import.meta.dir, "../../rooms");
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -15,12 +17,18 @@ function json(data: unknown, status = 200): Response {
   return Response.json(data, { status, headers: CORS_HEADERS });
 }
 
+function sanitizeAgent(m: ManagedAgent) {
+  const { agent: _agent, ...rest } = m;
+  return { ...rest, uptimeMs: Date.now() - m.startedAt };
+}
+
 export async function handleDashboardApi(
   url: URL,
-  method: string,
+  req: Request,
   engine: Engine,
   db?: MarinaDB,
 ): Promise<Response | undefined> {
+  const method = req.method;
   if (url.pathname === "/api/world") {
     return getWorld(engine);
   }
@@ -102,6 +110,48 @@ export async function handleDashboardApi(
   }
   if (url.pathname === "/api/commands" && db) {
     return getCommands(db);
+  }
+
+  // ─── Agent management endpoints ──────────────────────────────────────────
+  if (url.pathname === "/api/agents" && method === "GET") {
+    const agents = engine.agentRuntime.list().map(sanitizeAgent);
+    return json({ agents, configuredProviders: getConfiguredProviderNames() });
+  }
+
+  if (url.pathname === "/api/agents/models" && method === "GET") {
+    const providers = await getModelsByProvider();
+    const configured = getConfiguredProviderNames();
+    return json({ providers, configured });
+  }
+
+  if (url.pathname === "/api/agents/spawn" && method === "POST") {
+    try {
+      const body = await req.json();
+      const { name, model, role } = body as { name?: string; model?: string; role?: string };
+      if (!name || !model) {
+        return json({ error: "name and model are required" }, 400);
+      }
+      const managed = await engine.agentRuntime.spawn({
+        name,
+        model,
+        role: role as "general" | "architect" | "scholar" | "diplomat" | "mentor" | "merchant",
+      });
+      return json(sanitizeAgent(managed));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("already running")) {
+        return json({ error: msg }, 409);
+      }
+      return json({ error: msg }, 500);
+    }
+  }
+
+  const agentStopMatch = url.pathname.match(/^\/api\/agents\/(.+)\/stop$/);
+  if (agentStopMatch && method === "POST") {
+    const agentName = decodeURIComponent(agentStopMatch[1]!);
+    const stopped = await engine.agentRuntime.stop(agentName);
+    if (!stopped) return json({ error: "Agent not found" }, 404);
+    return json({ ok: true });
   }
 
   if (url.pathname.startsWith("/api/")) {

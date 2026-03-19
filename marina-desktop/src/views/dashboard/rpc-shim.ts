@@ -130,8 +130,21 @@ window.fetch = async function patchedFetch(
 
   const method = init?.method?.toUpperCase() ?? "GET";
 
+  // Parse POST body if present
+  let body: unknown = undefined;
+  if (method === "POST" && init?.body) {
+    try {
+      body =
+        typeof init.body === "string"
+          ? JSON.parse(init.body)
+          : JSON.parse(new TextDecoder().decode(init.body as ArrayBuffer));
+    } catch {
+      // ignore parse errors
+    }
+  }
+
   try {
-    const data = await routeApiRequest(pathname, method);
+    const data = await routeApiRequest(pathname, method, body);
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -150,6 +163,7 @@ window.fetch = async function patchedFetch(
 async function routeApiRequest(
   pathname: string,
   method: string,
+  body?: unknown,
 ): Promise<unknown> {
   // ── DELETE routes ──
   if (method === "DELETE") {
@@ -162,7 +176,23 @@ async function routeApiRequest(
     throw new Error(`Unknown DELETE route: ${pathname}`);
   }
 
+  // ── POST routes ──
+  if (method === "POST") {
+    if (pathname === "/api/agents/spawn") {
+      return rpc.request.spawnAgent(
+        body as { name: string; model: string; role?: string },
+      );
+    }
+    const agentStopMatch = pathname.match(/^\/api\/agents\/(.+)\/stop$/);
+    if (agentStopMatch) {
+      return rpc.request.stopAgent(decodeURIComponent(agentStopMatch[1]!));
+    }
+    throw new Error(`Unknown POST route: ${pathname}`);
+  }
+
   // ── GET: Exact matches ──
+  if (pathname === "/api/agents") return rpc.request.getAgents();
+  if (pathname === "/api/agents/models") return rpc.request.getAgentModels();
   if (pathname === "/api/world") return rpc.request.getWorld();
   if (pathname === "/api/system") return rpc.request.getSystem();
   if (pathname === "/api/entities") return rpc.request.getEntities();
