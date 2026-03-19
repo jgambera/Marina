@@ -1,4 +1,4 @@
-// @ts-nocheck — imported from artilect-agent (non-strict tsconfig)
+// @ts-nocheck — non-strict tsconfig (agents subsystem)
 /**
  * Skill Discovery - Discover Marina commands and create dynamic tools
  */

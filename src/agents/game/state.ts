@@ -4,7 +4,48 @@
  */
 
 import type { EntityId, Perception, RoomId, RoomPerception } from "../net/types";
-import type { ConnectionStatus, EntityInfo, GameState, RoomInfo } from "./types";
+
+/** Connection status */
+export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "authenticated";
+
+/** Entity info as seen in room perceptions */
+export interface EntityInfo {
+  id: EntityId;
+  name: string;
+  short: string;
+}
+
+/** Room information from RoomPerception */
+export interface RoomInfo {
+  id: RoomId;
+  short: string;
+  long: string;
+  items: Record<string, string>;
+  exits: string[];
+  entities: EntityInfo[];
+}
+
+/** Complete game state */
+export interface GameState {
+  connection: {
+    status: ConnectionStatus;
+    wsUrl?: string;
+    mcpUrl?: string;
+    connectedAt?: number;
+    entityId?: EntityId;
+    characterName?: string;
+    token?: string;
+  };
+  location: {
+    currentRoom?: RoomInfo;
+  };
+  entities: {
+    present: EntityInfo[];
+    known: Map<string, EntityInfo>;
+  };
+  recentPerceptions: Perception[];
+  lastUpdate: number;
+}
 
 const MAX_RECENT_PERCEPTIONS = 100;
 

@@ -1,4 +1,4 @@
-// @ts-nocheck — imported from artilect-agent (non-strict tsconfig)
+// @ts-nocheck — non-strict tsconfig (agents subsystem)
 /**
  * Token Counter - Estimate tokens and costs for LLM usage
  */
