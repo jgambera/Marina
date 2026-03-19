@@ -39,14 +39,16 @@ bun run format         # Biome auto-format (run before committing)
 - `src/engine/agent-runtime.ts` — AgentRuntime class: spawn/stop/list managed agents
 - `src/engine/providers.ts` — Model resolution wrapper (pi-ai integration)
 - `src/engine/commands/agent.ts` — `agent spawn|stop|list|status` command (minRank: architect)
-- `src/agents/` — Agent intelligence layer (lean/full agents, tools, bridges)
+- `src/agents/` — Agent intelligence layer
   - `lean/` — Lean agent (delegates memory/state to platform)
   - `full/` — Full agent (local memory, curiosity, goals, learning)
-  - `external/` — External bridge (Claude Code, Codex CLI, Goose adapters)
   - `tools/` — 17 marina_* tools for agent-server interaction
   - `net/` — MarinaClient WebSocket client, MCP client
   - `agent/` — Roles, model registry, social awareness, context management
   - `credentials/` — API key and custom endpoint management (~/.marina/)
+  - `mapping/` — World map, exploration strategies, renderer
+  - `rooms/` — Room building context and templates for agents
+  - `game/` — Game state manager and types
 
 ## Key Files
 - `src/types.ts` — all core types (includes `RoomContext.brief`)
